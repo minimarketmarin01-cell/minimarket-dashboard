@@ -133,6 +133,7 @@
       <input type="search" id="fBuscar" placeholder="Buscar nombre, categoría, N° operación…">
       <select id="fMes"><option value="">Todos los meses</option></select>
       <select id="fTipo"><option value="">Todos los tipos</option></select>
+      <select id="fCategoria"><option value="">Todas las categorías</option></select>
       <select id="fCuenta"><option value="">Banco y efectivo</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
       <button class="btn btn-g" id="btnAgregar">+ Fila</button>
     </div>
@@ -177,7 +178,7 @@
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
-const TOKEN = "Marin376xyz";
+const TOKEN = "CAMBIA-ESTE-TOKEN";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -274,7 +275,8 @@ function initTabla(){
   const mesesSet=[...new Set(DATA.filas.map(f=>f.ym))].sort();
   const fMes=document.getElementById('fMes'); mesesSet.forEach(ym=>{const o=document.createElement('option');o.value=ym;o.textContent=MESES_ES[ym.split('-')[1]]+' '+ym.split('-')[0];fMes.appendChild(o);});
   const fTipo=document.getElementById('fTipo'); TIPOS_OPC.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fTipo.appendChild(o);});
-  ['fBuscar','fMes','fTipo','fCuenta'].forEach(id=>document.getElementById(id).addEventListener('input',pintarTabla));
+  const fCat=document.getElementById('fCategoria'); [...new Set(DATA.filas.map(f=>f.categoria).filter(Boolean))].sort().forEach(cat=>{const o=document.createElement('option');o.value=cat;o.textContent=cat;fCat.appendChild(o);});
+  ['fBuscar','fMes','fTipo','fCategoria','fCuenta'].forEach(id=>document.getElementById(id).addEventListener('input',pintarTabla));
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
@@ -282,9 +284,9 @@ function initTabla(){
 }
 function filtrarFilas(){
   const q=document.getElementById('fBuscar').value.toLowerCase();
-  const mes=document.getElementById('fMes').value, tipo=document.getElementById('fTipo').value, cta=document.getElementById('fCuenta').value;
+  const mes=document.getElementById('fMes').value, tipo=document.getElementById('fTipo').value, cta=document.getElementById('fCuenta').value, categoria=document.getElementById('fCategoria').value;
   return DATA.filas.filter(f=>{
-    if(mes&&f.ym!==mes)return false; if(tipo&&f.tipo!==tipo)return false; if(cta&&f.cuenta!==cta)return false;
+    if(mes&&f.ym!==mes)return false; if(tipo&&f.tipo!==tipo)return false; if(cta&&f.cuenta!==cta)return false; if(categoria&&f.categoria!==categoria)return false;
     if(q&&!(String(f.nombre)+f.categoria+f.nop+f.tipo).toLowerCase().includes(q))return false; return true;
   });
 }
