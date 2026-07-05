@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Marín · Panel financiero</title>
+<!-- ===== PWA: instalable en Android/iOS ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12203a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Marín Panel">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<!-- ========================================== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
@@ -106,6 +116,7 @@
     <div class="alerta" id="alerta"><span>⚠️</span><div><b>Mes incompleto.</b> Faltan ventas y costos en <b>efectivo</b>. El margen y la utilidad son <b>provisionales</b> hasta que registres el efectivo (pestaña «Cierre de caja»).</div></div>
     <section class="hero" id="hero"><div class="cargando">Conectando…</div></section>
     <section class="mini" id="mini"></section>
+    <section class="mini" id="miniPago"></section>
     <div class="grid">
       <div class="card full"><h2>Rentabilidad por mes</h2><div class="cap">Utilidad neta sobre ingresos. Abril es referencia (−16,6%).</div><canvas id="chRent" height="110"></canvas></div>
       <div class="card full"><h2>Ingresos vs. costos y gastos — por día</h2><div class="cap" id="capDia"></div><canvas id="chDia" height="90"></canvas></div>
@@ -166,7 +177,7 @@
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
-const TOKEN = "Marin376xyz";
+const TOKEN = "CAMBIA-ESTE-TOKEN";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -206,6 +217,10 @@ function render(){
     <div class="kpi"><div class="lbl">Ticket promedio</div><div class="val">${clp(m.ticketPromedio)}</div><div class="sub">por transacción</div></div>
     <div class="kpi"><div class="lbl">Costo POS anual</div><div class="val">${clp(m.comisionPOSanual)}</div><div class="sub">comisión ×12</div></div>
     <div class="kpi"><div class="lbl">Días con ventas</div><div class="val">${Object.keys(m.dias).length}</div><div class="sub">este mes</div></div>`;
+  document.getElementById('miniPago').innerHTML=`
+    <div class="kpi"><div class="lbl">Ingreso POS</div><div class="val">${clp(m.ingresoPOS||0)}</div><div class="sub">tarjetas SuperCompraQuí</div></div>
+    <div class="kpi"><div class="lbl">Ingreso transferencia</div><div class="val">${clp(m.ingresoTransferencia||0)}</div><div class="sub">transferencias de clientes</div></div>
+    <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>${m.ingresoOtro?`<div class="kpi"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
   dibujarRent(); dibujarDia(m); dona('chProv',m.proveedores); dona('chGasto',m.gastoCats); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function nuevoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
@@ -275,7 +290,8 @@ function filtrarFilas(){
 }
 function pintarTabla(){
   const filas=filtrarFilas();
-  document.getElementById('contFilas').textContent=filas.length+' registros'+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
+  const suma=filas.reduce((s,f)=>{const dv=dirty[f.rowIndex];const monto=dv&&dv.monto!==undefined?Number(dv.monto):f.monto;return s+(monto||0);},0);
+  document.getElementById('contFilas').textContent=filas.length+' registros · suma '+clp(suma)+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
   const tb=document.querySelector('#tablaEdit tbody'); tb.innerHTML='';
   filas.forEach(f=>{
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
@@ -296,7 +312,12 @@ function pintarTabla(){
 }
 const selTipo=v=>`<select data-c="tipo">${TIPOS_OPC.map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
 const selCuenta=v=>`<select data-c="cuenta"><option ${v==='BANCO'?'selected':''}>BANCO</option><option ${v==='EFECTIVO'?'selected':''}>EFECTIVO</option></select>`;
-function marcarDirty(row,campo,val){ if(!dirty[row])dirty[row]={}; dirty[row][campo]=val; document.querySelector(`tr[data-row="${row}"]`)?.classList.add('dirty'); actualizarBarra(); }
+function marcarDirty(row,campo,val){ if(!dirty[row])dirty[row]={}; dirty[row][campo]=val; document.querySelector(`tr[data-row="${row}"]`)?.classList.add('dirty'); actualizarBarra(); actualizarSuma(); }
+function actualizarSuma(){
+  const filas=filtrarFilas();
+  const suma=filas.reduce((s,f)=>{const dv=dirty[f.rowIndex];const monto=dv&&dv.monto!==undefined?Number(dv.monto):f.monto;return s+(monto||0);},0);
+  document.getElementById('contFilas').textContent=filas.length+' registros · suma '+clp(suma)+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
+}
 function actualizarBarra(){ const n=Object.keys(dirty).length; document.getElementById('dirtyCount').textContent=n+' cambio'+(n!==1?'s':'')+' sin guardar'; document.getElementById('barraGuardar').classList.toggle('ver',n>0); }
 async function guardarCambios(){
   const cambios=Object.entries(dirty); if(!cambios.length)return;
@@ -412,6 +433,13 @@ async function descartarRev(r,card){
 async function post(body){
   const r=await fetch(WEBAPP_URL,{method:'POST',body:JSON.stringify(body)});
   return r.json();
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
 }
 </script>
 </body>
