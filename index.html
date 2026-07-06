@@ -102,7 +102,21 @@
   <header class="top">
     <h1>Minimarket Marín <span>· panel financiero</span></h1>
     <div class="sello" id="sello">cargando…</div>
+    <button id="btnCfg" title="Configuración" style="margin-left:auto;background:none;border:1px solid var(--linea);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px">⚙️</button>
   </header>
+
+  <div id="cajaCfg" class="hidden" style="max-width:560px;margin:12px auto;padding:16px;border:1px solid var(--linea);border-radius:12px;background:#fff">
+    <h2 style="margin:0 0 8px">⚙️ Configuración de conexión</h2>
+    <p style="color:var(--gris);font-size:13px;margin:0 0 12px">Se guarda solo en este dispositivo. Cambia estos valores sin tener que editar GitHub. <b>No pongas aquí la API key de Anthropic.</b></p>
+    <label style="display:block;font-size:13px;margin-bottom:4px">URL del Web App (termina en /exec)</label>
+    <input id="cfgUrl" style="width:100%;padding:9px;border:1px solid var(--linea);border-radius:8px;margin-bottom:12px;font-size:13px" placeholder="https://script.google.com/macros/s/.../exec">
+    <label style="display:block;font-size:13px;margin-bottom:4px">Token (igual a TOKEN_DASHBOARD)</label>
+    <input id="cfgToken" style="width:100%;padding:9px;border:1px solid var(--linea);border-radius:8px;margin-bottom:14px;font-size:13px" placeholder="marin376xyz">
+    <div style="display:flex;gap:8px">
+      <button id="cfgGuardar" class="btn btn-g">Guardar y recargar</button>
+      <button id="cfgCerrar" class="btn">Cerrar</button>
+    </div>
+  </div>
 
   <div class="tabs">
     <button class="on" data-tab="resumen">Resumen</button>
@@ -178,8 +192,14 @@
 </div>
 
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
-const TOKEN = "marin376xyz"; // debe coincidir EXACTO con TOKEN_DASHBOARD de Apps Script
+// Valores por defecto (respaldo). Se pueden cambiar en ⚙️ Configuración sin editar este archivo.
+const CFG_URL_DEFAULT   = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
+const CFG_TOKEN_DEFAULT = "marin376xyz";
+let WEBAPP_URL, TOKEN;
+try {
+  WEBAPP_URL = localStorage.getItem('cfg_url')   || CFG_URL_DEFAULT;
+  TOKEN      = localStorage.getItem('cfg_token') || CFG_TOKEN_DEFAULT;
+} catch(e) { WEBAPP_URL = CFG_URL_DEFAULT; TOKEN = CFG_TOKEN_DEFAULT; }
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -477,6 +497,24 @@ async function post(body){
   const r=await fetch(WEBAPP_URL,{method:'POST',body:JSON.stringify(body)});
   return r.json();
 }
+
+// ===== Configuración de conexión (URL + token) guardada en el navegador =====
+(function initCfg(){
+  const $=id=>document.getElementById(id);
+  $('btnCfg').onclick=()=>{
+    $('cfgUrl').value=WEBAPP_URL;
+    $('cfgToken').value=TOKEN;
+    $('cajaCfg').classList.toggle('hidden');
+  };
+  $('cfgCerrar').onclick=()=>$('cajaCfg').classList.add('hidden');
+  $('cfgGuardar').onclick=()=>{
+    const u=$('cfgUrl').value.trim(), t=$('cfgToken').value.trim();
+    if(!u || u.indexOf('/exec')<0){ alert('La URL debe terminar en /exec'); return; }
+    if(!t){ alert('Falta el token'); return; }
+    try{ localStorage.setItem('cfg_url',u); localStorage.setItem('cfg_token',t); }catch(e){ alert('No se pudo guardar en este navegador'); return; }
+    alert('Guardado. Recargando…'); location.reload();
+  };
+})();
 </script>
 <script>
 if('serviceWorker' in navigator){
