@@ -179,7 +179,7 @@
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
-const TOKEN = "marin376xyz";
+const TOKEN = "marin376xyz"; // debe coincidir EXACTO con TOKEN_DASHBOARD de Apps Script
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -223,7 +223,8 @@ function render(){
   document.getElementById('miniPago').innerHTML=`
     <div class="kpi"><div class="lbl">Ingreso POS</div><div class="val">${clp(m.ingresoPOS||0)}</div><div class="sub">tarjetas SuperCompraQuí</div></div>
     <div class="kpi"><div class="lbl">Ingreso transferencia</div><div class="val">${clp(m.ingresoTransferencia||0)}</div><div class="sub">transferencias de clientes</div></div>
-    <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>${m.ingresoOtro?`<div class="kpi"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
+    <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>
+    <div class="kpi"><div class="lbl">Transacciones tarjeta</div><div class="val">${(m.nTransaccionesPOS||0).toLocaleString('es-CL')}</div><div class="sub">ventas POS del mes</div></div>${m.ingresoOtro?`<div class="kpi"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
   dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores); dona('chGasto',m.gastoCats); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
