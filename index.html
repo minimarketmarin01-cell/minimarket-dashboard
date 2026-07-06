@@ -122,6 +122,7 @@
       <div class="card full"><h2>Ingresos vs. costos y gastos — por día</h2><div class="cap" id="capDia"></div><canvas id="chDia" height="90"></canvas></div>
       <div class="card"><h2>Costos por proveedor</h2><div class="cap">Todas las categorías de mercadería.</div><canvas id="chProv" height="240"></canvas></div>
       <div class="card"><h2>Gasto operacional</h2><div class="cap">Todas las categorías de gasto.</div><canvas id="chGasto" height="240"></canvas></div>
+      <div class="card full"><h2>Control de gastos — % sobre ingreso</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><canvas id="chControl" height="140"></canvas></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
       <div class="card"><h2>Datos que faltan</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
@@ -159,7 +160,7 @@
     <div class="card" style="max-width:640px;margin:0 auto">
       <h2>Cierre de caja por foto</h2>
       <div class="cap">Toma o sube una foto del cuaderno de cierre. Claude lee la venta en efectivo y los costos pagados en efectivo; tú revisas y confirmas antes de guardar.</div>
-      <div class="drop" id="drop">📷 Toca para tomar o subir la foto del cierre<input type="file" id="fileFoto" accept="image/*" capture="environment" class="hidden"></div>
+      <div class="drop" id="drop">📷 Toca para tomar o subir la foto del cierre<input type="file" id="fileFoto" accept="image/*" class="hidden"></div>
       <img id="previewImg" class="hidden">
       <div id="cierreEstado"></div>
       <div id="cierreForm" class="hidden">
@@ -178,7 +179,7 @@
 
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
-const TOKEN = "marin376xyz";
+const TOKEN = "CAMBIA-ESTE-TOKEN";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -216,13 +217,52 @@ function render(){
   document.getElementById('mini').innerHTML=`
     <div class="kpi"><div class="lbl">Punto de equilibrio</div><div class="val">${clp(m.puntoEquilibrio)}</div><div class="sub">ventas p/ cubrir gasto ope</div></div>
     <div class="kpi"><div class="lbl">Ticket promedio</div><div class="val">${clp(m.ticketPromedio)}</div><div class="sub">por transacción</div></div>
-    <div class="kpi"><div class="lbl">Costo POS anual</div><div class="val">${clp(m.comisionPOSanual)}</div><div class="sub">comisión ×12</div></div>
+    <div class="kpi"><div class="lbl">Comisión POS del mes</div><div class="val">${clp(m.comisionPOSmensual||0)}</div><div class="sub">SuperCompraQuí 1,29% + IVA</div></div>
+    <div class="kpi"><div class="lbl">Total abonado POS</div><div class="val">${clp(m.abonadoPOS||0)}</div><div class="sub">neto al banco (venta − comisión)</div></div>
     <div class="kpi"><div class="lbl">Días con ventas</div><div class="val">${Object.keys(m.dias).length}</div><div class="sub">este mes</div></div>`;
   document.getElementById('miniPago').innerHTML=`
     <div class="kpi"><div class="lbl">Ingreso POS</div><div class="val">${clp(m.ingresoPOS||0)}</div><div class="sub">tarjetas SuperCompraQuí</div></div>
     <div class="kpi"><div class="lbl">Ingreso transferencia</div><div class="val">${clp(m.ingresoTransferencia||0)}</div><div class="sub">transferencias de clientes</div></div>
     <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>${m.ingresoOtro?`<div class="kpi"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
-  dibujarRent(); dibujarDia(m); dona('chProv',m.proveedores); dona('chGasto',m.gastoCats); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores); dona('chGasto',m.gastoCats); tablaMes(m); autoAnalisis(m); faltantes(m);
+}
+function dibujarControl(m){
+  const ing=m.ingreso||0;
+  const p=v=>ing? v/ing*100 : 0;
+  const adm=(m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0;
+  const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
+  // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar)
+  const items=[
+    {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
+    {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
+    {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
+    {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
+    {n:'Insumos',    v:m.insumos,  pc:p(m.insumos),meta:3, tipo:'gasto'},
+    {n:'Merma',      v:m.merma,    pc:p(m.merma), meta:2,  tipo:'gasto'},
+    {n:'Plásticos',  v:m.plasticos,pc:p(m.plasticos),meta:1,tipo:'gasto'},
+    {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
+    {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:null, tipo:'util'}
+  ];
+  const color=it=>{
+    if(it.tipo==='ing') return '#2f6df0';
+    if(it.tipo==='util') return it.v>=0?'#1f7a54':'#b23b3b';
+    return (it.meta!==null && it.pc>it.meta) ? '#b23b3b' : '#1f7a54';  // rojo si sobrepasa meta
+  };
+  // plugin inline: dibuja "$monto · %" al final de cada barra
+  const etiquetas={id:'etiquetas',afterDatasetsDraw(ch){
+    const {ctx}=ch; ctx.save(); ctx.font='600 10px system-ui'; ctx.textBaseline='middle';
+    ch.getDatasetMeta(0).data.forEach((bar,i)=>{
+      const it=items[i]; const txt=clp(it.v)+' · '+(it.pc||0).toFixed(1)+'%';
+      ctx.fillStyle='#333'; ctx.textAlign='left';
+      ctx.fillText(txt, bar.x+6, bar.y);
+    });
+    ctx.restore();
+  }};
+  nuevoChart('chControl',{type:'bar',data:{labels:items.map(i=>i.n),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
+    options:{indexAxis:'y',layout:{padding:{right:120}},plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+(it.meta!==null?' (meta ≤'+it.meta+'%)':'');}}}},
+      scales:{x:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#eee'}},y:{grid:{display:false}}}},
+    plugins:[etiquetas]});
 }
 function nuevoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
 function dibujarRent(){
