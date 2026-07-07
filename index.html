@@ -119,15 +119,10 @@
   .spin{display:inline-block; width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--tinta);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
   @keyframes sp{to{transform:rotate(360deg)}}
   @media (max-width:820px){ .hero{grid-template-columns:1fr 1fr} .mini{grid-template-columns:1fr 1fr} .grid{grid-template-columns:1fr} .kpi.hero-util{grid-column:1/-1} }
-  /* Bloqueo de giro SOLO en celular físico: en horizontal, un teléfono tiene
-     alto muy chico (<480px) Y ancho de celular (<950px). Una tablet en
-     horizontal tiene alto mayor, así que NO entra aquí y se muestra normal
-     y adaptada al ancho. Esto arregla el "aplastado" en tablet. */
-  @media screen and (orientation: landscape) and (max-height:480px) and (max-width:950px){
-    html{ transform:rotate(-90deg); transform-origin:left top; width:100vh; height:100vw; overflow-x:hidden; position:absolute; top:100%; left:0; }
-  }
-  /* Tablet/desktop en horizontal (ancho amplio): aprovechar el espacio con
-     más columnas, en vez de dejar las tarjetas aplastadas o en una fila. */
+  /* En horizontal con ancho amplio (tablet/desktop): aprovechar el espacio.
+     El bloqueo de giro en celular se maneja SOLO por JavaScript (screen.orientation),
+     que lee el tamaño físico real del dispositivo — el truco de rotación por CSS
+     se quitó porque rompía el layout en tablets. */
   @media screen and (orientation: landscape) and (min-width:900px){
     .hero{grid-template-columns:1.4fr 1fr 1fr 1fr} .mini{grid-template-columns:repeat(5,1fr)} .grid{grid-template-columns:1fr 1fr}
   }
