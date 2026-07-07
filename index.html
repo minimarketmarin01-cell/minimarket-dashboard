@@ -167,6 +167,7 @@
         <div class="campo"><label>Fecha del cierre</label><input type="text" id="cFecha" placeholder="DD/MM/AAAA"></div>
         <div class="campo"><label>Venta en efectivo del día</label><input type="number" id="cVenta" placeholder="0"></div>
         <label style="font-size:.76rem;color:var(--gris);text-transform:uppercase;letter-spacing:.05em">Costos pagados en efectivo <span style="text-transform:none;font-weight:400">(categoría y tipo sugeridos por IA — revisa y corrige)</span></label>
+        <datalist id="listaCategorias"></datalist>
         <div style="overflow-x:auto;margin:8px 0">
           <table id="tablaCierre" style="min-width:480px">
             <thead><tr style="text-align:left;color:var(--gris);font-size:.74rem;text-transform:uppercase">
@@ -203,13 +204,24 @@ function init(){
   mesActual=DATA.meses[DATA.meses.length-1].ym;
   document.getElementById('sello').textContent='actualizado '+new Date(DATA.generado).toLocaleString('es-CL');
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
-  render(); initTabla(); initCierre(); initRevisar();
+  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab();
+}
+function poblarCategorias(){
+  const dl=document.getElementById('listaCategorias'); if(!dl)return;
+  dl.innerHTML=(DATA.categorias||[]).map(c=>`<option value="${c}">`).join('');
 }
 const mesData=ym=>DATA.meses.find(m=>m.ym===ym);
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
   ['resumen','registros','revisar','cierre'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  try{ localStorage.setItem('tabActiva', b.dataset.tab); }catch(e){}
 });
+function restaurarTab(){
+  let tab='resumen';
+  try{ tab = localStorage.getItem('tabActiva') || 'resumen'; }catch(e){}
+  const btn=document.querySelector(`.tabs button[data-tab="${tab}"]`);
+  if(btn) btn.click();
+}
 
 function render(){
   const m=mesData(mesActual);
@@ -424,11 +436,12 @@ function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input value="${detalle}" data-k="detalle" style="width:100%;border:1px solid var(--linea);border-radius:6px;padding:6px"></td>
-    <td><input value="${categoria}" data-k="categoria" style="width:100%;border:1px solid var(--linea);border-radius:6px;padding:6px" placeholder="ej. BOLSAS"></td>
+    <td><input value="${(categoria||'').toUpperCase()}" data-k="categoria" list="listaCategorias" style="width:100%;border:1px solid var(--linea);border-radius:6px;padding:6px;text-transform:uppercase" placeholder="ej. BOLSAS"></td>
     <td>${selTipoCierre(tipo)}</td>
     <td class="num"><input type="number" value="${monto}" data-k="monto" style="width:100px;text-align:right;border:1px solid var(--linea);border-radius:6px;padding:6px"></td>
     <td><button class="btn-del" title="Eliminar">✕</button></td>`;
   tr.querySelector('.btn-del').onclick=()=>tr.remove();
+  tr.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
   tb.appendChild(tr);
 }
 async function guardarCierreUI(){
@@ -443,8 +456,33 @@ async function guardarCierreUI(){
   })).filter(c=>c.monto>0);
   document.getElementById('btnGuardarCierre').innerHTML='<span class="spin"></span> Guardando…';
   const r=await post({accion:'guardarCierre',token:TOKEN,datos:{fecha,venta_efectivo:venta,costos_efectivo:costos}});
-  if(r.ok){alert('Cierre guardado ('+r.filas+' filas). Recargando…');location.reload();}
-  else{alert('Error: '+(r.error||''));document.getElementById('btnGuardarCierre').textContent='Confirmar y guardar en registros';}
+  if(r.ok){
+    // No recargamos la página: limpiamos el formulario y dejamos listo
+    // para subir la foto del siguiente día, sin salir de esta pestaña.
+    document.getElementById('cierreEstado').innerHTML='<p style="color:var(--verde);margin:12px 0">✓ Cierre del '+fecha+' guardado ('+r.filas+' filas). Listo para el siguiente día.</p>';
+    document.getElementById('cierreForm').classList.add('hidden');
+    document.getElementById('previewImg').classList.add('hidden');
+    document.getElementById('previewImg').src='';
+    document.getElementById('fileFoto').value='';
+    document.querySelector('#tablaCierre tbody').innerHTML='';
+    document.getElementById('cFecha').value=''; document.getElementById('cVenta').value='';
+    document.getElementById('btnGuardarCierre').textContent='Confirmar y guardar en registros';
+    fotoBase64=null;
+    refrescarDatosSilencioso();
+  } else {
+    alert('Error: '+(r.error||''));
+    document.getElementById('btnGuardarCierre').textContent='Confirmar y guardar en registros';
+  }
+}
+// Vuelve a pedir los datos al backend y re-pinta SIN cambiar de pestaña ni
+// recargar la página — así los KPIs quedan al día para cuando Edwin
+// vuelva a "Resumen", mientras sigue cargando cierres uno tras otro.
+async function refrescarDatosSilencioso(){
+  try{
+    const d=await fetch(WEBAPP_URL).then(r=>r.json());
+    DATA=d;
+    render(); initTabla(); initRevisar(); poblarCategorias();
+  }catch(e){ /* si falla, los datos se refrescarán al recargar manualmente */ }
 }
 
 // ================= POR REVISAR =================
@@ -465,7 +503,7 @@ function initRevisar(){
       <div style="font-size:.8rem;color:var(--ambar);background:var(--ambar-suave);padding:6px 10px;border-radius:8px;margin-bottom:10px">${r.motivo||''}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input placeholder="Nombre / proveedor" data-k="nombre" style="flex:1;min-width:130px;padding:8px;border:1px solid var(--linea);border-radius:8px" value="${(r.descripcion||'').slice(0,40)}">
-        <input placeholder="Categoría" data-k="categoria" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px">
+        <input placeholder="Categoría" data-k="categoria" list="listaCategorias" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px;text-transform:uppercase">
         <select data-k="tipo" style="padding:8px;border:1px solid var(--linea);border-radius:8px">${TIPOS_OPC.map(t=>`<option ${t==='COSTOS'?'selected':''}>${t}</option>`).join('')}</select>
         <select data-k="cuenta" style="padding:8px;border:1px solid var(--linea);border-radius:8px"><option>BANCO</option><option>EFECTIVO</option></select>
         <button class="btn btn-p" data-act="aprobar">Aprobar</button>
@@ -473,6 +511,7 @@ function initRevisar(){
       </div>`;
     card.querySelector('[data-act=aprobar]').onclick=()=>aprobarRev(r,card);
     card.querySelector('[data-act=descartar]').onclick=()=>descartarRev(r,card);
+    card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
     cont.appendChild(card);
   });
 }
@@ -482,7 +521,7 @@ async function aprobarRev(r,card){
   if(!categoria){alert('Pon una categoría');return;}
   card.querySelector('[data-act=aprobar]').innerHTML='<span class="spin"></span>';
   // agrega a REGISTROS con el N° operación original y borra de POR_REVISAR
-  await post({accion:'agregar',token:TOKEN,valores:{nombre,fecha:r.fecha,categoria,tipo,cuenta,monto:r.monto,nop:r.nop}});
+  await post({accion:'agregar',token:TOKEN,valores:{nombre,fecha:r.fecha,categoria,tipo,cuenta,monto:r.monto,nop:r.nop,patron:r.descripcion}});
   await post({accion:'quitarRevisar',token:TOKEN,fila:r.fila,nop:r.nop});
   card.style.opacity=.4; card.innerHTML='<div style="text-align:center;color:var(--verde);padding:10px">✓ Aprobado y movido a registros</div>';
 }
