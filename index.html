@@ -129,7 +129,11 @@
     <section class="mini" id="mini"></section>
     <section class="mini" id="miniPago"></section>
     <div class="grid">
-      <div class="card full"><h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div><div style="height:130px"><canvas id="chRent"></canvas></div></div>
+      <div class="card full" style="position:relative;overflow:hidden">
+        <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
+        <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
+        <div style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
+      </div>
       <div class="card full"><h2>Ingresos vs. costos y gastos — por día</h2><div class="cap" id="capDia"></div><canvas id="chDia" height="90"></canvas></div>
       <div class="card"><h2>Costos por proveedor</h2><div class="cap">Todas las categorías de mercadería.</div><canvas id="chProv" height="240"></canvas></div>
       <div class="card"><h2>Gasto operacional</h2><div class="cap">Todas las categorías de gasto.</div><canvas id="chGasto" height="240"></canvas></div>
@@ -313,26 +317,43 @@ function dibujarRent(){
   const clpCompacto=n=>{n=Math.round(n||0);const s=n<0?'-':'';n=Math.abs(n);
     if(n>=1000000)return s+'$'+(n/1000000).toFixed(1).replace('.0','')+'M';
     if(n>=1000)return s+'$'+Math.round(n/1000)+'K'; return s+'$'+n;};
+
+  // Línea de tendencia: regresión lineal simple (mínimos cuadrados) sobre
+  // la rentabilidad %, para mostrar la dirección real del negocio en el
+  // tiempo (no solo el vaivén mes a mes).
+  const n=serie.length, xs=serie.map((_,i)=>i), ys=serie.map(s=>s.rentabilidad);
+  const sx=xs.reduce((a,b)=>a+b,0), sy=ys.reduce((a,b)=>a+b,0);
+  const sxy=xs.reduce((a,x,i)=>a+x*ys[i],0), sxx=xs.reduce((a,x)=>a+x*x,0);
+  const pend=(n*sxy-sx*sy)/(n*sxx-sx*sx || 1), inter=(sy-pend*sx)/n;
+  const tendencia=xs.map(x=>+(pend*x+inter).toFixed(2));
+
   const etiquetas={id:'etiquetasRent',afterDatasetsDraw(ch){
     const {ctx}=ch; ctx.save(); ctx.textAlign='center';
     ch.getDatasetMeta(0).data.forEach((bar,i)=>{
       const s=serie[i]; const color=s.rentabilidad>=0?'#177a56':'#b6402f';
-      ctx.font='700 11px Inter, system-ui'; ctx.fillStyle=color;
-      ctx.fillText(pct(s.rentabilidad), bar.x, bar.y-22);
-      if(!s.ref){ ctx.font='600 9.5px Inter, system-ui'; ctx.fillStyle='#807f74';
-        ctx.fillText(clpCompacto(s.utilidad), bar.x, bar.y-10); }
+      ctx.font='700 11px Manrope, system-ui'; ctx.fillStyle=color;
+      ctx.fillText(pct(s.rentabilidad), bar.x, bar.y-20);
+      if(!s.ref){ ctx.font='600 9px Inter, system-ui'; ctx.fillStyle='#9a988c';
+        ctx.fillText(clpCompacto(s.utilidad), bar.x, bar.y-9); }
     });
     ctx.restore();
   }};
   nuevoChart('chRent',{type:'bar',data:{labels:serie.map(m=>MESES_ES[m.ym.split('-')[1]].slice(0,3)),
-    datasets:[{data:serie.map(m=>+m.rentabilidad.toFixed(1)),backgroundColor:serie.map(m=>m.rentabilidad>=0?'#177a56':'#b6402f'),borderRadius:6,barPercentage:.6}]},
-    options:{layout:{padding:{top:30}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>{const s=serie[c.dataIndex]; return s.ref?['Rentabilidad '+pct(c.raw)]:['Utilidad '+clp(s.utilidad)+' ('+pct(c.raw)+')','Ingreso total '+clp(s.ingreso)];}}}},
-      scales:{y:{display:false},x:{grid:{display:false},ticks:{font:{size:10.5,weight:'600'}}}}},
+    datasets:[
+      {data:serie.map(m=>+m.rentabilidad.toFixed(1)),backgroundColor:serie.map(m=>m.rentabilidad>=0?'#177a56':'#b6402f'),borderRadius:999,barPercentage:.42,order:2},
+      {type:'line',data:tendencia,borderColor:'#2f6df0',borderWidth:2.5,borderDash:[0],pointRadius:0,tension:0,fill:false,order:1,
+        segment:{borderColor:c=>'#2f6df0'}}
+    ]},
+    options:{layout:{padding:{top:28,bottom:2}},plugins:{legend:{display:false},
+      tooltip:{filter:c=>c.datasetIndex===0,callbacks:{label:c=>{const s=serie[c.dataIndex]; return s.ref?['Rentabilidad '+pct(c.raw)]:['Utilidad '+clp(s.utilidad)+' ('+pct(c.raw)+')','Ingreso total '+clp(s.ingreso)];}}}},
+      scales:{y:{display:false},x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,weight:'600',family:'Inter'},color:'#8a8878'}}}},
     plugins:[etiquetas]});
   const actual=DATA.meses.find(x=>x.ym===mesActual);
+  const dirTexto = pend>0.15?'mejorando':(pend<-0.15?'bajando':'estable');
+  const dirColor = pend>0.15?'#177a56':(pend<-0.15?'#b6402f':'#8a8878');
   if(actual) document.getElementById('capRent').innerHTML=
-    `<b>${MESES_ES[actual.ym.split('-')[1]]}:</b> utilidad ${clp(actual.utilidad)} (${pct(actual.rentabilidad)}) sobre ingreso total ${clp(actual.ingreso)}`;
+    `<b>${MESES_ES[actual.ym.split('-')[1]]}:</b> utilidad ${clp(actual.utilidad)} (${pct(actual.rentabilidad)}) sobre ingreso total ${clp(actual.ingreso)} `
+    + `<span style="color:${dirColor};font-weight:700">· tendencia ${dirTexto} (${pend>=0?'+':''}${pend.toFixed(1)} pp/mes)</span>`;
 }
 function dibujarDia(m){
   const dias=Object.keys(m.dias).sort();
