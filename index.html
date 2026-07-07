@@ -546,6 +546,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   });
 }
+// Bloqueo de orientación por JS: actúa de inmediato, sin depender de que
+// Android regenere el WebAPK a partir del manifest (eso puede tardar días).
+// Solo funciona en modo instalado (standalone) o pantalla completa; en una
+// pestaña normal de Chrome el navegador ignora esto silenciosamente, lo cual
+// está bien porque ahí manda el bloqueo de rotación del propio sistema.
+function fijarOrientacion(){
+  try{
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('portrait').catch(()=>{});
+    }
+  }catch(e){}
+}
+fijarOrientacion();
+window.addEventListener('load', fijarOrientacion);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fijarOrientacion(); });
 </script>
 </body>
 </html>
