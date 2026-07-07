@@ -200,8 +200,12 @@ fetch(WEBAPP_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
 function init(){
   if(!DATA.meses||!DATA.meses.length){document.getElementById('hero').innerHTML='<div class="cargando">Sin datos aún.</div>';return;}
   const sel=document.getElementById('selMes');sel.innerHTML='';
-  DATA.meses.forEach(m=>{const b=document.createElement('button');b.textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];b.dataset.ym=m.ym;b.onclick=()=>{mesActual=m.ym;render();};sel.appendChild(b);});
+  DATA.meses.forEach(m=>{const b=document.createElement('button');b.textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];b.dataset.ym=m.ym;b.onclick=()=>{mesActual=m.ym;try{localStorage.setItem('mesActivo',m.ym);}catch(e){}render();};sel.appendChild(b);});
   mesActual=DATA.meses[DATA.meses.length-1].ym;
+  try{
+    const guardado=localStorage.getItem('mesActivo');
+    if(guardado && DATA.meses.some(m=>m.ym===guardado)) mesActual=guardado;
+  }catch(e){}
   document.getElementById('sello').textContent='actualizado '+new Date(DATA.generado).toLocaleString('es-CL');
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
   render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab();
