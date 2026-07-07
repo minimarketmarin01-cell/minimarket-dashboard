@@ -126,6 +126,33 @@
   @media screen and (orientation: landscape) and (min-width:900px){
     .hero{grid-template-columns:1.4fr 1fr 1fr 1fr} .mini{grid-template-columns:repeat(5,1fr)} .grid{grid-template-columns:1fr 1fr}
   }
+  /* Tablet/desktop (ancho ≥900px, en cualquier orientación): escalar
+     tipografía, espaciado y gráficos — no solo reacomodar columnas.
+     Antes el contenido se veía "chico" porque usaba el mismo tamaño de
+     fuente que el celular aunque hubiera mucho más espacio disponible. */
+  @media screen and (min-width:900px){
+    .wrap{max-width:1500px; padding:0 32px 60px}
+    header.top h1{font-size:1.9rem}
+    .kpi{padding:22px 24px 20px}
+    .kpi .lbl{font-size:.82rem}
+    .kpi .val{font-size:2.3rem}
+    .kpi .sub{font-size:.9rem}
+    .mini .kpi .val{font-size:1.5rem}
+    .card{padding:24px}
+    .card h2{font-size:1.15rem}
+    .card .cap{font-size:.9rem}
+    .tabs button{font-size:1.02rem; padding:13px 20px}
+    .selector button{font-size:1rem; padding:10px 20px}
+    table{font-size:1rem}
+    .graf-mini{height:190px!important}
+    .graf-dia{height:320px!important}
+  }
+  @media screen and (min-width:1300px){
+    .wrap{max-width:1700px}
+    .kpi .val{font-size:2.6rem}
+    .graf-mini{height:220px!important}
+    .graf-dia{height:380px!important}
+  }
 </style>
 </head>
 <body>
@@ -153,12 +180,12 @@
       <div class="card full" style="position:relative;overflow:hidden">
         <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
         <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
-        <div style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
+        <div class="graf-mini" style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
       </div>
       <div class="card full" style="position:relative;overflow:hidden">
         <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
         <h2>Ingresos vs. costos y gastos — por día</h2><div class="cap" id="capDia"></div>
-        <canvas id="chDia" height="90"></canvas>
+        <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
           <span style="font-size:.72rem;color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
           <div style="position:relative;flex:1;height:26px">
