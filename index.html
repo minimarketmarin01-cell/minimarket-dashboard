@@ -290,11 +290,24 @@ function render(){
   document.querySelectorAll('#selMes button').forEach(b=>b.classList.toggle('on',b.dataset.ym===mesActual));
   document.getElementById('alerta').classList.toggle('ver',m.incompleto);
   const uc=m.utilidad>=0?'pos':'neg';
+  // Mes anterior (para comparativos ▲▼). null si es el primer mes cargado.
+  const idx=DATA.meses.findIndex(x=>x.ym===mesActual);
+  const prev = idx>0 ? DATA.meses[idx-1] : null;
+  // delta: flecha + % de variación vs mes anterior. mejorSubir=true si subir es bueno.
+  const delta=(actual,anterior,mejorSubir=true)=>{
+    if(anterior===null||anterior===undefined||!isFinite(anterior)||anterior===0) return '';
+    const v=(actual-anterior)/Math.abs(anterior)*100;
+    if(Math.abs(v)<0.05) return `<span style="color:var(--gris);font-size:.72rem"> · = igual</span>`;
+    const sube=v>0; const bueno = sube===mejorSubir;
+    const col=bueno?'var(--verde)':'var(--rojo)';
+    const flecha=sube?'▲':'▼';
+    return `<span style="color:${col};font-weight:700;font-size:.72rem"> · ${flecha} ${Math.abs(v).toFixed(1)}% vs ${MESES_ES[prev.ym.split('-')[1]].slice(0,3)}</span>`;
+  };
   document.getElementById('hero').innerHTML=`
-    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos</div></div>
-    <div class="kpi"><div class="lbl">Ingresos <span style="font-weight:400;text-transform:none;font-size:.68rem">(venta bruta)</span></div><div class="val">${clp(m.ingreso)}</div><div class="sub">tarjeta+transf. ${clp((m.ingresoPOS||0)+(m.ingresoTransferencia||0))} · efectivo ${clp(m.efectivo)}</div></div>
-    <div class="kpi"><div class="lbl">Margen bruto ${m.incompleto?'<span class="badge">prov.</span>':''}</div><div class="val">${m.margenBruto.toFixed(1)}%</div><div class="sub">costos ${clp(m.costos)}</div></div>
-    <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">plásticos ${m.pctPlasticos.toFixed(2)}% s/ingreso</div></div>`;
+    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div></div>
+    <div class="kpi"><div class="lbl">Ingresos <span style="font-weight:400;text-transform:none;font-size:.68rem">(venta bruta)</span></div><div class="val">${clp(m.ingreso)}</div><div class="sub">tarjeta+transf. ${clp((m.ingresoPOS||0)+(m.ingresoTransferencia||0))} · efectivo ${clp(m.efectivo)}${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
+    <div class="kpi"><div class="lbl">Margen bruto ${m.incompleto?'<span class="badge">prov.</span>':''}</div><div class="val">${m.margenBruto.toFixed(1)}%</div><div class="sub">costos ${clp(m.costos)}${prev?delta(m.margenBruto,prev.margenBruto):''}</div></div>
+    <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">plásticos ${m.pctPlasticos.toFixed(2)}% s/ingreso${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div></div>`;
   document.getElementById('mini').innerHTML=`
     <div class="kpi"><div class="lbl">Punto de equilibrio</div><div class="val">${clp(m.puntoEquilibrio)}</div><div class="sub">ventas p/ cubrir gasto ope</div></div>
     <div class="kpi"><div class="lbl">Ticket promedio</div><div class="val">${clp(m.ticketPromedio)}</div><div class="sub">por transacción</div></div>
