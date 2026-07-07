@@ -146,12 +146,16 @@
     table{font-size:1rem}
     .graf-mini{height:190px!important}
     .graf-dia{height:320px!important}
+    .graf-dona{height:380px!important}
+    .graf-control{height:190px!important}
   }
   @media screen and (min-width:1300px){
     .wrap{max-width:1700px}
     .kpi .val{font-size:2.6rem}
     .graf-mini{height:220px!important}
     .graf-dia{height:380px!important}
+    .graf-dona{height:440px!important}
+    .graf-control{height:220px!important}
   }
 </style>
 </head>
@@ -197,9 +201,9 @@
         </div>
         <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
       </div>
-      <div class="card"><h2>Costos por proveedor</h2><div class="cap">Todas las categorías de mercadería.</div><canvas id="chProv" height="300"></canvas><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card"><h2>Gasto operacional</h2><div class="cap">Todas las categorías de gasto.</div><canvas id="chGasto" height="300"></canvas><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card full"><h2>Control de gastos — % sobre ingreso</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><canvas id="chControl" height="140"></canvas></div>
+      <div class="card"><h2>Costos por proveedor</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      <div class="card"><h2>Gasto operacional</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      <div class="card full"><h2>Control de gastos — % sobre ingreso</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
       <div class="card"><h2>Datos que faltan</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
@@ -392,7 +396,16 @@ function dibujarControl(m){
   document.getElementById('capControl').innerHTML =
     'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.<br>💡 '+txtControl;
 }
-function nuevoChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function nuevoChart(id,cfg){
+  if(charts[id])charts[id].destroy();
+  // Fuerza que TODO gráfico llene el ancho real de su contenedor (la tarjeta),
+  // en vez de limitarse a la proporción 2:1 por defecto de Chart.js — eso era
+  // lo que dejaba espacio en blanco a la derecha en pantallas anchas.
+  cfg.options = cfg.options || {};
+  cfg.options.responsive = true;
+  cfg.options.maintainAspectRatio = false;
+  charts[id]=new Chart(document.getElementById(id),cfg);
+}
 function dibujarRent(){
   const ref={ym:'2026-04',rentabilidad:-16.61,ref:true};
   const serie=[ref,...DATA.meses].filter((v,i,a)=>a.findIndex(x=>x.ym===v.ym)===i).sort((a,b)=>a.ym<b.ym?-1:1);
