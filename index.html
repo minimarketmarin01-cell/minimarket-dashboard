@@ -30,7 +30,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Inter',system-ui,sans-serif; background:var(--papel); color:var(--tinta); -webkit-font-smoothing:antialiased; line-height:1.45; font-variant-numeric:tabular-nums}
   .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px}
-  .masthead{height:4px; background:linear-gradient(90deg,var(--tinta) 0%,var(--acento) 55%,var(--acento2) 100%); margin:0 -16px 18px}
+  .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
   header.top{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:14px}
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
@@ -130,7 +130,7 @@
 </style>
 </head>
 <body>
-<div class="masthead"></div>
+<div class="masthead"><svg viewBox="0 0 1180 44" preserveAspectRatio="none" style="width:100%;height:100%;display:block"><defs><linearGradient id="gMast" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0f1b30"/><stop offset="0.55" stop-color="#2f6df0"/><stop offset="1" stop-color="#3f7f8c"/></linearGradient></defs><path d="M0,30 C260,4 420,44 640,22 C880,-2 1000,40 1180,14 L1180,44 L0,44 Z" fill="url(#gMast)"/></svg></div>
 <div class="wrap">
   <header class="top">
     <h1>Minimarket Marín <span>· panel financiero</span></h1>
@@ -406,7 +406,7 @@ let rangoDiaActual={desde:1,hasta:31,ymActual:null};
 function dibujarDia(m){
   const dias=Object.keys(m.dias).sort();
   const nDias=dias.length;
-  document.getElementById('capDia').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · barra=ingresos, línea=costos+gastos';
+  document.getElementById('capDia').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · barra azul=ingresos, barra roja=costos+gastos';
 
   // Si cambiamos de mes, resetear el rango del slider al mes completo.
   if(rangoDiaActual.ymActual!==m.ym){ rangoDiaActual={desde:1,hasta:nDias,ymActual:m.ym}; }
@@ -428,16 +428,19 @@ function dibujarDia(m){
     const {lo,hi}=actualizarPista();
     const diasVista=dias.slice(lo-1,hi);
     const clpCompacto=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
-    const mostrarEtiquetas=diasVista.length<=12; // con pocos días caben las etiquetas de $ sobre cada barra
+    const mostrarEtiquetas=diasVista.length<=10; // con pocos días caben las etiquetas de $ sobre cada barra
     const etiquetas={id:'etiquetasDia',afterDatasetsDraw(ch){
       if(!mostrarEtiquetas)return;
-      const {ctx}=ch; ctx.save(); ctx.textAlign='center'; ctx.font='600 8.5px Inter, system-ui'; ctx.fillStyle='#2f6df0';
-      ch.getDatasetMeta(0).data.forEach((bar,i)=>{ ctx.fillText(clpCompacto(m.dias[diasVista[i]].ingreso), bar.x, bar.y-6); });
+      const {ctx}=ch; ctx.save(); ctx.textAlign='center'; ctx.font='700 8px Inter, system-ui';
+      // ingresos (dataset 0) en azul, arriba de su barra
+      ch.getDatasetMeta(0).data.forEach((bar,i)=>{ ctx.fillStyle='#2f6df0'; ctx.fillText(clpCompacto(m.dias[diasVista[i]].ingreso), bar.x, bar.y-5); });
+      // gastos (dataset 1) en rojo, arriba de su barra
+      ch.getDatasetMeta(1).data.forEach((bar,i)=>{ ctx.fillStyle='#b6402f'; ctx.fillText(clpCompacto(m.dias[diasVista[i]].egreso), bar.x, bar.y-5); });
       ctx.restore();
     }};
     nuevoChart('chDia',{type:'bar',data:{labels:diasVista.map(d=>d.slice(-2)),datasets:[
-      {type:'bar',label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:5,barPercentage:.55},
-      {type:'line',label:'Costos+gastos',data:diasVista.map(d=>m.dias[d].egreso),borderColor:'#b6402f',backgroundColor:'#b6402f',tension:.35,pointRadius:diasVista.length<=15?3:0}
+      {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:6,barPercentage:.9,categoryPercentage:.7},
+      {label:'Costos+gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:6,barPercentage:.9,categoryPercentage:.7}
     ]},options:{layout:{padding:{top:mostrarEtiquetas?18:6}},plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10.5}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
       scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:9.5}},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{font:{size:9.5}}}}},
