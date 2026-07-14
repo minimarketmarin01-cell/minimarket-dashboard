@@ -88,6 +88,23 @@
   .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:.82rem; font-family:inherit}
   .tabla-edit input:focus,.tabla-edit select:focus{border-color:var(--acento); background:#fff; outline:none}
   .tabla-edit tr.dirty{background:#fff7e6}
+  /* Tarjeta KPI clickeable (ej. "Otro ingreso" → abre detalle) */
+  .kpi-click{cursor:pointer; transition:box-shadow .15s, border-color .15s}
+  .kpi-click:hover{border-color:var(--acento); box-shadow:0 1px 2px rgba(15,27,48,.04), 0 14px 28px -12px rgba(47,109,240,.32)}
+  .kpi-click:focus-visible{outline:2px solid var(--acento); outline-offset:2px}
+  .kpi-click .lbl::after{content:'→'; margin-left:6px; opacity:.45; font-weight:400}
+  /* Caja genérica de modal de detalle (reutiliza .modal-overlay ya existente) */
+  .modal-box{background:#fff; border-radius:16px; padding:20px; max-width:640px; width:100%; box-shadow:var(--sombra); max-height:85vh; display:flex; flex-direction:column}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px}
+  .modal-head h3{font-family:'Manrope',sans-serif; font-size:1.05rem; font-weight:800}
+  .modal-x{background:none; border:none; font-size:1.15rem; color:var(--gris); cursor:pointer; padding:4px 9px; border-radius:8px; line-height:1}
+  .modal-x:hover{background:#f2f0ea; color:var(--tinta)}
+  .modal-body-scroll{overflow:auto; margin-top:10px}
+  /* Encabezados ordenables de la tabla Registros */
+  .tabla-edit th[data-col]{cursor:pointer; user-select:none; white-space:nowrap}
+  .tabla-edit th[data-col]:hover{color:var(--tinta)}
+  .sort-ico{display:inline-block; font-size:.62em; opacity:.35; margin-left:3px; letter-spacing:-.1em}
+  .sort-ico.activo{opacity:1; color:var(--acento); letter-spacing:0}
   .tabla-scroll{max-height:520px; overflow:auto; border:1px solid var(--linea); border-radius:12px}
   .btn{border:none; border-radius:9px; padding:9px 16px; font-size:.86rem; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif}
   .btn-p{background:var(--tinta); color:#fff} .btn-g{background:#eee; color:var(--tinta)}
@@ -223,7 +240,16 @@
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:.8rem" id="contFilas"></div>
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
-        <thead><tr><th>Nombre</th><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Cuenta</th><th>Monto</th><th>N° op.</th><th></th></tr></thead>
+        <thead><tr>
+          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span></th>
+          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span></th>
+          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span></th>
+          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span></th>
+          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span></th>
+          <th data-col="monto">Monto <span class="sort-ico">▲▼</span></th>
+          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span></th>
+          <th></th>
+        </tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -270,6 +296,26 @@
     </div>
   </div>
 
+  <div id="modalOtroIngreso" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalOtroIngresoTitulo">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalOtroIngresoTitulo">Otro ingreso — detalle</h3>
+        <button class="modal-x" id="btnCerrarOtroIngreso" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="cap" id="capOtroIngreso"></div>
+      <div class="modal-body-scroll">
+        <table id="tablaOtroIngreso">
+          <thead><tr>
+            <th style="text-align:left">Fecha</th><th style="text-align:left">Concepto</th>
+            <th style="text-align:left">Categoría</th><th style="text-align:left">Cuenta</th><th>Monto</th>
+          </tr></thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="pie" id="pie"></div>
 </div>
 
@@ -280,7 +326,48 @@ const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
 const pct=n=>(n>=0?'+':'')+(n||0).toFixed(1)+'%';
+// dd/mm/aaaa a partir de la fecha ISO (aaaa-mm-dd) que entrega el backend
+const fechaEs=iso=>{ const p=String(iso||'').split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : (iso||''); };
+// Misma regla que usa el backend (construirJSON) para clasificar una fila
+// de INGRESO como "otro ingreso": no es tarjeta, no es transferencia, y la
+// cuenta no es EFECTIVO. Se replica aquí para armar el detalle sin pedirle
+// nada nuevo al servidor — reutiliza los datos que ya llegaron en DATA.filas.
+function esOtroIngresoFila(f){
+  if(f.tipo!=='INGRESO') return false;
+  const cat=String(f.categoria||'').toUpperCase();
+  if(cat.indexOf('TARJETA')>=0) return false;
+  if(cat.indexOf('TRANSFERENCIA')>=0) return false;
+  if(f.cuenta==='EFECTIVO') return false;
+  return true;
+}
+function abrirDetalleOtroIngreso(){
+  const filas=DATA.filas.filter(f=>f.ym===mesActual && esOtroIngresoFila(f)).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const total=filas.reduce((s,f)=>s+(Number(f.monto)||0),0);
+  const [yy,mm]=mesActual.split('-');
+  document.getElementById('capOtroIngreso').textContent=`${MESES_ES[mm]} ${yy} · ${filas.length} registro${filas.length!==1?'s':''}`;
+  document.querySelector('#tablaOtroIngreso tbody').innerHTML = filas.length ? filas.map(f=>`
+    <tr>
+      <td style="text-align:left">${fechaEs(f.fecha)}</td>
+      <td style="text-align:left">${f.nombre||''}</td>
+      <td style="text-align:left">${f.categoria||''}</td>
+      <td style="text-align:left">${f.cuenta||''}</td>
+      <td>${clp(f.monto)}</td>
+    </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--gris);padding:18px 8px">Sin registros este mes</td></tr>`;
+  document.querySelector('#tablaOtroIngreso tfoot').innerHTML =
+    `<tr><td colspan="4" style="text-align:left;font-weight:800">Total</td><td style="font-weight:800">${clp(total)}</td></tr>`;
+  const modal=document.getElementById('modalOtroIngreso');
+  modal.classList.remove('hidden');
+  document.getElementById('btnCerrarOtroIngreso').focus();
+}
+function cerrarDetalleOtroIngreso(){
+  document.getElementById('modalOtroIngreso').classList.add('hidden');
+  document.getElementById('kpiOtroIngreso')?.focus();
+}
+document.getElementById('btnCerrarOtroIngreso').onclick=cerrarDetalleOtroIngreso;
+document.getElementById('modalOtroIngreso').addEventListener('click',e=>{ if(e.target.id==='modalOtroIngreso') cerrarDetalleOtroIngreso(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalOtroIngreso').classList.contains('hidden')) cerrarDetalleOtroIngreso(); });
 let DATA=null, mesActual=null, charts={}, dirty={};
+let sortState={col:null, dir:null}; // dir: 'asc' | 'desc' | null(=orden original)
 
 fetch(WEBAPP_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
   .catch(e=>{document.getElementById('hero').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
@@ -349,7 +436,12 @@ function render(){
     <div class="kpi"><div class="lbl">Ingreso POS</div><div class="val">${clp(m.ingresoPOS||0)}</div><div class="sub">tarjetas SuperCompraQuí</div></div>
     <div class="kpi"><div class="lbl">Ingreso transferencia</div><div class="val">${clp(m.ingresoTransferencia||0)}</div><div class="sub">transferencias de clientes</div></div>
     <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>
-    <div class="kpi"><div class="lbl">Transacciones tarjeta</div><div class="val">${(m.nTransaccionesPOS||0).toLocaleString('es-CL')}</div><div class="sub">ventas POS del mes</div></div>${m.ingresoOtro?`<div class="kpi"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
+    <div class="kpi"><div class="lbl">Transacciones tarjeta</div><div class="val">${(m.nTransaccionesPOS||0).toLocaleString('es-CL')}</div><div class="sub">ventas POS del mes</div></div>${m.ingresoOtro?`<div class="kpi kpi-click" id="kpiOtroIngreso" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Ver detalle de otro ingreso"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
+  const kpiOtro=document.getElementById('kpiOtroIngreso');
+  if(kpiOtro){
+    kpiOtro.onclick=abrirDetalleOtroIngreso;
+    kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
+  }
   dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
@@ -596,7 +688,50 @@ function initTabla(){
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
+  initOrdenTabla();
   pintarTabla();
+}
+// --- Ordenamiento de columnas de la tabla Registros (▲▼ en cada encabezado,
+// alterna ascendente → descendente → orden original, sin recargar) ---
+function fechaAOrden(s){
+  s=String(s||'');
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);            // ISO: aaaa-mm-dd
+  if(m) return Number(m[1])*10000+Number(m[2])*100+Number(m[3]);
+  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);       // dd/mm/aaaa
+  if(m) return Number(m[3])*10000+Number(m[2])*100+Number(m[1]);
+  return 0;
+}
+function compararValor(col,va,vb){
+  if(col==='monto') return (Number(va)||0)-(Number(vb)||0);
+  if(col==='fecha') return fechaAOrden(va)-fechaAOrden(vb);
+  return String(va??'').localeCompare(String(vb??''),'es',{sensitivity:'base'});
+}
+function aplicarOrden(filas){
+  if(!sortState.col||!sortState.dir) return filas;              // orden original: sin cambios
+  const dirMul=sortState.dir==='asc'?1:-1, col=sortState.col;
+  return [...filas].sort((a,b)=>compararValor(col,a[col],b[col])*dirMul);
+}
+function actualizarIconosOrden(){
+  document.querySelectorAll('#tablaEdit thead th[data-col]').forEach(th=>{
+    const ico=th.querySelector('.sort-ico'); if(!ico)return;
+    if(sortState.col===th.dataset.col&&sortState.dir){
+      ico.textContent=sortState.dir==='asc'?'▲':'▼'; ico.classList.add('activo');
+    }else{ ico.textContent='▲▼'; ico.classList.remove('activo'); }
+  });
+}
+function initOrdenTabla(){
+  document.querySelectorAll('#tablaEdit thead th[data-col]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const col=th.dataset.col;
+      if(sortState.col!==col) sortState={col,dir:'asc'};
+      else if(sortState.dir==='asc') sortState.dir='desc';
+      else if(sortState.dir==='desc') sortState={col:null,dir:null};
+      else sortState={col,dir:'asc'};
+      actualizarIconosOrden();
+      pintarTabla();
+    });
+  });
+  actualizarIconosOrden();
 }
 function filtrarFilas(){
   const q=document.getElementById('fBuscar').value.toLowerCase();
@@ -608,7 +743,7 @@ function filtrarFilas(){
   });
 }
 function pintarTabla(){
-  const filas=filtrarFilas();
+  const filas=aplicarOrden(filtrarFilas());
   const suma=filas.reduce((s,f)=>{const dv=dirty[f.rowIndex];const monto=dv&&dv.monto!==undefined?Number(dv.monto):f.monto;return s+(monto||0);},0);
   document.getElementById('contFilas').textContent=filas.length+' registros · suma '+clp(suma)+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
   const tb=document.querySelector('#tablaEdit tbody'); tb.innerHTML='';
