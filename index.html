@@ -28,6 +28,7 @@
     --sombra:0 1px 2px rgba(15,27,48,.04), 0 10px 24px -12px rgba(15,27,48,.12);
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:hidden; max-width:100%}
   body{font-family:'Inter',system-ui,sans-serif; background:var(--papel); color:var(--tinta); -webkit-font-smoothing:antialiased; line-height:1.45; font-variant-numeric:tabular-nums}
   .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px}
   .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
@@ -35,8 +36,9 @@
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
   .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
-  .tabs{display:flex; gap:2px; margin:18px 0 4px; border-bottom:1px solid var(--linea)}
-  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; padding:11px 16px; font-size:.9rem; font-weight:600; color:var(--gris); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s}
+  .tabs{display:flex; gap:2px; margin:18px 0 4px; border-bottom:1px solid var(--linea); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; padding:11px 16px; font-size:.9rem; font-weight:600; color:var(--gris); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s; flex:0 0 auto; white-space:nowrap}
   .tabs button.on{color:var(--tinta); border-bottom-color:var(--acento)}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
@@ -329,9 +331,10 @@
 </div>
 
 <script>
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
 const TOKEN = "marin376xyz"; // debe coincidir EXACTO con TOKEN_DASHBOARD de Apps Script
 const WORKER_FINANZAS_URL = "https://marin376-api.minimarketmarin01.workers.dev/";
+// Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
+const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -379,7 +382,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getEle
 let DATA=null, mesActual=null, charts={}, dirty={};
 let sortState={col:null, dir:null}; // dir: 'asc' | 'desc' | null(=orden original)
 
-fetch(WEBAPP_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
+fetch(FINANZAS_GET_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
   .catch(e=>{document.getElementById('hero').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
 
 function init(){
@@ -897,7 +900,7 @@ async function guardarCierreUI(){
 // vuelva a "Resumen", mientras sigue cargando cierres uno tras otro.
 async function refrescarDatosSilencioso(){
   try{
-    const d=await fetch(WEBAPP_URL).then(r=>r.json());
+    const d=await fetch(FINANZAS_GET_URL).then(r=>r.json());
     DATA=d;
     render(); initTabla(); initRevisar(); poblarCategorias();
   }catch(e){ /* si falla, los datos se refrescarán al recargar manualmente */ }
@@ -950,11 +953,11 @@ async function descartarRev(r,card){
 }
 
 async function post(body){
-  const r=await fetch(WEBAPP_URL,{method:'POST',body:JSON.stringify(body)});
-  return r.json();
+  // Edición/aprobación/eliminación todavía no está portada a D1 — se avisa
+  // en vez de mandarlo en silencio a Apps Script (que ya no leemos).
+  return { ok:false, error:'Edición aún no conectada a la base nueva (D1). Por ahora los cambios no se guardan — pendiente de portar.' };
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
@@ -986,41 +989,10 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
   const estado = document.getElementById('cartolaEstado');
   estado.innerHTML = '<div class="cargando">Leyendo y clasificando…</div>';
   try{
-    const buffer = await archivo.arrayBuffer();
-    const wb = XLSX.read(buffer, {type:'array'});
-    const hojaMov = wb.Sheets['Movimientos'] || wb.Sheets[wb.SheetNames[1]] || wb.Sheets[wb.SheetNames[0]];
-    const filasRaw = XLSX.utils.sheet_to_json(hojaMov, {header:1, raw:true});
-
-    let anio = new Date().getFullYear();
-    const hojaResumen = wb.Sheets['Resumen'];
-    if(hojaResumen){
-      const filasResumen = XLSX.utils.sheet_to_json(hojaResumen, {header:1, raw:false});
-      for(const r of filasResumen){
-        if(r[0] && String(r[0]).indexOf('Fecha Final')!==-1){
-          const m = String(r[4]||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-          if(m) anio = parseInt(m[3],10);
-        }
-      }
-    }
-
-    const filas = [];
-    for(let i=1;i<filasRaw.length;i++){
-      const c = filasRaw[i];
-      if(!c || !c[0]) continue;
-      const fm = String(c[0]).match(/^(\d{1,2})\/(\d{1,2})/);
-      if(!fm) continue;
-      filas.push({
-        fecha: anio+'-'+fm[2].padStart(2,'0')+'-'+fm[1].padStart(2,'0'),
-        nOperacion: String(c[5]||'').trim(),
-        descripcion: String(c[6]||'').trim(),
-        cargo: c[7],
-        abono: c[8]
-      });
-    }
-
+    const contenido = await archivo.text();
     const resp = await fetch(WORKER_FINANZAS_URL, {
       method:'POST',
-      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, filas })
+      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, contenido })
     });
     const data = await resp.json();
     if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
