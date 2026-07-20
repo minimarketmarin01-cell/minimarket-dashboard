@@ -188,7 +188,7 @@
     <button class="on" data-tab="resumen">Resumen</button>
     <button data-tab="registros">Registros</button>
     <button data-tab="revisar">Por revisar <span id="badgeRev" class="badge" style="display:none"></span></button>
-    <button data-tab="cierre">Cierre de caja</button>
+    <button data-tab="cierre">Cierre de caja</button><button data-tab="cartolas">Cartolas</button>
   </div>
 
   <div id="tab-resumen">
@@ -295,7 +295,16 @@
       </div>
     </div>
   </div>
-
+<div id="tab-cartolas" class="hidden">
+  <div class="card">
+    <h2>Subir cartola BancoEstado</h2>
+    <div class="cap">Solo compras y gastos por ahora (cargos). Ingresos bancarios van en la próxima fase.</div>
+    <div class="drop" id="dropCartola">📄 Toca para elegir el archivo de la cartola (.xlsx)
+      <input type="file" id="fileCartola" accept=".xlsx,.xls,.csv,.txt" class="hidden">
+    </div>
+    <div id="cartolaEstado" style="margin-top:12px"></div>
+  </div>
+</div>
   <div id="modalOtroIngreso" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalOtroIngresoTitulo">
     <div class="modal-box">
       <div class="modal-head">
@@ -322,6 +331,7 @@
 <script>
 const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzpD1GwK3uENuP7bE2k2Md0fncAiErvBQ6Zq6PjOS58TuioJDq_7wsd3LVz_lbOEkPy/exec";
 const TOKEN = "marin376xyz"; // debe coincidir EXACTO con TOKEN_DASHBOARD de Apps Script
+const WORKER_FINANZAS_URL = "https://marin376-api.minimarketmarin01.workers.dev/";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
@@ -392,7 +402,7 @@ function poblarCategorias(){
 const mesData=ym=>DATA.meses.find(m=>m.ym===ym);
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  ['resumen','registros','revisar','cierre'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  ['resumen','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
   try{ localStorage.setItem('tabActiva', b.dataset.tab); }catch(e){}
 });
 function restaurarTab(){
@@ -968,6 +978,31 @@ function fijarOrientacion(){
 fijarOrientacion();
 window.addEventListener('load', fijarOrientacion);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fijarOrientacion(); });
+  document.getElementById('dropCartola').addEventListener('click',()=>document.getElementById('fileCartola').click());
+document.getElementById('fileCartola').addEventListener('change', async (e)=>{
+  const archivo = e.target.files[0];
+  if(!archivo) return;
+  const estado = document.getElementById('cartolaEstado');
+  estado.innerHTML = '<div class="cargando">Leyendo y clasificando…</div>';
+  try{
+    const contenido = await archivo.text();
+    const resp = await fetch(WORKER_FINANZAS_URL, {
+      method:'POST',
+      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, contenido })
+    });
+    const data = await resp.json();
+    if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
+    const r = data.resultado;
+    estado.innerHTML = `<div class="cap">
+      Filas leídas: <b>${r.total_filas}</b><br>
+      Escritos en Registros: <b>${r.escritos_registros}</b><br>
+      Enviados a Por revisar: <b>${r.enviados_a_revisar}</b><br>
+      Duplicados omitidos: <b>${r.duplicados_omitidos}</b>
+    </div>`;
+  }catch(err){
+    estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>Error: ${err.message}</div></div>`;
+  }
+});
 </script>
 </body>
 </html>
