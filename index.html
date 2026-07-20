@@ -300,11 +300,19 @@
 <div id="tab-cartolas" class="hidden">
   <div class="card">
     <h2>Subir cartola BancoEstado</h2>
-    <div class="cap">Solo compras y gastos por ahora (cargos). Ingresos bancarios van en la próxima fase.</div>
+    <div class="cap">Compras/gastos (cargos) y transferencias de clientes (abonos). Ventas con tarjeta van en la tarjeta de abajo.</div>
     <div class="drop" id="dropCartola">📄 Toca para elegir el archivo de la cartola (.xlsx)
       <input type="file" id="fileCartola" accept=".xlsx,.xls,.csv,.txt" class="hidden">
     </div>
     <div id="cartolaEstado" style="margin-top:12px"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Subir abono SuperCompraQuí</h2>
+    <div class="cap">Ventas con tarjeta — 1 fila por transacción (venta + comisión), para no perder nada si subes reportes repetidos o parciales.</div>
+    <div class="drop" id="dropAbonoSCQ">💳 Toca para elegir el archivo de abonos SCQ
+      <input type="file" id="fileAbonoSCQ" accept=".xlsx,.xls,.csv,.txt" class="hidden">
+    </div>
+    <div id="abonoSCQEstado" style="margin-top:12px"></div>
   </div>
 </div>
   <div id="modalOtroIngreso" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalOtroIngresoTitulo">
@@ -1043,6 +1051,71 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
       Escritos en Registros: <b>${r.escritos_registros}</b><br>
       Enviados a Por revisar: <b>${r.enviados_a_revisar}</b><br>
       Duplicados omitidos: <b>${r.duplicados_omitidos}</b>
+    </div>`;
+  }catch(err){
+    estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>Error: ${err.message}</div></div>`;
+  }
+});
+
+// ---- Abonos SuperCompraQuí: acepta binario real (xlsx/PK) o texto tabulado (formato viejo) ----
+async function leerArchivoAbonoSCQ(archivo){
+  const buffer = await archivo.arrayBuffer();
+  const bytes = new Uint8Array(buffer.slice(0,2));
+  const esBinario = bytes[0]===0x50 && bytes[1]===0x4B; // firma 'PK' de un xlsx real
+  let filasRaw;
+  if(esBinario){
+    const wb = XLSX.read(buffer, {type:'array'});
+    const hoja = wb.Sheets[wb.SheetNames[0]];
+    filasRaw = XLSX.utils.sheet_to_json(hoja, {header:1, raw:true});
+  }else{
+    const texto = new TextDecoder('utf-8').decode(buffer);
+    filasRaw = texto.split(/\r?\n/).map(l=>l.split('\t'));
+  }
+  let idxHeader=-1;
+  for(let i=0;i<filasRaw.length;i++){
+    if(filasRaw[i] && String(filasRaw[i][0]||'').trim()==='IDP'){ idxHeader=i; break; }
+  }
+  if(idxHeader===-1) return [];
+  const filas=[];
+  for(let i=idxHeader+1;i<filasRaw.length;i++){
+    const c=filasRaw[i];
+    if(!c||!c[3]) continue;
+    const fm=String(c[3]).match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+    if(!fm) continue;
+    filas.push({
+      fecha: fm[3]+'-'+fm[2].padStart(2,'0')+'-'+fm[1].padStart(2,'0'),
+      nOperacion: String(c[5]||'').trim(),
+      estado: String(c[8]||'').trim(),
+      montoVenta: c[14],
+      totalAbono: c[21]
+    });
+  }
+  return filas;
+}
+document.getElementById('dropAbonoSCQ').addEventListener('click',()=>document.getElementById('fileAbonoSCQ').click());
+document.getElementById('fileAbonoSCQ').addEventListener('change', async (e)=>{
+  const archivo = e.target.files[0];
+  if(!archivo) return;
+  const estado = document.getElementById('abonoSCQEstado');
+  estado.innerHTML = '<div class="cargando">Leyendo y clasificando…</div>';
+  try{
+    const filas = await leerArchivoAbonoSCQ(archivo);
+    if(filas.length===0){
+      estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>No se encontraron filas (buscando encabezado "IDP"). Revisa que sea el reporte correcto.</div></div>`;
+      return;
+    }
+    const resp = await fetch(WORKER_FINANZAS_URL, {
+      method:'POST',
+      body: JSON.stringify({ action:'ingesta_abonos_scq', token: TOKEN, archivo: archivo.name, filas })
+    });
+    const data = await resp.json();
+    if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
+    const r = data.resultado;
+    estado.innerHTML = `<div class="cap">
+      Filas leídas: <b>${r.total_filas}</b><br>
+      Transacciones escritas: <b>${r.transacciones_escritas}</b><br>
+      Duplicadas omitidas: <b>${r.duplicadas_omitidas}</b><br>
+      Ignoradas: <b>${r.ignoradas}</b>
     </div>`;
   }catch(err){
     estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>Error: ${err.message}</div></div>`;
