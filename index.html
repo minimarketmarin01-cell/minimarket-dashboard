@@ -958,6 +958,7 @@ async function post(body){
   return { ok:false, error:'Edición aún no conectada a la base nueva (D1). Por ahora los cambios no se guardan — pendiente de portar.' };
 }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
@@ -989,10 +990,51 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
   const estado = document.getElementById('cartolaEstado');
   estado.innerHTML = '<div class="cargando">Leyendo y clasificando…</div>';
   try{
-    const contenido = await archivo.text();
+    const buffer = await archivo.arrayBuffer();
+    const wb = XLSX.read(buffer, {type:'array'});
+    const hojaMov = wb.Sheets['Movimientos'] || wb.Sheets[wb.SheetNames[1]] || wb.Sheets[wb.SheetNames[0]];
+    const filasRaw = XLSX.utils.sheet_to_json(hojaMov, {header:1, raw:true});
+
+    let anio = new Date().getFullYear();
+    const hojaResumen = wb.Sheets['Resumen'];
+    if(hojaResumen){
+      const filasResumen = XLSX.utils.sheet_to_json(hojaResumen, {header:1, raw:false});
+      for(const r of filasResumen){
+        if(r[0] && String(r[0]).indexOf('Fecha Final')!==-1){
+          const m = String(r[4]||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if(m) anio = parseInt(m[3],10);
+        }
+      }
+    }
+
+    const filas = [];
+    for(let i=1;i<filasRaw.length;i++){
+      const c = filasRaw[i];
+      if(!c || !c[0]) continue;
+      const fm = String(c[0]).match(/^(\d{1,2})\/(\d{1,2})/);
+      if(!fm) continue;
+      filas.push({
+        fecha: anio+'-'+fm[2].padStart(2,'0')+'-'+fm[1].padStart(2,'0'),
+        nOperacion: String(c[5]||'').trim(),
+        descripcion: String(c[6]||'').trim(),
+        cargo: c[7],
+        abono: c[8]
+      });
+    }
+
+    if(filas.length===0){
+      estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>
+        No se encontraron filas. Diagnóstico —
+        Hojas del archivo: <b>${wb.SheetNames.join(', ')}</b><br>
+        Filas crudas en la hoja usada: <b>${filasRaw.length}</b><br>
+        Primeras 3 filas: <pre style="white-space:pre-wrap;font-size:.75rem">${JSON.stringify(filasRaw.slice(0,3))}</pre>
+      </div></div>`;
+      return;
+    }
+
     const resp = await fetch(WORKER_FINANZAS_URL, {
       method:'POST',
-      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, contenido })
+      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, filas })
     });
     const data = await resp.json();
     if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
