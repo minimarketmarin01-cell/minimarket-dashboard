@@ -512,8 +512,7 @@ function nuevoChart(id,cfg){
   charts[id]=new Chart(document.getElementById(id),cfg);
 }
 function dibujarRent(){
-  const ref={ym:'2026-04',rentabilidad:-16.61,ref:true};
-  const serie=[ref,...DATA.meses].filter((v,i,a)=>a.findIndex(x=>x.ym===v.ym)===i).sort((a,b)=>a.ym<b.ym?-1:1);
+  const serie=[...DATA.meses].filter((v,i,a)=>a.findIndex(x=>x.ym===v.ym)===i).sort((a,b)=>a.ym<b.ym?-1:1);
   const clpCompacto=n=>{n=Math.round(n||0);const s=n<0?'-':'';n=Math.abs(n);
     if(n>=1000000)return s+'$'+(n/1000000).toFixed(1).replace('.0','')+'M';
     if(n>=1000)return s+'$'+Math.round(n/1000)+'K'; return s+'$'+n;};
