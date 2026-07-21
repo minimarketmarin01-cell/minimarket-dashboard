@@ -226,6 +226,7 @@
       <div class="card"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
       <div class="card full"><h2>Rotación por categoría — compras vs. ventas</h2><div class="cap">Solo categorías donde el nombre calza con Loyverse. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+      <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
       <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
@@ -466,7 +467,7 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarMermas(m); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
@@ -546,6 +547,30 @@ function dibujarRotacion(m){
   cont.innerHTML=`<table><thead><tr><th style="text-align:left">Categoría</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
     ${filas.map(f=>`<tr><td style="text-align:left">${f.cat}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
   </tbody></table>`;
+}
+function dibujarMermas(m){
+  const cont=document.getElementById('mermasCard');
+  const d=m.mermaDetalle;
+  if(!d || (!d.real && !d.consumoInterno && !d.cambioProveedor)){
+    cont.innerHTML='<div class="cap">Sin registros de mermas este mes en la tabla compartida con Pedidos Marín 376.</div>';
+    return;
+  }
+  const META_PERDIDA=3; // referencia de Amorín (carnicería ≤3%, panadería ≤3,5%) — se usa como meta general
+  const sobreMeta=d.tasaPerdida>META_PERDIDA;
+  const catsOrdenadas=Object.entries(d.porCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  cont.innerHTML=`
+    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso · meta Amorín ≤3%</div></div>
+      <div class="kpi"><div class="lbl">Casos de merma real</div><div class="val">${d.nReal}</div><div class="sub">vencido/dañado/robo/liquidado</div></div>
+      <div class="kpi"><div class="lbl">Consumo interno</div><div class="val">${clp(d.consumoInterno)}</div><div class="sub">retiro para uso propio — no es pérdida de gestión</div></div>
+      <div class="kpi"><div class="lbl">En gestión con proveedor</div><div class="val">${clp(d.cambioProveedor)}</div><div class="sub">pendiente de cambio/abono — no se cuenta como pérdida aún</div></div>
+    </div>
+    ${catsOrdenadas.length?`<div class="cap" style="margin-bottom:6px">Categorías con más merma real este mes:</div><table><thead><tr><th style="text-align:left">Categoría</th><th>Merma</th></tr></thead><tbody>
+      ${catsOrdenadas.map(([cat,v])=>`<tr><td style="text-align:left">${cat}</td><td>${clp(v)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    <div class="cap" style="margin-top:8px">💡 ${sobreMeta
+      ? 'Sobre la meta — revisa PVPS (Primero que Vence, Primero que Sale) en las categorías de la tabla de arriba, y considera rebaja de precio o exhibición en punto de cobro antes de que venza.'
+      : 'Dentro de la meta — sigue con la rotación PVPS para mantenerlo así.'}</div>`;
 }
 function nuevoChart(id,cfg){
   if(charts[id])charts[id].destroy();
