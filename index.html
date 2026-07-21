@@ -207,7 +207,7 @@
       </div>
       <div class="card full" style="position:relative;overflow:hidden">
         <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
-        <h2>Ingresos vs. costos y gastos — por día</h2><div class="cap" id="capDia"></div>
+        <h2>Flujo diario: ingresos vs. egresos operativos</h2><div class="cap" id="capDia"></div>
         <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
           <span style="font-size:.72rem;color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
@@ -220,12 +220,12 @@
         </div>
         <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
       </div>
-      <div class="card"><h2>Costos por proveedor</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card"><h2>Gasto operacional</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card full"><h2>Control de gastos — % sobre ingreso</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
+      <div class="card"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      <div class="card"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
-      <div class="card"><h2>Datos que faltan</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
+      <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
     </div>
   </div>
 
@@ -961,7 +961,7 @@ async function post(body){
   // Puente entre las llamadas antiguas (accion:'editar'/'eliminar'/'agregar'/'quitarRevisar',
   // ya usadas en el resto del dashboard) y las acciones nuevas del Worker sobre D1.
   // Cierre de caja (leerCierre/guardarCierre) sigue pendiente de portar.
-  const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar' };
+  const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar', leerCierre:'financiero_leer_cierre', guardarCierre:'financiero_guardar_cierre' };
   const accionNueva = mapa[body.accion];
   if(!accionNueva){
     return { ok:false, error:'Edición aún no conectada a la base nueva (D1) para "'+body.accion+'". Pendiente de portar.' };
