@@ -223,6 +223,9 @@
       <div class="card"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       <div class="card"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
+      <div class="card"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
+      <div class="card full"><h2>Rotación por categoría — compras vs. ventas</h2><div class="cap">Solo categorías donde el nombre calza con Loyverse. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
       <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
@@ -463,7 +466,7 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
@@ -507,6 +510,42 @@ function dibujarControl(m){
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
     'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.<br>💡 '+txtControl;
+}
+function dibujarUtilidad(m){
+  const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
+  if(!d.total){
+    if(charts['chUtilidad']){charts['chUtilidad'].destroy();delete charts['chUtilidad'];}
+    document.getElementById('capUtilidad').innerHTML='Este mes no hay Insumos/Isabel registrados — nada que repartir todavía.';
+    return;
+  }
+  dona('chUtilidad',{'Retiro socios':d.retiroSocios,'Inversión':d.inversion,'Reserva':d.reserva},null,'categoría');
+  document.getElementById('capUtilidad').innerHTML=
+    `💡 Sobre ${clp(d.total)} de Insumos+Isabel este mes: Retiro ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
+    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). Ajustable en configuracion.`;
+}
+function dibujarMixSku(m){
+  const sku=DATA.skuActivos||0, area=DATA.areaVentasM2||0, mix=DATA.mixSkuM2||0;
+  const ventaSku=m.ventaPorSku||0, ventaTot=m.ventaLoyverseMes||0;
+  if(!sku){
+    document.getElementById('mixSku').innerHTML='<div class="cap">Sin catálogo de Loyverse disponible todavía en esta base.</div>';
+    return;
+  }
+  document.getElementById('mixSku').innerHTML=`
+    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="kpi"><div class="lbl">SKU activos</div><div class="val">${sku.toLocaleString('es-CL')}</div><div class="sub">catálogo Loyverse</div></div>
+      <div class="kpi"><div class="lbl">SKU por m²</div><div class="val">${mix.toFixed(1)}</div><div class="sub">${area?area+' m² de venta':'falta área en configuracion'}</div></div>
+      <div class="kpi"><div class="lbl">Venta del mes (Loyverse)</div><div class="val">${clp(ventaTot)}</div><div class="sub">todas las categorías</div></div>
+      <div class="kpi"><div class="lbl">Venta por SKU</div><div class="val">${clp(ventaSku)}</div><div class="sub">venta mes ÷ SKU activos</div></div>
+    </div>
+    <div class="cap" style="margin-top:8px">💡 Los benchmarks de Marcos Amorín (>23 SKU/m², >$230 venta/SKU) están calibrados en dólares y otro mercado — úsalos como referencia de tendencia mes a mes, no como meta exacta todavía.</div>`;
+}
+function dibujarRotacion(m){
+  const cont=document.getElementById('rotacionTabla');
+  const filas=Object.entries(m.rotacionCategoria||{}).map(([cat,v])=>({cat,...v})).sort((a,b)=>b.margen-a.margen);
+  if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas sincronizadas de Loyverse para el mismo nombre de categoría.</div>'; return; }
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Categoría</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
+    ${filas.map(f=>`<tr><td style="text-align:left">${f.cat}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
+  </tbody></table>`;
 }
 function nuevoChart(id,cfg){
   if(charts[id])charts[id].destroy();
