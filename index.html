@@ -476,7 +476,6 @@ function dibujarControl(m){
     {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
-    {n:'Insumos',    v:m.insumos,  pc:p(m.insumos),meta:3, tipo:'gasto'},
     {n:'Merma',      v:m.merma,    pc:p(m.merma), meta:2,  tipo:'gasto'},
     {n:'Plásticos',  v:m.plasticos,pc:p(m.plasticos),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
@@ -693,7 +692,6 @@ function autoAnalisis(m){
 function faltantes(m){
   const f=[];
   if(m.efectivo===0){f.push('Ventas en efectivo del mes (cierre de caja).');f.push('Costos pagados en efectivo.');}
-  if((m.insumos||0)===0)f.push('Insumos (aseo, bolsas de trabajo, etc.).');
   if((m.merma||0)===0)f.push('Merma (vencidos, roturas, pérdidas).');
   f.push('Conteo de inventario (stock inicial y final) para margen exacto.');
   document.getElementById('faltan').innerHTML=f.map(x=>`<li>${x}</li>`).join('');
@@ -960,9 +958,19 @@ async function descartarRev(r,card){
 }
 
 async function post(body){
-  // Edición/aprobación/eliminación todavía no está portada a D1 — se avisa
-  // en vez de mandarlo en silencio a Apps Script (que ya no leemos).
-  return { ok:false, error:'Edición aún no conectada a la base nueva (D1). Por ahora los cambios no se guardan — pendiente de portar.' };
+  // Puente entre las llamadas antiguas (accion:'editar'/'eliminar'/'agregar'/'quitarRevisar',
+  // ya usadas en el resto del dashboard) y las acciones nuevas del Worker sobre D1.
+  // Cierre de caja (leerCierre/guardarCierre) sigue pendiente de portar.
+  const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar' };
+  const accionNueva = mapa[body.accion];
+  if(!accionNueva){
+    return { ok:false, error:'Edición aún no conectada a la base nueva (D1) para "'+body.accion+'". Pendiente de portar.' };
+  }
+  const resp = await fetch(WORKER_FINANZAS_URL, {
+    method:'POST',
+    body: JSON.stringify(Object.assign({}, body, { action: accionNueva }))
+  });
+  return resp.json();
 }
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
