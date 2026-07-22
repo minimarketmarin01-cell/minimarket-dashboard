@@ -351,7 +351,7 @@ const WORKER_FINANZAS_URL = "https://marin376-finanzas.minimarketmarin01.workers
 // Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
 const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
-const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','INSUMOS','MERMA','ISABEL','PLASTICOS'];
+const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
 const pct=n=>(n>=0?'+':'')+(n||0).toFixed(1)+'%';
 // dd/mm/aaaa a partir de la fecha ISO (aaaa-mm-dd) que entrega el backend
@@ -519,13 +519,17 @@ function dibujarUtilidad(m){
   const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
   if(!d.total){
     if(charts['chUtilidad']){charts['chUtilidad'].destroy();delete charts['chUtilidad'];}
-    document.getElementById('capUtilidad').innerHTML='Este mes no hay Insumos/Isabel registrados — nada que repartir todavía.';
+    document.getElementById('capUtilidad').innerHTML='Este mes no hay retiro de utilidad registrado — nada que repartir todavía.';
     return;
   }
   dona('chUtilidad',{'Retiro socios':d.retiroSocios,'Inversión':d.inversion,'Reserva':d.reserva},null,'categoría');
+  const porSubtipo=Object.entries(m.retiroPorSubtipo||{}).sort((a,b)=>b[1]-a[1]);
+  const desgloseSubtipo=porSubtipo.length
+    ? '<br>Por quién retira: '+porSubtipo.map(([s,v])=>`${s} ${clp(v)}`).join(' · ')
+    : '';
   document.getElementById('capUtilidad').innerHTML=
-    `💡 Sobre ${clp(d.total)} de Insumos+Isabel este mes: Retiro ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
-    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). Ajustable en configuracion.`;
+    `💡 Sobre ${clp(d.total)} de retiro de utilidad este mes: Retiro ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
+    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). Ajustable en configuracion.${desgloseSubtipo}`;
 }
 function dibujarMixSku(m){
   const sku=DATA.skuActivos||0, area=DATA.areaVentasM2||0, mix=DATA.mixSkuM2||0;
@@ -788,7 +792,7 @@ function dona(id,obj,lecturaId,tipoTexto){
 }
 function tablaMes(m){
   document.getElementById('capTabla').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];
-  const rows=[['Ingresos',m.ingreso,''],['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%'],['Margen bruto',m.ingreso-m.costos,m.margenBruto.toFixed(1)+'%','pos'],['Gasto operacional',m.gastoOpe,((m.gastoOpe/m.ingreso*100)||0).toFixed(1)+'%'],['Insumos',m.insumos,''],['Merma',m.merma,''],['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%']];
+  const rows=[['Ingresos',m.ingreso,''],['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%'],['Margen bruto',m.ingreso-m.costos,m.margenBruto.toFixed(1)+'%','pos'],['Gasto operacional',m.gastoOpe,((m.gastoOpe/m.ingreso*100)||0).toFixed(1)+'%'],['Retiro de utilidad',m.retiroUtilidad,''],['Merma',m.merma,''],['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%']];
   let html='<tr><th>Concepto</th><th>Monto</th><th>% s/ingreso</th></tr>';
   rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td class="${r[3]||''}">${clp(r[1])}</td><td>${r[2]}</td></tr>`);
   const uc=m.utilidad>=0?'pos':'neg';
