@@ -227,6 +227,9 @@
       <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
       <div class="card full"><h2>Rotación por categoría — compras vs. ventas</h2><div class="cap">Solo categorías donde el nombre calza con Loyverse. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
       <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
+      <div class="card full"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
+      <div class="card full"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
+      <div class="card full"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
       <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
       <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
       <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
@@ -467,7 +470,7 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarMermas(m); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
@@ -571,6 +574,57 @@ function dibujarMermas(m){
     <div class="cap" style="margin-top:8px">💡 ${sobreMeta
       ? 'Sobre la meta — revisa PVPS (Primero que Vence, Primero que Sale) en las categorías de la tabla de arriba, y considera rebaja de precio o exhibición en punto de cobro antes de que venza.'
       : 'Dentro de la meta — sigue con la rotación PVPS para mantenerlo así.'}</div>`;
+}
+function dibujarQuiebre(){
+  const cont=document.getElementById('quiebreCard');
+  const q=DATA.quiebreValorizado;
+  if(!q || !q.totalSkuQuiebre){
+    cont.innerHTML='<div class="cap">Sin datos de quiebre disponibles (o no hay productos en 0 con seguimiento activo).</div>';
+    return;
+  }
+  cont.innerHTML=`
+    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="kpi"><div class="lbl">SKU en quiebre</div><div class="val">${q.totalSkuQuiebre}</div><div class="sub">${q.skuConHistorialVenta} con historial de venta</div></div>
+      <div class="kpi"><div class="lbl">Impacto estimado semanal</div><div class="val" style="color:var(--rojo)">${clp(q.impactoEstimadoSemanal)}</div><div class="sub">${clp(q.impactoEstimadoDiario)}/día si sigue así</div></div>
+    </div>
+    ${q.top.length?`<div class="cap" style="margin-bottom:6px">Los que más venta pierden por día sin stock:</div><table><thead><tr><th style="text-align:left">Producto</th><th style="text-align:left">Categoría</th><th>Venta/día perdida</th></tr></thead><tbody>
+      ${q.top.map(r=>`<tr><td style="text-align:left">${r.nombre||r.sku}</td><td style="text-align:left">${r.categoria||''}</td><td>${clp(r.ventaPromDia)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    <div class="cap" style="margin-top:8px">💡 Estimado con la venta promedio diaria histórica de cada SKU mientras tenía stock — no sabemos hace cuántos días exactos está en 0, así que es "cuánto seguís perdiendo por semana", no el total ya perdido.</div>`;
+}
+function dibujarVencimientos(){
+  const cont=document.getElementById('vencimientosCard');
+  const v=DATA.vencimientosProximos;
+  if(!v || (!v.nProximos && !v.nVencidoSinMerma)){
+    cont.innerHTML='<div class="cap">Sin vencimientos pendientes registrados en Pedidos Marín 376.</div>';
+    return;
+  }
+  cont.innerHTML=`
+    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="kpi"><div class="lbl">Valor en riesgo (no vencido aún)</div><div class="val">${clp(v.valorTotalProximos)}</div><div class="sub">${v.nProximos} lotes por vencer</div></div>
+      <div class="kpi ${v.nVencidoSinMerma?'':'acc-verde'}"><div class="lbl">Vencido, sin merma registrada ${v.nVencidoSinMerma?'<span class="badge">revisar</span>':''}</div><div class="val" style="color:${v.nVencidoSinMerma?'var(--rojo)':'inherit'}">${clp(v.valorTotalVencidoSinMerma)}</div><div class="sub">${v.nVencidoSinMerma} lotes</div></div>
+    </div>
+    ${v.top.length?`<div class="cap" style="margin-bottom:6px">Próximos a vencer (más urgentes primero):</div><table><thead><tr><th style="text-align:left">Producto</th><th>Días</th><th>Valor</th></tr></thead><tbody>
+      ${v.top.map(r=>`<tr><td style="text-align:left">${r.prioridad||''} ${r.producto||r.sku}</td><td style="color:${r.diasRestantes<=3?'var(--rojo)':'inherit'}">${r.diasRestantes}</td><td>${clp(r.valor)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    ${v.topVencidoSinMerma.length?`<div class="cap" style="margin:10px 0 6px">Vencidos sin registrar merma todavía:</div><table><thead><tr><th style="text-align:left">Producto</th><th>Días vencido</th><th>Valor</th></tr></thead><tbody>
+      ${v.topVencidoSinMerma.map(r=>`<tr><td style="text-align:left">${r.producto||r.sku}</td><td>${r.diasVencido}</td><td>${clp(r.valor)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    <div class="cap" style="margin-top:8px">💡 PVPS (Primero que Vence, Primero que Sale) — actúa en los de menos días antes de que pasen a pérdida total.</div>`;
+}
+function dibujarSinRotacion(){
+  const cont=document.getElementById('sinRotacionCard');
+  const s=DATA.categoriasSinRotacion;
+  if(!s || !s.categorias || !s.categorias.length){
+    cont.innerHTML='<div class="cap">Sin categorías con capital inmovilizado detectadas — o falta cruce con Loyverse.</div>';
+    return;
+  }
+  cont.innerHTML=`
+    <div class="kpi" style="margin-bottom:12px"><div class="lbl">Capital inmovilizado total</div><div class="val">${clp(s.totalCapitalInmovilizado)}</div><div class="sub">stock pagado, cero ventas desde julio</div></div>
+    <table><thead><tr><th style="text-align:left">Categoría</th><th>N° productos</th><th>Capital inmovilizado</th></tr></thead><tbody>
+      ${s.categorias.map(c=>`<tr><td style="text-align:left">${c.categoria||'SIN CATEGORÍA'}</td><td>${c.n_productos}</td><td>${clp(c.capital_inmovilizado)}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="cap" style="margin-top:8px">💡 Candidatos a liquidar (recuperar algo de esa plata) o dejar de reponer para liberar espacio en góndola.</div>`;
 }
 function nuevoChart(id,cfg){
   if(charts[id])charts[id].destroy();
