@@ -225,7 +225,8 @@
       <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
       <div class="card"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
-      <div class="card full"><h2>Rotación por categoría — compras vs. ventas</h2><div class="cap">Solo categorías donde el nombre calza con Loyverse. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+      <div class="card full"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+      <div class="card full"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
       <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
       <div class="card full"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
       <div class="card full"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
@@ -470,7 +471,7 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
@@ -549,10 +550,20 @@ function dibujarMixSku(m){
 }
 function dibujarRotacion(m){
   const cont=document.getElementById('rotacionTabla');
-  const filas=Object.entries(m.rotacionCategoria||{}).map(([cat,v])=>({cat,...v})).sort((a,b)=>b.margen-a.margen);
-  if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas sincronizadas de Loyverse para el mismo nombre de categoría.</div>'; return; }
-  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Categoría</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
-    ${filas.map(f=>`<tr><td style="text-align:left">${f.cat}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
+  const filas=Object.entries(m.rotacionProveedor||{}).map(([prov,v])=>({prov,...v})).sort((a,b)=>b.margen-a.margen);
+  if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
+    ${filas.map(f=>`<tr><td style="text-align:left">${f.prov}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+function dibujarVentaSector(m){
+  const cont=document.getElementById('sectorCard');
+  if(!cont) return;
+  const filas=Object.entries(m.ventaPorSector||{}).sort((a,b)=>b[1]-a[1]);
+  if(!filas.length){ cont.innerHTML='<div class="cap">Sin ventas con sector asignado todavía en Pedidos Marín.</div>'; return; }
+  const total=filas.reduce((s,[,v])=>s+v,0);
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Sector</th><th>Venta</th><th>% del total</th></tr></thead><tbody>
+    ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${clp(v)}</td><td>${total?(v/total*100).toFixed(1):'0.0'}%</td></tr>`).join('')}
   </tbody></table>`;
 }
 function dibujarMermas(m){
