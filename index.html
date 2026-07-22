@@ -824,7 +824,7 @@ function initTabla(){
   const fMes=document.getElementById('fMes'); mesesSet.forEach(ym=>{const o=document.createElement('option');o.value=ym;o.textContent=MESES_ES[ym.split('-')[1]]+' '+ym.split('-')[0];fMes.appendChild(o);});
   const fTipo=document.getElementById('fTipo'); TIPOS_OPC.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fTipo.appendChild(o);});
   const fCat=document.getElementById('listaCategoriasReg'); [...new Set(DATA.filas.map(f=>f.categoria).filter(Boolean))].sort().forEach(cat=>{const o=document.createElement('option');o.value=cat;fCat.appendChild(o);});
-  ['fBuscar','fMes','fTipo','fCategoria','fCuenta'].forEach(id=>document.getElementById(id).addEventListener('input',pintarTabla));
+  ['fBuscar','fMes','fTipo','fCategoria','fCuenta'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{filasMostradas=FILAS_POR_PAGINA;pintarTabla();}));
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
@@ -882,10 +882,13 @@ function filtrarFilas(){
     if(q&&!(String(f.nombre)+f.categoria+f.nop+f.tipo).toLowerCase().includes(q))return false; return true;
   });
 }
+const FILAS_POR_PAGINA=100;
+let filasMostradas=FILAS_POR_PAGINA;
 function pintarTabla(){
-  const filas=aplicarOrden(filtrarFilas());
-  const suma=filas.reduce((s,f)=>{const dv=dirty[f.rowIndex];const monto=dv&&dv.monto!==undefined?Number(dv.monto):f.monto;return s+(monto||0);},0);
-  document.getElementById('contFilas').textContent=filas.length+' registros · suma '+clp(suma)+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
+  const todas=aplicarOrden(filtrarFilas());
+  const suma=todas.reduce((s,f)=>{const dv=dirty[f.rowIndex];const monto=dv&&dv.monto!==undefined?Number(dv.monto):f.monto;return s+(monto||0);},0);
+  const filas=todas.slice(0,filasMostradas);
+  document.getElementById('contFilas').textContent=todas.length+' registros · suma '+clp(suma)+(Object.keys(dirty).length?' · '+Object.keys(dirty).length+' editados':'');
   const tb=document.querySelector('#tablaEdit tbody'); tb.innerHTML='';
   filas.forEach(f=>{
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
@@ -903,6 +906,17 @@ function pintarTabla(){
     tr.querySelector('.btn-del').onclick=()=>eliminarFila(f);
     tb.appendChild(tr);
   });
+  let masDiv=document.getElementById('cargarMasRegistros');
+  if(!masDiv){
+    masDiv=document.createElement('div'); masDiv.id='cargarMasRegistros'; masDiv.style.cssText='text-align:center;padding:14px';
+    document.querySelector('#tablaEdit').insertAdjacentElement('afterend',masDiv);
+  }
+  if(todas.length>filasMostradas){
+    masDiv.innerHTML=`<button class="btn btn-g" id="btnCargarMas">Cargar ${Math.min(FILAS_POR_PAGINA,todas.length-filasMostradas)} más (${todas.length-filasMostradas} restantes)</button>`;
+    document.getElementById('btnCargarMas').onclick=()=>{filasMostradas+=FILAS_POR_PAGINA;pintarTabla();};
+  }else{
+    masDiv.innerHTML=todas.length>FILAS_POR_PAGINA?`<span class="cap">Mostrando las ${todas.length} filas.</span>`:'';
+  }
 }
 const selTipo=v=>`<select data-c="tipo">${TIPOS_OPC.map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
 const selCuenta=v=>`<select data-c="cuenta"><option ${v==='BANCO'?'selected':''}>BANCO</option><option ${v==='EFECTIVO'?'selected':''}>EFECTIVO</option></select>`;
