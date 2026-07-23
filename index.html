@@ -50,8 +50,8 @@
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
   .alerta{display:none; align-items:flex-start; gap:10px; background:var(--ambar-suave); border:1px solid #ecd8a3; color:#6e5011; padding:12px 14px; border-radius:12px; font-size:.9rem; margin-bottom:16px}
   .alerta.ver{display:flex}
-  .hero{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:14px; margin-bottom:14px}
-  .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:16px 16px 15px; box-shadow:var(--sombra); position:relative; overflow:hidden}
+  .hero{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:14px; margin-bottom:14px}
+  .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:16px 16px 15px; box-shadow:var(--sombra); position:relative; overflow:hidden; min-width:0}
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--acento)}
   .kpi.acc-verde{background:var(--verde-suave); border-color:#cbe6d8} .kpi.acc-verde::before{background:var(--verde)}
   .kpi.acc-rojo{background:var(--rojo-suave); border-color:#eecabf} .kpi.acc-rojo::before{background:var(--rojo)}
@@ -66,11 +66,11 @@
   .kpi .val.pos{color:var(--verde)} .kpi .val.neg{color:var(--rojo)}
   .kpi.hero-util .val.pos{color:#7fdcae} .kpi.hero-util .val.neg{color:#f0a3a3}
   .badge{display:inline-block; font-size:.64rem; text-transform:uppercase; background:#fff; color:var(--ambar); padding:3px 9px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:700}
-  .mini{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px}
+  .mini{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px}
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
   .mini .kpi .val{font-size:1.12rem; font-weight:700}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px}
-  .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:17px; box-shadow:var(--sombra)}
+  .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin-top:16px}
+  .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:17px; box-shadow:var(--sombra); min-width:0}
   .card h2{font-family:'Manrope',sans-serif; font-size:.98rem; font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
   .card .cap{font-size:.78rem; color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
@@ -145,20 +145,20 @@
   .rango-fill{position:absolute;top:15px;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
   .spin{display:inline-block; width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--tinta);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
   @keyframes sp{to{transform:rotate(360deg)}}
-  @media (max-width:820px){ .hero{grid-template-columns:1fr 1fr} .mini{grid-template-columns:1fr 1fr} .grid{grid-template-columns:1fr} .kpi.hero-util{grid-column:1/-1} }
+  @media (max-width:820px){ .hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .mini{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .grid{grid-template-columns:minmax(0,1fr)} .kpi.hero-util{grid-column:1/-1} }
   /* En horizontal con ancho amplio (tablet/desktop): aprovechar el espacio.
      El bloqueo de giro en celular se maneja SOLO por JavaScript (screen.orientation),
      que lee el tamaño físico real del dispositivo — el truco de rotación por CSS
      se quitó porque rompía el layout en tablets. */
   @media screen and (orientation: landscape) and (min-width:900px){
-    .hero{grid-template-columns:1.4fr 1fr 1fr 1fr} .mini{grid-template-columns:repeat(5,1fr)} .grid{grid-template-columns:1fr 1fr}
+    .hero{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)} .mini{grid-template-columns:repeat(5,minmax(0,1fr))} .grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   }
   /* Tablet/desktop (ancho ≥900px, en cualquier orientación): escalar
      tipografía, espaciado y gráficos — no solo reacomodar columnas.
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
-    .wrap{max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:230px 1fr; column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"}
+    .wrap{max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:230px minmax(0,1fr); column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"}
     header.top{grid-area:header}
     header.top h1{font-size:1.9rem}
     .tabs{grid-area:nav; position:sticky; top:24px; left:auto; right:auto; bottom:auto; flex-direction:column; align-items:stretch; height:calc(100vh - 48px); overflow-y:auto; border-top:none; padding:10px; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra)}
@@ -587,7 +587,7 @@ function dibujarMixSku(m){
     return;
   }
   document.getElementById('mixSku').innerHTML=`
-    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
       <div class="kpi"><div class="lbl">SKU activos</div><div class="val">${sku.toLocaleString('es-CL')}</div><div class="sub">catálogo Loyverse</div></div>
       <div class="kpi"><div class="lbl">SKU por m²</div><div class="val">${mix.toFixed(1)}</div><div class="sub">${area?area+' m² de venta':'falta área en configuracion'}</div></div>
       <div class="kpi"><div class="lbl">Venta del mes (Loyverse)</div><div class="val">${clp(ventaTot)}</div><div class="sub">todas las categorías</div></div>
@@ -624,7 +624,7 @@ function dibujarMermas(m){
   const sobreMeta=d.tasaPerdida>META_PERDIDA;
   const catsOrdenadas=Object.entries(d.porCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
   cont.innerHTML=`
-    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
       <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso · meta Amorín ≤3%</div></div>
       <div class="kpi"><div class="lbl">Casos de merma real</div><div class="val">${d.nReal}</div><div class="sub">vencido/dañado/robo/liquidado</div></div>
       <div class="kpi"><div class="lbl">Consumo interno</div><div class="val">${clp(d.consumoInterno)}</div><div class="sub">retiro para uso propio — no es pérdida de gestión</div></div>
@@ -645,7 +645,7 @@ function dibujarQuiebre(){
     return;
   }
   cont.innerHTML=`
-    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
       <div class="kpi"><div class="lbl">SKU en quiebre</div><div class="val">${q.totalSkuQuiebre}</div><div class="sub">${q.skuConHistorialVenta} con historial de venta</div></div>
       <div class="kpi"><div class="lbl">Impacto estimado semanal</div><div class="val" style="color:var(--rojo)">${clp(q.impactoEstimadoSemanal)}</div><div class="sub">${clp(q.impactoEstimadoDiario)}/día si sigue así</div></div>
     </div>
@@ -662,7 +662,7 @@ function dibujarVencimientos(){
     return;
   }
   cont.innerHTML=`
-    <div class="mini" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
       <div class="kpi"><div class="lbl">Valor en riesgo (no vencido aún)</div><div class="val">${clp(v.valorTotalProximos)}</div><div class="sub">${v.nProximos} lotes por vencer</div></div>
       <div class="kpi ${v.nVencidoSinMerma?'':'acc-verde'}"><div class="lbl">Vencido, sin merma registrada ${v.nVencidoSinMerma?'<span class="badge">revisar</span>':''}</div><div class="val" style="color:${v.nVencidoSinMerma?'var(--rojo)':'inherit'}">${clp(v.valorTotalVencidoSinMerma)}</div><div class="sub">${v.nVencidoSinMerma} lotes</div></div>
     </div>
