@@ -1,13 +1,13 @@
 {
   "name": "Minimarket Marín · Panel financiero",
-  "short_name": "Marín Panel",
+  "short_name": "Marín Finanzas",
   "description": "Panel financiero en tiempo real de Minimarket Marín",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f7f6f2",
-  "theme_color": "#12203a",
+  "background_color": "#000f20",
+  "theme_color": "#000f20",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

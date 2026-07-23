@@ -1,9 +1,9 @@
-// Service worker Minimarket Marín — v4
+// Service worker Minimarket Marín — v5 (ícono oficial "Marín Finanzas")
 // - Permite instalar como app.
 // - NUNCA cachea el HTML (siempre fresco, así el token/código nuevo entra al recargar).
 // - NUNCA intercepta la llamada a Apps Script ni nada de otro dominio
 //   (si lo hiciera, rompería la carga de datos por el redirect de Google).
-const CACHE = 'marin-v4';
+const CACHE = 'marin-v5';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
 
