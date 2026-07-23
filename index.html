@@ -255,6 +255,7 @@
           </div>
           <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
         </div>
+        <div class="card full"><h2>Margen global promedio (Amorín)</h2><div class="cap">Participación × margen por sector — usa la utilidad real de cada venta (venta − costo del producto en ese momento), no una aproximación por compras del mes.</div><div id="margenGlobalCard"></div></div>
       </div>
     </div>
 
@@ -533,7 +534,7 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
@@ -627,6 +628,23 @@ function dibujarVentaSector(m){
   cont.innerHTML=`<table><thead><tr><th style="text-align:left">Sector</th><th>Venta</th><th>% del total</th></tr></thead><tbody>
     ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${clp(v)}</td><td>${total?(v/total*100).toFixed(1):'0.0'}%</td></tr>`).join('')}
   </tbody></table>`;
+}
+function dibujarMargenGlobal(m){
+  const cont=document.getElementById('margenGlobalCard');
+  if(!cont) return;
+  const mg=m.margenGlobal;
+  if(!mg || !mg.ventaTotal){ cont.innerHTML='<div class="cap">Sin ventas con sector asignado todavía — necesita el campo Sector en los productos de Pedidos Marín.</div>'; return; }
+  const filas=Object.entries(mg.porSector||{}).sort((a,b)=>b[1].participacionPct-a[1].participacionPct);
+  cont.innerHTML=`
+    <div class="kpi" style="margin-bottom:14px;max-width:280px">
+      <div class="lbl">Margen global ponderado</div>
+      <div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div>
+      <div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div>
+    </div>
+    <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Margen</th></tr></thead><tbody>
+      ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%</td></tr>`).join('')}
+    </tbody></table>
+    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio.</div>`;
 }
 function dibujarMermas(m){
   const cont=document.getElementById('mermasCard');
