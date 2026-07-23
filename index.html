@@ -23,9 +23,10 @@
     --verde:#177a56; --verde-suave:#e3f2ea;
     --rojo:#b6402f; --rojo-suave:#f8e9e4;
     --ambar:#a8760f; --ambar-suave:#f8edd6;
+    --acento-suave:#e7eefd;
     --gris:#6d6c63; --acento:#2f6df0; --acento2:#3f7f8c;
-    --radius:16px;
-    --sombra:0 1px 2px rgba(15,27,48,.04), 0 10px 24px -12px rgba(15,27,48,.12);
+    --radius:18px;
+    --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{overflow-x:hidden; max-width:100%}
@@ -38,17 +39,19 @@
   .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
   .tabs{display:flex; gap:2px; margin:18px 0 4px; border-bottom:1px solid var(--linea); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
-  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; padding:11px 16px; font-size:.9rem; font-weight:600; color:var(--gris); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s; flex:0 0 auto; white-space:nowrap}
-  .tabs button.on{color:var(--tinta); border-bottom-color:var(--acento)}
+  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; padding:9px 16px; font-size:.9rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:10px; margin-bottom:2px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
+  .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
   .alerta{display:none; align-items:flex-start; gap:10px; background:var(--ambar-suave); border:1px solid #ecd8a3; color:#6e5011; padding:12px 14px; border-radius:12px; font-size:.9rem; margin-bottom:16px}
   .alerta.ver{display:flex}
-  .hero{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:12px; margin-bottom:12px}
+  .hero{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:14px; margin-bottom:14px}
   .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:16px 16px 15px; box-shadow:var(--sombra); position:relative; overflow:hidden}
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--acento)}
-  .kpi.acc-verde::before{background:var(--verde)} .kpi.acc-rojo::before{background:var(--rojo)} .kpi.acc-ambar::before{background:var(--ambar)}
+  .kpi.acc-verde{background:var(--verde-suave); border-color:#cbe6d8} .kpi.acc-verde::before{background:var(--verde)}
+  .kpi.acc-rojo{background:var(--rojo-suave); border-color:#eecabf} .kpi.acc-rojo::before{background:var(--rojo)}
+  .kpi.acc-ambar{background:var(--ambar-suave); border-color:#ecd8a3} .kpi.acc-ambar::before{background:var(--ambar)}
   .kpi .lbl{font-size:.71rem; text-transform:uppercase; letter-spacing:.08em; color:var(--gris); margin-bottom:7px; font-weight:600}
   .kpi .val{font-family:'Manrope',sans-serif; font-size:1.68rem; font-weight:800; letter-spacing:-.02em}
   .kpi .sub{font-size:.78rem; color:var(--gris); margin-top:4px}
@@ -58,22 +61,23 @@
   .kpi.hero-util .lbl,.kpi.hero-util .sub{color:#a9b7cf}
   .kpi .val.pos{color:var(--verde)} .kpi .val.neg{color:var(--rojo)}
   .kpi.hero-util .val.pos{color:#7fdcae} .kpi.hero-util .val.neg{color:#f0a3a3}
-  .badge{display:inline-block; font-size:.64rem; text-transform:uppercase; background:var(--ambar-suave); color:var(--ambar); padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle; font-weight:700}
+  .badge{display:inline-block; font-size:.64rem; text-transform:uppercase; background:#fff; color:var(--ambar); padding:3px 9px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:700}
   .mini{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px}
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
   .mini .kpi .val{font-size:1.12rem; font-weight:700}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px}
   .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:17px; box-shadow:var(--sombra)}
   .card h2{font-family:'Manrope',sans-serif; font-size:.98rem; font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
   .card .cap{font-size:.78rem; color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
   canvas{max-width:100%}
-  table{width:100%; border-collapse:collapse; font-size:.86rem}
-  th,td{text-align:right; padding:8px; border-bottom:1px solid var(--linea)}
+  table{width:100%; border-collapse:collapse; font-size:.86rem; border-radius:12px; overflow:hidden}
+  th,td{text-align:right; padding:9px 8px; border-bottom:1px solid var(--linea)}
   th:first-child,td:first-child{text-align:left}
-  th{font-size:.71rem; text-transform:uppercase; color:var(--gris); font-weight:700}
+  th{font-size:.71rem; text-transform:uppercase; color:var(--gris); font-weight:700; background:#faf9f5}
   td.pos{color:var(--verde); font-weight:700} td.neg{color:var(--rojo); font-weight:700}
-  tr.foco td{background:#faf9f5}
+  tbody tr:hover td{background:#faf9f5}
+  tr.foco td{background:var(--acento-suave)}
   .notas{list-style:none; display:flex; flex-direction:column; gap:10px}
   .notas li{display:flex; gap:10px; align-items:flex-start; font-size:.9rem; padding:11px 13px; border-radius:11px; border:1px solid var(--linea)}
   .notas li.ok{background:var(--verde-suave)} .notas li.warn{background:var(--ambar-suave)} .notas li.bad{background:var(--rojo-suave)}
@@ -84,7 +88,7 @@
   .filtros input,.filtros select{padding:8px 10px; border:1px solid var(--linea); border-radius:9px; font-size:.85rem; background:#fff; font-family:inherit}
   .filtros input[type=search]{flex:1; min-width:160px}
   .tabla-edit{width:100%; border-collapse:collapse; font-size:.82rem}
-  .tabla-edit th{position:sticky; top:0; background:#fff; z-index:1}
+  .tabla-edit th{position:sticky; top:0; background:#faf9f5; z-index:1}
   .tabla-edit td{text-align:left; padding:6px 8px}
   .tabla-edit td.num{text-align:right}
   .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:.82rem; font-family:inherit}
