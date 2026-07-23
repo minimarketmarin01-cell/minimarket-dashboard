@@ -19,12 +19,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --tinta:#0f1b30; --papel:#f6f5f0; --linea:#e7e3d8;
-    --verde:#177a56; --verde-suave:#e3f2ea;
-    --rojo:#b6402f; --rojo-suave:#f8e9e4;
-    --ambar:#a8760f; --ambar-suave:#f8edd6;
-    --acento-suave:#e7eefd;
-    --gris:#6d6c63; --acento:#2f6df0; --acento2:#3f7f8c;
+    --tinta:#0f1b30; --papel:#f4f6fb; --linea:#e4e8f2;
+    --verde:#177a56; --verde-suave:#e6f6ec;
+    --rojo:#b6402f; --rojo-suave:#fbeaea;
+    --ambar:#a8760f; --ambar-suave:#faf1de;
+    --acento-suave:#e8effd;
+    --gris:#727a8c; --acento:#2f6df0; --acento2:#3f7f8c;
     --radius:18px;
     --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
   }
@@ -41,7 +41,8 @@
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 12px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:12px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
-  .tab-ico{font-size:1.2rem; line-height:1}
+  .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
+  .tab-ico svg{width:19px; height:19px}
   .tab-txt{white-space:nowrap}
   .main-content{padding-bottom:76px}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
@@ -77,9 +78,9 @@
   table{width:100%; border-collapse:collapse; font-size:.86rem; border-radius:12px; overflow:hidden}
   th,td{text-align:right; padding:9px 8px; border-bottom:1px solid var(--linea)}
   th:first-child,td:first-child{text-align:left}
-  th{font-size:.71rem; text-transform:uppercase; color:var(--gris); font-weight:700; background:#faf9f5}
+  th{font-size:.71rem; text-transform:uppercase; color:var(--gris); font-weight:700; background:#f6f8fc}
   td.pos{color:var(--verde); font-weight:700} td.neg{color:var(--rojo); font-weight:700}
-  tbody tr:hover td{background:#faf9f5}
+  tbody tr:hover td{background:#f6f8fc}
   tr.foco td{background:var(--acento-suave)}
   .notas{list-style:none; display:flex; flex-direction:column; gap:10px}
   .notas li{display:flex; gap:10px; align-items:flex-start; font-size:.9rem; padding:11px 13px; border-radius:11px; border:1px solid var(--linea)}
@@ -91,7 +92,7 @@
   .filtros input,.filtros select{padding:8px 10px; border:1px solid var(--linea); border-radius:9px; font-size:.85rem; background:#fff; font-family:inherit}
   .filtros input[type=search]{flex:1; min-width:160px}
   .tabla-edit{width:100%; border-collapse:collapse; font-size:.82rem}
-  .tabla-edit th{position:sticky; top:0; background:#faf9f5; z-index:1}
+  .tabla-edit th{position:sticky; top:0; background:#f6f8fc; z-index:1}
   .tabla-edit td{text-align:left; padding:6px 8px}
   .tabla-edit td.num{text-align:right}
   .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:.82rem; font-family:inherit}
@@ -107,7 +108,7 @@
   .modal-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px}
   .modal-head h3{font-family:'Manrope',sans-serif; font-size:1.05rem; font-weight:800}
   .modal-x{background:none; border:none; font-size:1.15rem; color:var(--gris); cursor:pointer; padding:4px 9px; border-radius:8px; line-height:1}
-  .modal-x:hover{background:#f2f0ea; color:var(--tinta)}
+  .modal-x:hover{background:#eef1f8; color:var(--tinta)}
   .modal-body-scroll{overflow:auto; margin-top:10px}
   /* Encabezados ordenables de la tabla Registros */
   .tabla-edit th[data-col]{cursor:pointer; user-select:none; white-space:nowrap}
@@ -199,16 +200,16 @@
   </header>
 
   <nav class="tabs">
-    <button class="on" data-tab="resumen"><span class="tab-ico">🏠</span><span class="tab-txt">Resumen</span></button>
-    <button data-tab="rentabilidad"><span class="tab-ico">📈</span><span class="tab-txt">Rentabilidad</span></button>
-    <button data-tab="costos"><span class="tab-ico">🧾</span><span class="tab-txt">Costos</span></button>
-    <button data-tab="retiro"><span class="tab-ico">💰</span><span class="tab-txt">Retiro utilidad</span></button>
-    <button data-tab="surtido"><span class="tab-ico">📦</span><span class="tab-txt">Surtido</span></button>
-    <button data-tab="mermas"><span class="tab-ico">⚠️</span><span class="tab-txt">Mermas</span></button>
-    <button data-tab="registros"><span class="tab-ico">📋</span><span class="tab-txt">Registros</span></button>
-    <button data-tab="revisar"><span class="tab-ico">🔍</span><span class="tab-txt">Por revisar</span> <span id="badgeRev" class="badge" style="display:none"></span></button>
-    <button data-tab="cierre"><span class="tab-ico">🗄️</span><span class="tab-txt">Cierre de caja</span></button>
-    <button data-tab="cartolas"><span class="tab-ico">📤</span><span class="tab-txt">Cartolas</span></button>
+    <button class="on" data-tab="resumen"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span><span class="tab-txt">Resumen</span></button>
+    <button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button>
+    <button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button>
+    <button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button>
+    <button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button>
+    <button data-tab="mermas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span><span class="tab-txt">Mermas</span></button>
+    <button data-tab="registros"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l3 3v15H5V6z"/><path d="M9 11h6M9 15h6M9 7h3"/></svg></span><span class="tab-txt">Registros</span></button>
+    <button data-tab="revisar"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><span class="tab-txt">Por revisar</span> <span id="badgeRev" class="badge" style="display:none"></span></button>
+    <button data-tab="cierre"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.4"/><rect x="3" y="14" width="18" height="6" rx="1.4"/><path d="M7 7h.01M7 17h.01"/></svg></span><span class="tab-txt">Cierre de caja</span></button>
+    <button data-tab="cartolas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></span><span class="tab-txt">Cartolas</span></button>
   </nav>
 
   <div class="main-content">
