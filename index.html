@@ -43,6 +43,9 @@
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
   .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
   .tab-ico svg{width:19px; height:19px}
+  .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:var(--sombra); flex:0 0 auto; align-self:center; transition:background .15s}
+  .btn-sidebar-toggle:hover{background:var(--acento-suave)}
+  .btn-sidebar-toggle svg{width:19px; height:19px}
   .tab-txt{white-space:nowrap}
   .main-content{padding-bottom:76px}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
@@ -158,14 +161,17 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
-    .wrap{max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:230px minmax(0,1fr); column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"}
+    .wrap{--sidebar-w:230px; max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:var(--sidebar-w) minmax(0,1fr); column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"; transition:grid-template-columns .28s ease, column-gap .28s ease}
+    .wrap.sidebar-oculto{--sidebar-w:0px; column-gap:0px}
     header.top{grid-area:header}
     header.top h1{font-size:1.9rem}
-    .tabs{grid-area:nav; position:sticky; top:24px; left:auto; right:auto; bottom:auto; flex-direction:column; align-items:stretch; height:calc(100vh - 48px); overflow-y:auto; border-top:none; padding:10px; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra)}
-    .tabs button{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px}
+    .tabs{grid-area:nav; position:sticky; top:24px; left:auto; right:auto; bottom:auto; flex-direction:column; align-items:stretch; height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra); transition:opacity .2s ease, padding .2s ease; opacity:1}
+    .wrap.sidebar-oculto .tabs{opacity:0; pointer-events:none; padding:0; border-width:0; box-shadow:none}
+    .tabs button{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:nowrap}
     .tab-ico{font-size:1.15rem}
     .main-content{grid-area:main; min-width:0; padding-bottom:0}
     .pie{grid-area:pie}
+    .btn-sidebar-toggle{display:inline-flex}
     .card h2{font-size:1.15rem}
     .card .cap{font-size:.9rem}
     .selector button{font-size:1rem; padding:10px 20px}
@@ -188,6 +194,9 @@
 <div class="masthead"><svg viewBox="0 0 1180 44" preserveAspectRatio="none" style="width:100%;height:100%;display:block"><defs><linearGradient id="gMast" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0f1b30"/><stop offset="0.55" stop-color="#2f6df0"/><stop offset="1" stop-color="#3f7f8c"/></linearGradient></defs><path d="M0,30 C260,4 420,44 640,22 C880,-2 1000,40 1180,14 L1180,44 L0,44 Z" fill="url(#gMast)"/></svg></div>
 <div class="wrap">
   <header class="top">
+    <button id="btnSidebarToggle" class="btn-sidebar-toggle" aria-label="Mostrar/ocultar menú lateral" title="Mostrar/ocultar menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+    </button>
     <h1>Minimarket Marín <span>· panel financiero</span></h1>
     <div class="sello" id="sello">cargando…</div>
   </header>
@@ -470,6 +479,15 @@ function restaurarTab(){
   const btn=document.querySelector(`.tabs button[data-tab="${tab}"]`);
   if(btn) btn.click();
 }
+
+// ---- Ocultar/mostrar sidebar (solo aplica en tablet/escritorio, ≥900px) ----
+document.getElementById('btnSidebarToggle').addEventListener('click',()=>{
+  const oculto=document.querySelector('.wrap').classList.toggle('sidebar-oculto');
+  try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(e){}
+});
+try{
+  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
+}catch(e){}
 
 function render(){
   const m=mesData(mesActual);
