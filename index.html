@@ -37,10 +37,13 @@
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
   .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
-  .tabs{display:flex; gap:2px; margin:18px 0 4px; border-bottom:1px solid var(--linea); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .tabs{display:flex; gap:2px; position:fixed; left:0; right:0; bottom:0; z-index:40; background:#fff; border-top:1px solid var(--linea); padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px)); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; box-shadow:0 -6px 18px rgba(15,27,48,.08)}
   .tabs::-webkit-scrollbar{display:none}
-  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; padding:9px 16px; font-size:.9rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:10px; margin-bottom:2px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
+  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 12px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:12px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
+  .tab-ico{font-size:1.2rem; line-height:1}
+  .tab-txt{white-space:nowrap}
+  .main-content{padding-bottom:76px}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
@@ -154,8 +157,14 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
-    .wrap{max-width:1500px; padding:0 32px 60px}
+    .wrap{max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:230px 1fr; column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"}
+    header.top{grid-area:header}
     header.top h1{font-size:1.9rem}
+    .tabs{grid-area:nav; position:sticky; top:24px; left:auto; right:auto; bottom:auto; flex-direction:column; align-items:stretch; height:calc(100vh - 48px); overflow-y:auto; border-top:none; padding:10px; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra)}
+    .tabs button{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px}
+    .tab-ico{font-size:1.15rem}
+    .main-content{grid-area:main; min-width:0; padding-bottom:0}
+    .pie{grid-area:pie}
     .kpi{padding:22px 24px 20px}
     .kpi .lbl{font-size:.82rem}
     .kpi .val{font-size:2.3rem}
@@ -164,7 +173,6 @@
     .card{padding:24px}
     .card h2{font-size:1.15rem}
     .card .cap{font-size:.9rem}
-    .tabs button{font-size:1.02rem; padding:13px 20px}
     .selector button{font-size:1rem; padding:10px 20px}
     table{font-size:1rem}
     .graf-mini{height:190px!important}
@@ -190,56 +198,89 @@
     <div class="sello" id="sello">cargando…</div>
   </header>
 
-  <div class="tabs">
-    <button class="on" data-tab="resumen">Resumen</button>
-    <button data-tab="registros">Registros</button>
-    <button data-tab="revisar">Por revisar <span id="badgeRev" class="badge" style="display:none"></span></button>
-    <button data-tab="cierre">Cierre de caja</button><button data-tab="cartolas">Cartolas</button>
-  </div>
+  <nav class="tabs">
+    <button class="on" data-tab="resumen"><span class="tab-ico">🏠</span><span class="tab-txt">Resumen</span></button>
+    <button data-tab="rentabilidad"><span class="tab-ico">📈</span><span class="tab-txt">Rentabilidad</span></button>
+    <button data-tab="costos"><span class="tab-ico">🧾</span><span class="tab-txt">Costos</span></button>
+    <button data-tab="retiro"><span class="tab-ico">💰</span><span class="tab-txt">Retiro utilidad</span></button>
+    <button data-tab="surtido"><span class="tab-ico">📦</span><span class="tab-txt">Surtido</span></button>
+    <button data-tab="mermas"><span class="tab-ico">⚠️</span><span class="tab-txt">Mermas</span></button>
+    <button data-tab="registros"><span class="tab-ico">📋</span><span class="tab-txt">Registros</span></button>
+    <button data-tab="revisar"><span class="tab-ico">🔍</span><span class="tab-txt">Por revisar</span> <span id="badgeRev" class="badge" style="display:none"></span></button>
+    <button data-tab="cierre"><span class="tab-ico">🗄️</span><span class="tab-txt">Cierre de caja</span></button>
+    <button data-tab="cartolas"><span class="tab-ico">📤</span><span class="tab-txt">Cartolas</span></button>
+  </nav>
 
-  <div id="tab-resumen">
+  <div class="main-content">
     <div class="selector" id="selMes"></div>
-    <div class="alerta" id="alerta"><span>⚠️</span><div><b>Mes incompleto.</b> Faltan ventas y costos en <b>efectivo</b>. El margen y la utilidad son <b>provisionales</b> hasta que registres el efectivo (pestaña «Cierre de caja»).</div></div>
-    <section class="hero" id="hero"><div class="cargando">Conectando…</div></section>
-    <section class="mini" id="mini"></section>
-    <section class="mini" id="miniPago"></section>
-    <div class="grid">
-      <div class="card full" style="position:relative;overflow:hidden">
-        <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
-        <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
-        <div class="graf-mini" style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
+
+    <div id="tab-resumen">
+      <div class="alerta" id="alerta"><span>⚠️</span><div><b>Mes incompleto.</b> Faltan ventas y costos en <b>efectivo</b>. El margen y la utilidad son <b>provisionales</b> hasta que registres el efectivo (pestaña «Cierre de caja»).</div></div>
+      <section class="hero" id="hero"><div class="cargando">Conectando…</div></section>
+      <section class="mini" id="mini"></section>
+      <section class="mini" id="miniPago"></section>
+      <div class="grid">
+        <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
+        <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
+        <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
       </div>
-      <div class="card full" style="position:relative;overflow:hidden">
-        <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
-        <h2>Flujo diario: ingresos vs. egresos operativos</h2><div class="cap" id="capDia"></div>
-        <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
-          <span style="font-size:.72rem;color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
-          <div style="position:relative;flex:1;height:26px">
-            <div class="rango-pista"></div>
-            <div class="rango-fill" id="rangoFill"></div>
-            <input type="range" id="diaDesde" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
-            <input type="range" id="diaHasta" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
-          </div>
-        </div>
-        <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
-      </div>
-      <div class="card"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
-      <div class="card"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-      <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
-      <div class="card full"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
-      <div class="card full"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
-      <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
-      <div class="card full"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
-      <div class="card full"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
-      <div class="card full"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
-      <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><table id="tabla"><tbody></tbody></table></div>
-      <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
-      <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
     </div>
-  </div>
+
+    <div id="tab-rentabilidad" class="hidden">
+      <div class="grid">
+        <div class="card full" style="position:relative;overflow:hidden">
+          <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
+          <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
+          <div class="graf-mini" style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
+        </div>
+        <div class="card full" style="position:relative;overflow:hidden">
+          <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
+          <h2>Flujo diario: ingresos vs. egresos operativos</h2><div class="cap" id="capDia"></div>
+          <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+            <span style="font-size:.72rem;color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
+            <div style="position:relative;flex:1;height:26px">
+              <div class="rango-pista"></div>
+              <div class="rango-fill" id="rangoFill"></div>
+              <input type="range" id="diaDesde" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+              <input type="range" id="diaHasta" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+            </div>
+          </div>
+          <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-costos" class="hidden">
+      <div class="grid">
+        <div class="card"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
+      </div>
+    </div>
+
+    <div id="tab-retiro" class="hidden">
+      <div class="grid">
+        <div class="card full"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-surtido" class="hidden">
+      <div class="grid">
+        <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
+        <div class="card full"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+        <div class="card full"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
+        <div class="card full"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
+      </div>
+    </div>
+
+    <div id="tab-mermas" class="hidden">
+      <div class="grid">
+        <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
+        <div class="card full"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
+        <div class="card full"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
+      </div>
+    </div>
 
   <div id="tab-registros" class="hidden">
     <div class="filtros">
@@ -327,6 +368,7 @@
     <div id="abonoSCQEstado" style="margin-top:12px"></div>
   </div>
 </div>
+  </div>
   <div id="modalOtroIngreso" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalOtroIngresoTitulo">
     <div class="modal-box">
       <div class="modal-head">
@@ -425,7 +467,7 @@ function poblarCategorias(){
 const mesData=ym=>DATA.meses.find(m=>m.ym===ym);
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
-  ['resumen','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  ['resumen','rentabilidad','costos','retiro','surtido','mermas','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
   try{ localStorage.setItem('tabActiva', b.dataset.tab); }catch(e){}
 });
 function restaurarTab(){
