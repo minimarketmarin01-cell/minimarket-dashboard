@@ -52,9 +52,13 @@
   .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0)}
   .submenu li{list-style:none}
   .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px; font-size:.85rem; border-radius:8px}
+  .submenu-n2{list-style:none; margin:2px 0 4px; padding:0}
+  .submenu-n2 a.submenu-link{display:block; padding:8px 12px 8px 26px; font-size:.78rem; color:var(--gris); text-decoration:none; border-radius:8px; -webkit-tap-highlight-color:transparent}
+  .submenu-n2 a.submenu-link:hover,.submenu-n2 a.submenu-link:active{background:var(--acento-suave); color:var(--acento)}
   .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
   .tab-ico svg{width:19px; height:19px}
-  .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:var(--sombra); flex:0 0 auto; align-self:center; transition:background .15s}
+  .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:none; flex:0 0 auto; transition:background .15s}
+  .tabs-header{display:none}
   .btn-sidebar-toggle:hover{background:var(--acento-suave)}
   .btn-sidebar-toggle svg{width:19px; height:19px}
   .tab-txt{white-space:nowrap}
@@ -172,16 +176,16 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
-    .wrap{--sidebar-w:230px; --sidebar-x:max(32px, calc((100vw - 1500px)/2 + 32px)); max-width:1500px; padding:0 32px 60px; display:block}
+    .wrap{--sidebar-w:230px; max-width:1500px; padding:0 32px 60px}
     .wrap.sidebar-oculto{--sidebar-w:64px}
-    header.top{padding-left:calc(var(--sidebar-w) + 28px); transition:padding-left .28s ease}
     header.top h1{font-size:1.9rem}
+    .layout-desktop{display:flex; align-items:flex-start; gap:28px}
     .tabs{
-      position:fixed; top:24px; bottom:24px; left:var(--sidebar-x); width:var(--sidebar-w); z-index:30;
+      position:sticky; top:24px; flex:0 0 var(--sidebar-w); width:var(--sidebar-w); z-index:30;
       display:flex; flex-direction:column; align-items:stretch;
-      overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px;
+      max-height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px;
       background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);
-      transition:width .28s ease; opacity:1
+      transition:width .28s ease, flex-basis .28s ease; opacity:1
     }
     .menu-nivel1{display:block; overflow:visible}
     .menu-grupo{margin-bottom:2px}
@@ -193,13 +197,18 @@
     .submenu{position:static; transform:none; margin-bottom:0; width:auto; min-width:0; box-shadow:none; border:none; padding:0; max-height:0; overflow:hidden; opacity:0; transition:max-height .3s ease, opacity .25s ease}
     .menu-grupo.abierto .submenu{max-height:420px; opacity:1}
     .submenu button{padding-left:34px}
+    .submenu-n2 a.submenu-link{padding-left:50px}
+    .wrap.sidebar-oculto .submenu-n2{display:none}
     @media (hover:hover) and (pointer:fine){
       .wrap:not(.sidebar-oculto) .menu-grupo:hover .submenu{max-height:420px; opacity:1}
       .wrap:not(.sidebar-oculto) .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}
     }
-    .main-content{min-width:0; padding-bottom:0; margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
-    .pie{margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
+    .main-content{flex:1 1 0%; min-width:0; padding-bottom:0}
     .btn-sidebar-toggle{display:inline-flex}
+    .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 8px 12px; margin-bottom:6px; border-bottom:1px solid var(--linea)}
+    .tabs-header-txt{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--gris)}
+    .wrap.sidebar-oculto .tabs-header{justify-content:center}
+    .wrap.sidebar-oculto .tabs-header-txt{display:none}
     /* --- Contraído: solo íconos, texto oculto, submenú como flyout lateral --- */
     .wrap.sidebar-oculto .tabs{padding:10px 8px; align-items:center}
     .wrap.sidebar-oculto .tab-txt{display:none}
@@ -225,7 +234,7 @@
     .graf-control{height:190px!important}
   }
   @media screen and (min-width:1300px){
-    .wrap{max-width:1700px; --sidebar-x:max(32px, calc((100vw - 1700px)/2 + 32px))}
+    .wrap{max-width:1700px}
     .graf-mini{height:220px!important}
     .graf-dia{height:380px!important}
     .graf-dona{height:440px!important}
@@ -237,9 +246,6 @@
 <div class="masthead"><svg viewBox="0 0 1180 44" preserveAspectRatio="none" style="width:100%;height:100%;display:block"><defs><linearGradient id="gMast" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0f1b30"/><stop offset="0.55" stop-color="#2f6df0"/><stop offset="1" stop-color="#3f7f8c"/></linearGradient></defs><path d="M0,30 C260,4 420,44 640,22 C880,-2 1000,40 1180,14 L1180,44 L0,44 Z" fill="url(#gMast)"/></svg></div>
 <div class="wrap">
   <header class="top">
-    <button id="btnSidebarToggle" class="btn-sidebar-toggle" aria-label="Mostrar/ocultar menú lateral" title="Mostrar/ocultar menú">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
-    </button>
     <div style="display:flex;align-items:center;gap:10px">
       <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAoN0lEQVR4nL28ebwlVXX2/117V9WZ7tR9e6CZGoQACjKJBFCEBgIOoILe9nVGgzEq6qsxhjdGL03UoGKMOAUQJxygO05EfVWUbkAEI6JRQCaZmrG7b9/pjFV77/X7o6rOObcxvib5ve/pz+lzT517q/Z+9lrPetbaq47wf/ExNTVlN23aBOABjIAPWn3169954EM75g5sZ+HpqBzc6aUrjDF7tXvOj4+N7ZkklYpXCCooAVVFVUEVEQHIX4ufQZGh61prydL0CWukmVSSOWvMHWO12r/tsWbyui9+7G9+00tdOUDLpk3+D81B/tCH//XHlIVNAdDICG9807t2v/m2+07oOn1BquZor7pWTJQgMSomH4TkE/MhgAZUAxoUUFTpv4owBIxghmcgghSTEmMQERTBmPwaBu0lSfVna1ZPfvlzF5771TVr1rTyw6qI6P8LgMrxhWol5oTn/o/T7nro0XN6Tk6NahNjUVwliiOMMaiGgKK5dXhRVFRBQegDkltGf+SqIJQfI2IKXGSAGUoOEyoCqsVVNIiCwcTEcYWKNXeuWT5+/o83fuQqr8D0tGHDhvB/D6DCXOPIsu55Z/3ZXQ/tfG/byfFRbZRqtUYlqXhjLD548d6LqopqKGZQzl93eU8fHtWlCyzl/32XK1an/AFKoOifpbhACCEgJoriCquWTXz1Pee89NzTTz9+tqAE/+Tr/PcfFvDT73rXblf84GcfnkvNq5PGBI1GI9SqdQUxmcvEeY+GUAy4mHjQ/vs+INqHpUBJc7vQ4u8KV9JhqEr3GnJBQXJzLN4XIJXnDQoaV0dsLTa3HLRm4oxNX7zo8V0t6f8PgCIjuJNOe9HJv7jr4ctDPLp2YvmK0GiMahzH1vtAL+0RQgCF0J9wf5wDjumDlA9My8kwmGD5U/57UkKXgzZsReWrSN/alGLeOjibEjKROK4m9o6XnrzuuR947+u3Tk9Pmw0FSNF/Exwr4A575rrX//yuRz8bNVbI5PgyV6lWIxtFdHs9ssxhioEHQn9y5eS1cKkSmIGFFTD2I9cApL4rCqACUkCnIKYgKSnAG7ZGhi4EJWBx8KnrkDztuz/5yb+o6gki67Nyjcx/A5wossYfctSJb7/78fnLK2MrdcXkilBrNKIoSmh3OqRpmsOi+bOYVz9sqypBFQ1aRK08pIcQCMGjPo9k+fv8WP+pAYKChsGzADyUwIfcYn0IhKDFOPJr+nIMIQ+2wfWy2cXe0cec/oYPCps8U1MG/qsudsIJkVx/nTv25Be+4fb7tl1aGV3uJ8YnTLVWE2Mi5hcX0RDylR92KcrVz4+EUt+EgXsN3Grpi+Q+l/8OWrhT8W9APvk1zcDiSq4aKKahRxEk8l8UVcVXkkROOvqpJ1z+T9M3Tk1N2f88QEW0OvPMqZOu/eV9P4xHV7FsfMJUajWxUcTc3ByqYIzZZaJLQchxCEMupgPwhkBaEuJ3mWQfJJEhHpInicglYJVEz+B65dhE1WNjOzla/f5vr/va83xQ8590sWnDpk36pU9/etUNv7rnS5qM2rHRUYkrFYniiNmdO3FZllNn4S6FEFniVoX2KQg6dy+K19A/nruVhoB6P3C7whXpS4TBOQfMpUPnLsZSuqn6/vvymA+B4D0+BOvTns4ttk5+xevfdwAQ/pMAbRBrTDj/M1+5uE1jj7HxZS6KE5MkFebm5kmzFGvNYLC7ghKAEPrPwXEtwCiBLSZRArULP/XBKUkNBRkCqnSdvoUOgRaGwC/OT8ivF7wnBO+zQPzr3937IoD/BEBTFvDPPeNlp21bSF82Or7MV6u1qFqp0Go16XQ6JHHCUCDO/y8GFQoLGQyXgpy1P9Alq15aX3mcMGRpw+AM5LsME4YOATJkLSU4IWjxLAm8XCwv3jkW262TrJE/NsznsVRVK3s99bgPm0qDer1OpVLBec/8whxRlBBUiaxFRPDeoyjWGFQp3g/rtBKwoZ/73FRAOCCggQwQMCUSIkTWAuSWBfl7Ka5Xulf/LCVw5TkHHNS/hqqELCMkcugNP7lx+R9nQVPrDRCOOemFL1jIzKH1esNbYywo8wsLGBMhKAZlodlkYbGJETAIi4vt/L0x5EFtaLVKripWMY/Woe92w6tdWo8UCOfaSpmbX2Cx2caIYICFxSYLCy2MSN9yQwgEX3KZR4NH/ZAbhyGpoSoaPN3ULfvM565e8cdGMVFVu9sBx/60a+pHTYxPaLVWM51Om26aEScVRAyLCws855mH8OcvfyEH7b8WYwwPPPQYG7+zmW/98AasNcTWknnXd5XS9QaqemA9/dciWyjTiSiOcD7g05QXnXYCLz/rNPZfuwcK3HP/w1z+lW/z/S03MTo2WoA7IPEl+R2DyNa3MQ2qikTWpEcdtN+x/2eAirC+7rlnPf+WOx/+bnV0WRgdmzDWRszNzWKtIYoimt2Mt77mLC541+t/72mu/sENvO29H2Wh2aFeq5K5rAj5A97J3WTInfr+mM9EEJI4ot3pMTY2wuUXvYfnnXzc773eBRddxoWf/gqNRpVQuhvD5x1a/SJlKf3fh6CNWlXOWHfUWX+MBRlV1X0OefY1Ozpy0vjERKjVR2y318M5R2wti81FnnHwn/CjTZ9GVfE+5NwjAyKO44hf3XY3r3jL+Ty6bYaReoVemhZuUEqCoRTk90wkiWIWWy12WzHJpssu5OgjD8Z53xeDwSvOB6w1VJKI09a/mc033cro6EiRAw6E6kC8SpHODK4Xgmq9msjzn/2MF/9BDpqenjZAeOMbzz1koRdOrNbrxHHFZGlKr9vBiCDG0MsCp//ZcxAR2p2UQhwjSmFhlixzHH7IAVz9hQ+z756rmZ1fILKCBl/mH7tIgjJq5c84sswtLLD/2t25ZuMnc3AyhzWGnA4lj0Y+sLjYJnjlpS84mSxNKWadP/vXYMk1h11Ri7Qlsv+HML9hwwYRgRtuvetsR2QrccUbY6TX62LEoMHjvQMNrN1zNQBZ5uj1MtI0w7mcYAHi2OKcZ/999+TqL3yYQw/Yl52zC8RxTJ8ThsI9pUUFJY4ids7M8vSD9uMHV36aA/Zbi3MeG1lUwTlPlnl6vZRmq0Or1aHXc+y1x2qMNXjnCpE4JCiHNNOSKBoGr877PwSQCuBv+u4VY9vnFl9moxhrjc3SHiEoxlqUIlK4tM90WZrR66V0uym9NCPLPN7nEcpag3OevfbYje9++Z94ztGHMzM7TxxFBO/71jJQw0oUW3bu2MlzjjmSH175KfbcfRXOeyJbyodAmjra7Q4LCy0Wmk3SLMuNxjtC2i0UuA4ssh+9dtVGQ8dV8f4PWtCJFuAtF1xxetebPeI48YD0emle6x2qHfsyrQAy5+n2UjrdHp1uj24vza3JB4JCZA3ee5YvH+ebn/8Ipx1/NNue2EEUmT6RasFFcWSY27aD55/ybL7zlY+zcsUyvPdYY4oJBLLM0e50WWi2mJlbYLHZAfKaNCiEbOnEg+I19DP7YXXdlwVlOoP7QwBdF1RVHp2Z+4tgIo2jqC/+RGSJSkX9EhWbOken26Pd6dBpd+h2e/R6Ka6wJiM5SCMjdf7lcx9m/RmnsHPbDFFkB5xjDXNP7GD9mc/lG1/8GKMjDXwIfeHpnJKmLnepdoeFxRaz84sIknNjWXnVkOuesNR9++4VhtyrjGQFSJ7/yIKmpiwQXvryP39GM/XHx1GEqtosS/Msva8phqR8YUHG5KXRbrdHu92j1enR7nTpdHqkvZQsczgfCpAClUqFKy+7kHNe81JmZxaI4wRrDHPbtvPGP38ZX7vswyRxTAgBI0JQxTlPmqYsNlssLLaYX2hx/9bHEIFqJSaK7KCaMJz47sI1pQWFoeNlvUhVwf1HFcVNm7BG+NVtd56bqTUjxjqfpVHuIrJLSF5anrAmj1qqsNBs06hX8d7j8myZakhINEbVYq0lhIAIXPax91GvVbn4U58HCbz77efwoQ1/3XeP3GrBuUCaZjRbHeYWWmSZ4457HiCylnq1ShxHxFHUL7vmiaiCBDQUZZA+WcMg3OcPYYir8L8PoGkDG8K5b3jbPp//3uYpG4+qGKwPAWPjIrfRfuZNwUflBcUIUWSpJDHzzRY75xaYnBjD+1CQdbF6SUwcKTbKcynvPR//4LtpVCLqI3X+7q/+Eh9CkYgK3ive+wKcLrPziyhw1+8epNXusO9eu1OpJCRJjLGmnDsUJRRRAWP6+Z0OvUq5lTT0YQgB738vQHeIEcKPfvHrd/Q0qtfjxIegVku9WRJpmeyVIbNIFo0YrMnTgUatyuPbZmi3O+yx28q+Ug6qVIpVjFGiqNwrUz44/c584YPmSamCD4EsK8Bpd9gxM0+1WuW399zHA1sf5cD992GkUaVWTYgjm+dhhUqnnxSbPI/TJVDkPK70Ny/zIBGAgGUXDsqF4abwmY/+45pHt8+92thEjWC890jh/1pok75eUC3CZmGikvNQEkfUqgkjjRrbd85x/9bHqNXrtDpdmq0OnU4Z4RxZ5vA+jzDOe7wr1HEAH7SvcVrtDjtm5qhUq2y+bgs/u+WX7LP3now2atRrVSpJgjVFdq+lBhsqmwyPuQ9cDkbOU2UxLRevTyLpDRvuEGNEP3nl985rZSyL49j7EPq7SgNCXkp4FLsVOUDSV89xHFOtJOy2agX3PfAg/3zJpYCh1e7mxN1N6XR69Lo5eecuJYgUGicEMpeDs9Bs8/j2nURJhR9vvpa3v+UNiAZWr1rBSL1GtZIQRbbPPYPcToYA0aXjHnqKGaopSbG5y5BQLK3n3e9+31Meenz7OWJsMCI2qIIpNYqi5S7FEvG1S/In+X54FFmq1QoTY2OggYsunOaiD3+IkZE6aZaLu26vRy9Lcc7hXci5KgSc87jM0Wl3mVtosn3HLGITvvmtb/COt/1P0pAwuWycSpxQrVZJ4rgoqchQMW7gTMowSBT5lyDW4F0gm+/kwrecm/e4YaG4YcMdEkeRXvmdaz7UcqaeVCoaghdT7H8PZ939NGBoBYYx6gNkLXEUEcVRvjrVFVzxxav4+w9cyEij3k8TylfnXPHqyTJHp5uy0GozN9+kVq/zrW99g+n3vR8X1REbUa1UGBupkcQWa03OPQzlVn3SZVA+QTEWECVrdci276QxmnDYC48jaVQJPizZss5JuihpPOe09afc/O93vTSOq96IsUquSMvdT5EBMIN6cU4WZUWvHJBA34pqGBr1GmprxCsafPmLV9LptPnIhe8H8vQjiiJCyJssVH0hAtvML7aIKxUuvewyPv6PH8eMLEeiiOBTGo0a9VqF4LOc5EvSHdpLKzd+VBUhn0s228SM1DnwmIM58oXH8SenPpPxPVdw0Qlv4bEdOzGVCor2o5iwaZOqanW3A4/9eEastTiWEALG5sq2LCcsJeVB1ktfURe/U9RujAhRZLCRpV6rgrH4kBEvn+DrV15Jc2GOyy+7hHo9r9kYI4Tg6fUyFppt5haaxHHCxRd/gks/dQlmbDlENgfCWOq1GpUkJk1zESmFpZc7FUt0mgY0OOLYcvSbX8xRZ61j/yMPIqol9Lxj6+33M/PAo4jNxyCFTjNMTRlrJBx89CkXzrayp1WSJCgYir2mfp9OX6bvmsNoIapybwulZJdcE1ljSeKon0aIMYSgxCv34gffv57X/cVbMRIYHxuj0+3RaneYW2jS7aWMjo5w8Sc+waWf+mfsxCRqDKp5iQURKklMHEeYYm97OI8LQYteIz8waYS4UuXQFz6bvf70AObbTbY/th0CzD/wBGkrw0RRURYJRIBh0yb/wvWv/7Ot2+bfbox4QW0Ig7A+2LId7ASU3hwYkPQw+ZWpSO5meVQzxhSgRUhUISAkq1Zzzfev5bTnv4S777mXFZPLqNVHaDRGcC7jggsu4PJLPoedWEUQATGINSAWjB1KKYSyZBtCwPlA5nOiJ7i+8sdY2p2UT617E7/48g8Zm1xGXK/RU8/9v7oLMp/v7ZekBUS3bd48cvKbN1ycakQSGwka8sYkDSxtbCsnvzSxUxl8FHSwgn1lLUJUhH3EIGIRI6gavHckK5bzs1tu41mnnsn6M5/PHmtW8uhjT3DNtddz3x13YZatIIgpsvNi59QYAvnuhikqgaW690UdJ8tcvpjlXELAxBF+dpGnnnUSh5x5Ck/cvZXt927lwBes46Ff31UyeRlqcoBes+HT72z2soMqkfEBcsUs0lfJJfENIsKulbcB4mWyZ3aJasZYYlsAZMr9dAEb4b0jGh9nbn6RSz/5z4DLz1kZw0yuzsdhhreVTX+b2QztwYdQlD9crriVDu1urz9mExn8zCxrjzuUsy99L3G1wmXn/gMP/uK3rP/keWy76yFIIkKxodC3oJmF1jmoqlhj1Lm+5C+jUWkpoT/jpaJLIG8+CAMJUFYRNV9zbOFm/XaDfoOTQYwl+BSTJJjJ3RjsZOTnFGvIN5Akd63CtVGfj6nIP0NQ0iwvs8zOLyI2YsfsAmAxSYKbXWS3Q/bjlV88H5mo88VX/jX3/einyMQkXzt7A9TqSCUepE+S90xGaeb3tCISvF/a6zHsRlpuj+yy3x60aKDRfhoSVPvtOqXRlW7RfyxpmzMIMSqDkkRhdrm1iBl0bvTL7AouT0E05OWPoNDp9tg2M88TO2YYn1jGAw8+hIjgFtqs/JM9edVV/8DoPruz8S8u4N+v+hFmcgUaBBkdpUQ6H7ZAyMO8yTIn5cRN6VplbbgsZPfJeChSlS44pKQHOwY8SV2bfitM+Zn0ATAmQkxOvGKj/FkekxLYwVaxiEAWuObHPyapVOn2cs20bWaW2fkFao0G99x7N/969TfR9jyr91vNG79xEXsesA/ffNMHuOWybyPLVhJSRV1YMmYdogxjVKLMpTnhGRlEIQZkO+ChklcGjUqUhD5seH0+gqKVaZfPCyPq42SA/Dw5eZdmp5QRYIBrPhmvHjPS4LOf/QIHP/UgTjv1VGbmF1lsdWi3mvzbdbew8RvfZPsD97PmiEN49Tc+RmPNJF961bu59StfJ1m5B2pAGiOoRGQLC4iNBotXPCeXr5yMCLlAK3uSWTIlHbKEYStRlljDkqaDPJr1I8LwKSjl/3BVchi2IeSG/mZoifO/CQoidDXiTef+FQc9dX+Wr1hFu5Oy9ZGHmXliO3R77H/qKZx95Yfo4LjsjDdx3zXXss/6V3HQuX9J6PQwNoakwe2f+ixbr/5XzEgjz+QLz1ixanLvSIyF4mA/yu066HJiA+4ezFxg+Ojwkven1q/u5W4rZuki5O48BED/tIPmhqUuq2jwiBWo1rjz9rvB3wFxAnEFeoEjX3MGL/ncBSz+7hG+8Mp38/itdyHJasYPO4rGmn1oPTFDyBSicRpr9wefDVkPRbAJaZRHoiJcmtyyA2EgaoZm2i9qMwRA3w1lif5ZYoWUjZgKwROgcM2S7HMwloC75HplKbRcmPJIfk5Tr2Mii2t3kF6HU/7+zZz2nrfxy29/l2++6e9pb1/ETi7D75ihN9ekvbNLZz4lpIrEKdli3ks54NN8hdIsbUXB9fKIYWx/AIIBKdOHpeF9MMDiIQLBMzs7m7tXCGjRklJuQ4egLCws5hLeFOnLEnPc1dWUJTDrwIKHQQPycRvB7ZxnbK9JXvDp93LI6SfxnfM/ypYPXAI2QUYbBBfAWlwGvTa4FvgeGAuhO0wbg59r9foKMzG5msboBNXaCEm1jomSYlBDIXfYFgryHo522JjvfP8ajDHYKMK5DB883nu8DyRJhau/+z1I0yKjLohqybl06AIMBlwmxOS1qIEFKyaK0MyhO+c4aOpk3nDr11n19AP57HPfwJYNlyKNMaReQ30ofNaTtR3dOU8678kWAum8x3e0CApL+bXd6sxElfoo1ju8ywhe8UkVl6W4rEeWdvHOUbbB9QfOQCQGH4jGxtl87Q28/x8+xN+e9y68B+cdRoRqtcKXvvwVvva1TZjRBt5lecVOWDIYpdBPpf303WmI64prSyFmw8xOaruv4NRL3sNhr3w+P//s19l83kV0Z7ZDfSXay0A9VCqU0sJ3IZ1zuGYgdANWMkIvLDl/ec1ut9mMoijKw3EwBJ+COvIsIEZMvsHnXYbPergszS2mzPQLDgjeYWp1PvjBj3L9DTcy9dIXs3rVKuYXmvzwRz/m61d/D6IqInaI15aSbg66DLnyLu6k2heburAAxnDI68/kmPe+kd7cTq543pu5//s/g/E6Y0ccSwgCcR0RQ+vB+9CsWJiOJ8w7/LxDux4xGdrNhsZBuePISK0xHhlj1NpI8tJFVHzqgbwpQYucKdcpET7r4r3Pt1L6J8tfzdg4P7n+Zn6y5fp8iyXkq8bYxGAreBduKd+VSn04COSn1fxcgDab4Bx7nXQszzzvHCb235NbP3kFv/zUV9GuQyoxu5/1avZcfzbpzE4kCFF1gnsu+RCzN34vLx2nil9whIUUTQOYDHo+d7Eh6xER7n/gvnsiRMSIwdrIg1ERhxhnxFjxxgqkoCkqecMCUkd8blGqReuK5HmShoAdG82tKuS7p4gQhgKUSIDSUgp0BilESc9FZLWSU9BiTvArjz6Mw95+NnsedQi/+9YP+N9nn0fn4UdgdByzrEGY24mtjJDNZmRzDul5vG0iTiFkEFXAWbSZEZoppB5MgqaDEL+Udy1RLYkXQ7CjjopVDM45et0OkqUg4gVRMWLEZcY5D+ryFY0T+u0iISdlFcFrXl4QDL40hv4NJUMapyhT5JajZY9XP/fSLIOFJlQS1pxwLAe88kzGDtibRzffwE1/eyGt+x6Bxmie8TuPqgEbkc0t4Ga76KIn9DTfUU2LRVSHttroQgdaGZp5VHo5UEs4sT9wH/2P5x1/2K9v+93kbHthbbvnD+z2soM6lsMXm+4pUVRtOK+4LAY65L0bGDHGGLWFq2WoWGwkebuJK+4D6QtIGUo2S1sJwwY0QMw7tNsC70lWrWTN805m71PXETUSHrvuRm5630WkWx/OKaBSgbRF6C5AtYFU6hBVgTqhGQjzHegpGlUQjYu6kCe0u+hiFzopZC63/DTrg1I0wWutWpVnPOOIfaJnP+tPq3/9ttfcAtxSTimJI85964V73f34o8c9PjP/rGa7dWI3Nk9PsxBlWYp3mQbvgpHUeFSchxByACxCcL3+tnQJlPYBKwNUEcLzkIcKRKOjTBzydFYefRQj+66lu3OGO6+4iu033wS9HiQ14r33ZdmxzwPAdVrQ67L4mxtxi7NAQDuKznvCgkNSj0oL7RVdZmKQTNFWD+12wBXck/UGAzMGnNPx0RGesu9TVkbbts+sBX47PT0dbdiyBa5bpWm2yf/jP75rK3AVcJWq2pe/8T1HPLZ99vS5VvfMVrN1aDfNrMt6eOec95lxWWZc1iP4DB/HBJcRXFrwjhQE7ItWuPymPpNUiSeWU1mxmpG1+1BfvRp8xsxtt3HvVZvIntiWD7gximlMEOaeoLHPwaw45XWEVhN1AWsbiK8xc/2XQCDMzaKzbWg5NM1dSHvd3GpFwDnodqDTQYNDjc/TjCLpNsbifWBycgW777bGRd6nB26+6Zd3rjv2iAdUVSS/uVWmp6fljjvukE2btomIuMLCblHVC178qnc869EdO89eaCcvSj2T3U4LkZYXUfHeGvEeb2LEJoSsQ8i6eQUwipDKCPHYSirLVxLVa4g6XHOOudtu5Ykt2/HzixR9LJjxsTyKFjkcNsJn0Nv6ONpuIh6wo+Ci3L1CCp2MMN9EO23Ea15C8X27hayHdtto1s07P4yiYUALYiySddnvKfsyuXK5iXymvV6rt1FEjt6yZYtVVS8iumHDhiUJxfT0tGzYssUUYN0gcMPFn/3qe7/5vetfvvWx9HVdO3Zw5jzeZV41iPPe+CxFXYJ3NbKsi5oYsVVcax43vx3faaHddm5VNoIoQhoVNO2AaxGyNpgon2RcyV0kJEgTaKZoFlBjoLWYBw+bgI+g1YVOO7/fzAC+sB4FdRnaa4Pr5D2WpPisCxRthSKoMXL40w8hTmoPRg/f/8CV+x6w38euvf7n5607/qgLp6enjeY6YImSKwALgExNTZlNmzbx1nNe8SjwUVX95Lqpv3xps+XfvdjuHdpcnMemXe/UG6ex5BvflrTbwbW259xT7IFLtTHQOT5DBMaPWo+pThS9kAntB2+h+8i/g42RTGCuh7Y6kPk8Z+ymRUoSkMwh7R70ujm3mQBZtx8vCA5cF5+18T5FCWTpHIhi4wpZlrF8r7VyxOGH8cQTjy9G73jH6+a+sukHly2fnPyH//2jn8899+SjLhORcMklt8SPPvqvfsOTb5XW8s5gVRU58UQrIj3gK6r69ee/4u0vf2Br+6/nffrULBMwxqFYjEpUG8FEMT5tEbJ8Uuoz8uqVBdfDTu5HY9/TEJ/lkxELzXm6D/4st6ZuD+YWcxdyDkSRrLSQAN0W2l5Es3bhQgXHFHI0+BSXtfCujQ89XMgImhLVx7FJlbTd4aQTns3y5cvYsX2mFQEyOzd/sVhzzuSy5Z/54bU/f+2ddz5yxkEH7bGjAMECKiJPvqc8tzJXWpWIdIHP62OPbVz3xv91zsPb5t/Z7GZ7d9tNQD0us4oSV0awjYSs10aiOuozXHcuZwkXCDseh6wJwSEmRltNsBXA5wnvwiImbfXrWJqluXmooFmP0GsSXAsJgWBz1U8ROUPo4V0T51t4TclcF42VSPI8cWzZuE696AxptVo7o0btN2bjxo3m3Desv3f7tpl/brU79LLsmHsffPDKn95y2/TNv7pzXxHxIhJUVTZu3GhVhwP2k6xKpqamrKxZ09py9Rc+/t43vfrIfdas+ECjVl20JrIiRo2RkFRHGJncm9FV+9NYcSAjqw7OpZIpcrXmPLRbaKcN3U5eeSn6fui10cWdhNY8ob2IduZzzirzOZ+iaRvNOnjXwbsW6tP+5yH0cKFN5hfJskUy/wRKk9hGpO0Wr3nZWeGgP9mfNE3vPPnYwx+NpqamwvS0mm50+fQjjz1+6prVKw82Iif3Uj1Zep233/iz33xCrP22iNxK8R0cmzdvjrZv365TU1NhV64qgYIp89rXnjUj8HevOue8L/3bb27/u/lW59XNTkXiSsNHVsSnPeO786gW2zqFkg3tOQjdXPabhNBbyFOF4AlZi9CdJ/g2AE6yQRQqAXBtvG8X5RFL0OLzorXFhwzvU3p+B2K7VOIaM7MznHLyOtafeYa2u12tJMmtIqImn+D5/M055yy2FtKX7dixc7bd6YatWx/pzexcWJZ53tftdH9xw03/vuXGm3/9gttuuy1Zt26dW79+vRcRnZ6eNps3b452sS6FTR5UlCl7xWcvvPt3t3z3Nccfdeipq5eP/zyyxhoRE1njozhRxGMbk9jGCiDg2ttxnVl8dxbX3UnIOrlOKfSUy1r4rIXLmrhskeC7/WQzhBTv27jQxvkCqNLFBELISLN52u5hVJpUkpjFxXkOPWg//urN59Dppiafh36r5HUANm7caNevX+8v+sQXT6s3Rr9dr9cqaAjGGq0miV2+bBlxbCGEOxG9PDHmBjOe3PunT3vazBJfUzVbtmwxANu3b1eATZtg06b1AF5V4+NPf/052+aaf9VJ2a+X9nBp17dbsyZ4L8E7IlMnSpZjo1GsrZB2t9Hc8RvA02jsx9jY0/A+dytjEpqL99Bs3g0o42OHUh9ZiyuAERPTWryL9uIDYCIqjTVIrUZsPbVKnYXFJgfuuzvv/9t30Gg0fFypWJ9lt+iek8dv+cIX0n4T5/r16/309HT0rre+9gcfv+RrL9w5l10SWbN3tRKb4DztTs8bKzIxNnbQxPjYR7ouQ7e3t2/5ya23WmO/L1Z+ZnzzVyLSoV9gHjw2qtpPnX9+JCIZ8JlrNl7z1Quu+Jd3PPz4trfs7LoVIgYj3iNI5uZNls5ibAMbjxJ6i9DP4jw+pPjQRTVgtPh6gJzE8EDmUrzvoAQk9HC+C1ECUY1gPPVIEEmYa7Z4zjFH8j/PeSW1ek19CFRNlKpx5z1n3327GzdufPJt4Rs3bkzWr1+ffu+HN75rx1zrIw8/8ogbqdeiJEkw1iBCsMaGSiWx9VpdRkcbVCsxaS9FNTxgjL09imSrqPlFQB+2lThr2Ozmww8/vFVcQt761o8nF1/8ttQa0Qv+/v17fP2Hv3zLttn51zW72W5pluHTrmpwPgRngs+E4POaSXCIqVKprEbUE0KKEJG5WZxbBIQoGiWyIzmABFQzfOhi4yo2qQARznlWTi7jFS85nRc97xSyzGnQEMbHx223033Jicc/4xulRz0JIFU1559/Pi+eesWhLvU/fXDrY/HvHnrEOOdNtZKQxDHW2OJrJtBqpRJG6lVNkthWqzWpVqpUKgnWCM7l1cnIRvc5n36+noRPHnHEEXO7XtMKXPpPl6+85F+veeVjO2Zf22y1D08zR57beUJwoB4JHi3uvchJ3RdaKd90QAVVl7uWWDBxXiSTCCXvT1q+bJx1zz6Gl5x+Gmv33ovFZkuNiJtcsSJuNhc/dsKzjnzn5s2bo3Xr1rklHLQrSCISrr/xF59fs2aPsx9+5GG/bftO8/iOWZlfaKIaqFRijAje53tXSZJQr1VDtVLRShxpksRSqcQSR5HU63WJ4xiXpr9FTEuM/JsYubZajW+vmmUPH3LI6ubw9fc//KSnOeQlO3bMPLvdaT8tqFlBCAlZavDZIOEtazfB52BBLgdskruUNRBHTIyP85S1e/PMIw/jhOOOZo891tDrZqRpLyRxIqt3Wy3zc/OXPOdZh//l5s2boxNPPNGX0fk/AkgA2XL77fV40f+tsfI3kbGm1elmzVbbLCw2jfNOUCVzjla7R5pmGJv3R1cqFZI4wlqLNRZjcpFZrdZMFOWfh+Dpdtpelce89/dnzreChqoReXR0dOTeFRNj2u2lIw9sffgpTzyxff+5xea+O2fnRmbnZgnODfqZi8p4kWMTMJgopl5vMLl8GWtWr2T33VaxYvlyKtUqaZaR9lJvjGF0bMyi2hXD+x998NALp6ZKOhtIl98L0K6Pn/z0l6+MKsk/JXFlRfCONM3opT0/6JxHQ14+lKBBgs+v02+dCVru8PS3UFUQIxJFUUyS5AUtDXkt2EY238DUvFtMvccY02+1K1toyk3Homg56GtSHfQ75w1V6r3XEDQYa8zY6KiJ4wTv3U3iwrnHHXfYraVh7KLr/jBAqipbtmyx69atc5s337RPbXT0NVnmjg4hHFGr1XdXhOA91lqQvA3Fl18j4Yt7Ooqac39HorjXo39vvYLzTkVEDXlZOAy+VMgEVVN+AVdxb2sZIbXcrC0bt4rVL3ucyiYk4igylUqVer2ef3OM99eZSC7rLc5clc9tc7Ru3bpi/33p44+yoJKTyvc333z3WBbaU9bakzOXVcSY7epDXURWKLpKlVFgHMWraFFXlDb5V8LUAEv+DVBVzdX5MgGTpzSYKIpMvivrUHCoiiJqrYniOMnDu7F5e86Sgv9gWqp556uxhk6nm1ljHois/ZGNzL8cc9Qh1/5Hc/svAQR5J/6JJ55oTjzxxPCHTghw//33V7dt6zRqNReazfx76up113POqbWTSSduGT8bNI61IdJ1WZbsppG1IoiGUI2sLHdO1UZmQbOwEKwxII6gKwW/WpGqoGtD/sVwdSNmOSJdDeqADqJdg3lIVSeMtVh08+67T9yx9957dwpQhLxlKYA8yWqGH/8fB3fFQArJ5E8AAAAASUVORK5CYII=" alt="Marín Finanzas" width="36" height="36" style="border-radius:9px;flex:0 0 auto">
       <h1>Minimarket Marín <span>· panel financiero</span></h1>
@@ -247,7 +253,14 @@
     <div class="sello" id="sello">cargando…</div>
   </header>
 
+  <div class="layout-desktop">
   <nav class="tabs">
+    <div class="tabs-header">
+      <span class="tabs-header-txt">Menú</span>
+      <button id="btnSidebarToggle" class="btn-sidebar-toggle" aria-label="Mostrar/ocultar menú lateral" title="Mostrar/ocultar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
+    </div>
     <ul class="menu-nivel1">
       <li class="menu-grupo">
         <div class="menu-grupo-btn" role="button" tabindex="0" aria-expanded="false">
@@ -257,11 +270,36 @@
         </div>
         <ul class="submenu">
           <li><button class="on" data-tab="resumen"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span><span class="tab-txt">Resumen</span></button></li>
-          <li><button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button></li>
-          <li><button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button></li>
+          <li><button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button>
+            <ul class="submenu-n2">
+              <li><a href="#graf-rent-mes" class="submenu-link" data-tab-padre="rentabilidad">Rentabilidad por mes</a></li>
+              <li><a href="#graf-flujo-diario" class="submenu-link" data-tab-padre="rentabilidad">Flujo diario</a></li>
+              <li><a href="#graf-margen-global" class="submenu-link" data-tab-padre="rentabilidad">Margen global (Amorín)</a></li>
+            </ul>
+          </li>
+          <li><button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button>
+            <ul class="submenu-n2">
+              <li><a href="#graf-compras-cat" class="submenu-link" data-tab-padre="costos">Compras por categoría</a></li>
+              <li><a href="#graf-gasto-cat" class="submenu-link" data-tab-padre="costos">Gasto operacional</a></li>
+              <li><a href="#graf-estructura-costos" class="submenu-link" data-tab-padre="costos">Estructura vs. benchmark</a></li>
+            </ul>
+          </li>
           <li><button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button></li>
-          <li><button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button></li>
-          <li><button data-tab="mermas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span><span class="tab-txt">Mermas</span></button></li>
+          <li><button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button>
+            <ul class="submenu-n2">
+              <li><a href="#graf-mix-sku" class="submenu-link" data-tab-padre="surtido">Mix SKU/m²</a></li>
+              <li><a href="#graf-rotacion-prov" class="submenu-link" data-tab-padre="surtido">Rotación por proveedor</a></li>
+              <li><a href="#graf-venta-sector" class="submenu-link" data-tab-padre="surtido">Venta por sector</a></li>
+              <li><a href="#graf-sin-rotacion" class="submenu-link" data-tab-padre="surtido">Categorías sin rotación</a></li>
+            </ul>
+          </li>
+          <li><button data-tab="mermas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span><span class="tab-txt">Mermas</span></button>
+            <ul class="submenu-n2">
+              <li><a href="#graf-mermas" class="submenu-link" data-tab-padre="mermas">Mermas y consumo interno</a></li>
+              <li><a href="#graf-quiebre" class="submenu-link" data-tab-padre="mermas">Quiebre de stock</a></li>
+              <li><a href="#graf-vencimientos" class="submenu-link" data-tab-padre="mermas">Vencimientos próximos</a></li>
+            </ul>
+          </li>
         </ul>
       </li>
       <li class="menu-grupo">
@@ -297,12 +335,12 @@
 
     <div id="tab-rentabilidad" class="hidden">
       <div class="grid">
-        <div class="card full" style="position:relative;overflow:hidden">
+        <div class="card full" id="graf-rent-mes" style="position:relative;overflow:hidden">
           <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
           <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
           <div class="graf-mini" style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
         </div>
-        <div class="card full" style="position:relative;overflow:hidden">
+        <div class="card full" id="graf-flujo-diario" style="position:relative;overflow:hidden">
           <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
           <h2>Flujo diario: ingresos vs. egresos operativos</h2><div class="cap" id="capDia"></div>
           <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
@@ -317,38 +355,38 @@
           </div>
           <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
         </div>
-        <div class="card full"><h2>Margen global promedio (Amorín)</h2><div class="cap">Participación × margen por sector — usa la utilidad real de cada venta (venta − costo del producto en ese momento), no una aproximación por compras del mes.</div><div id="margenGlobalCard"></div></div>
+        <div class="card full" id="graf-margen-global"><h2>Margen global promedio (Amorín)</h2><div class="cap">Participación × margen por sector — usa la utilidad real de cada venta (venta − costo del producto en ese momento), no una aproximación por compras del mes.</div><div id="margenGlobalCard"></div></div>
       </div>
     </div>
 
     <div id="tab-costos" class="hidden">
       <div class="grid">
-        <div class="card"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card full"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
+        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       </div>
     </div>
 
     <div id="tab-surtido" class="hidden">
       <div class="grid">
-        <div class="card"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
-        <div class="card full"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
-        <div class="card full"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
-        <div class="card full"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
+        <div class="card" id="graf-mix-sku"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
+        <div class="card full" id="graf-rotacion-prov"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+        <div class="card full" id="graf-venta-sector"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
+        <div class="card full" id="graf-sin-rotacion"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
       </div>
     </div>
 
     <div id="tab-mermas" class="hidden">
       <div class="grid">
-        <div class="card full"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
-        <div class="card full"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
-        <div class="card full"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
+        <div class="card full" id="graf-mermas"><h2>Mermas y consumo interno</h2><div class="cap">Desde Pedidos Marín 376 — vencidos/dañados/robo/liquidado = pérdida real. Consumo interno y cambio con proveedor van aparte, no cuentan como pérdida.</div><div id="mermasCard"></div></div>
+        <div class="card full" id="graf-quiebre"><h2>Quiebre de stock valorizado</h2><div class="cap">SKU en 0 con historial de venta — impacto estimado si el quiebre sigue así de acá en adelante.</div><div id="quiebreCard"></div></div>
+        <div class="card full" id="graf-vencimientos"><h2>Vencimientos próximos — valor en riesgo</h2><div class="cap">Preventivo: lo que aún no vence. Aparte, lo vencido que todavía no se registró como merma.</div><div id="vencimientosCard"></div></div>
       </div>
     </div>
 
@@ -457,6 +495,7 @@
         </table>
       </div>
     </div>
+  </div>
   </div>
 
   <div class="pie" id="pie"></div>
@@ -580,6 +619,17 @@ document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
 document.querySelectorAll('.tabs button.on').forEach(b=>{
   const grupo=b.closest('.menu-grupo');
   if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+});
+// Tercer nivel: enlaces directos a cada gráfico — usan el mismo botón de pestaña ya
+// existente para cambiar de vista (no duplican esa lógica), y después hacen scroll.
+document.querySelectorAll('.submenu-link').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    const btnPadre=document.querySelector(`.tabs button[data-tab="${a.dataset.tabPadre}"]`);
+    if(btnPadre && !btnPadre.classList.contains('on')) btnPadre.click();
+    const destino=document.querySelector(a.getAttribute('href'));
+    requestAnimationFrame(()=>{ if(destino) destino.scrollIntoView({behavior:'smooth', block:'start'}); });
+  });
 });
 
 function render(){
