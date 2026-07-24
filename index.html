@@ -38,24 +38,20 @@
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
   .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
-  .tabs{display:flex; gap:2px; position:fixed; left:0; right:0; bottom:0; z-index:40; background:#fff; border-top:1px solid var(--linea); padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px)); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; box-shadow:0 -6px 18px rgba(15,27,48,.08)}
-  .tabs::-webkit-scrollbar{display:none}
-  .tabs button{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 12px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:12px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
+  .tabs{position:fixed; left:0; right:0; bottom:0; z-index:40; background:#fff; border-top:1px solid var(--linea); padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px)); box-shadow:0 -6px 18px rgba(15,27,48,.08)}
+  .menu-nivel1{display:flex; gap:2px; list-style:none; margin:0; padding:0; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .menu-nivel1::-webkit-scrollbar{display:none}
+  .menu-grupo{position:relative; flex:0 0 auto; margin-bottom:0}
+  .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 12px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:12px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
-  .menu-nivel1{list-style:none; margin:0; padding:0}
-  .menu-grupo{margin-bottom:2px}
-  .menu-grupo-btn{display:flex; align-items:center; gap:11px; width:100%; padding:13px 14px; font-family:'Inter',sans-serif; font-size:1.02rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:10px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s}
   .menu-grupo-btn:hover,.menu-grupo-btn:focus-visible{background:var(--acento-suave); color:var(--acento); outline:none}
   .menu-grupo.abierto>.menu-grupo-btn{color:var(--tinta)}
-  .menu-chevron{margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
-  .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
-  .submenu{list-style:none; margin:0; padding:0; max-height:0; opacity:0; overflow:hidden; transition:max-height .3s ease, opacity .25s ease}
-  .menu-grupo.abierto .submenu{max-height:420px; opacity:1}
-  .submenu button{padding-left:34px}
-  @media (hover:hover) and (pointer:fine){
-    .menu-grupo:hover .submenu{max-height:420px; opacity:1}
-    .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}
-  }
+  .menu-chevron{display:none}
+  /* En móvil el submenú es un flyout que se abre HACIA ARRIBA sobre la barra inferior */
+  .submenu{list-style:none; margin:0; padding:6px; position:absolute; left:50%; bottom:100%; margin-bottom:8px; transform:translateX(-50%) translateY(6px); width:max-content; min-width:170px; max-height:none; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra); opacity:0; overflow:visible; pointer-events:none; transition:opacity .2s ease, transform .2s ease}
+  .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0)}
+  .submenu li{list-style:none}
+  .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px; font-size:.85rem; border-radius:8px}
   .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
   .tab-ico svg{width:19px; height:19px}
   .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:var(--sombra); flex:0 0 auto; align-self:center; transition:background .15s}
@@ -177,24 +173,48 @@
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
     .wrap{--sidebar-w:230px; --sidebar-x:max(32px, calc((100vw - 1500px)/2 + 32px)); max-width:1500px; padding:0 32px 60px; display:block}
-    .wrap.sidebar-oculto{--sidebar-w:0px}
+    .wrap.sidebar-oculto{--sidebar-w:64px}
     header.top{padding-left:calc(var(--sidebar-w) + 28px); transition:padding-left .28s ease}
     header.top h1{font-size:1.9rem}
     .tabs{
-      position:fixed; top:24px; bottom:24px; left:var(--sidebar-x); width:230px; z-index:30;
+      position:fixed; top:24px; bottom:24px; left:var(--sidebar-x); width:var(--sidebar-w); z-index:30;
       display:flex; flex-direction:column; align-items:stretch;
       overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px;
       background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);
-      transition:opacity .2s ease, transform .28s ease; opacity:1; transform:translateX(0)
+      transition:width .28s ease; opacity:1
     }
-    .wrap.sidebar-oculto .tabs{opacity:0; pointer-events:none; transform:translateX(-16px)}
-    .tabs button{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:nowrap}
+    .menu-nivel1{display:block; overflow:visible}
+    .menu-grupo{margin-bottom:2px}
+    .tabs button, .menu-grupo-btn{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:nowrap; border-radius:10px}
+    .menu-chevron{display:block; margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
+    .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
     .tab-ico{font-size:1.15rem}
+    /* Submenú expandido normal: empuja contenido hacia abajo dentro del propio sidebar */
+    .submenu{position:static; transform:none; margin-bottom:0; width:auto; min-width:0; box-shadow:none; border:none; padding:0; max-height:0; overflow:hidden; opacity:0; transition:max-height .3s ease, opacity .25s ease}
+    .menu-grupo.abierto .submenu{max-height:420px; opacity:1}
+    .submenu button{padding-left:34px}
+    @media (hover:hover) and (pointer:fine){
+      .wrap:not(.sidebar-oculto) .menu-grupo:hover .submenu{max-height:420px; opacity:1}
+      .wrap:not(.sidebar-oculto) .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}
+    }
     .main-content{min-width:0; padding-bottom:0; margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
-    .wrap.sidebar-oculto .main-content{margin-left:0}
     .pie{margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
-    .wrap.sidebar-oculto .pie{margin-left:0}
     .btn-sidebar-toggle{display:inline-flex}
+    /* --- Contraído: solo íconos, texto oculto, submenú como flyout lateral --- */
+    .wrap.sidebar-oculto .tabs{padding:10px 8px; align-items:center}
+    .wrap.sidebar-oculto .tab-txt{display:none}
+    .wrap.sidebar-oculto .menu-chevron{display:none}
+    .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; width:44px; height:44px; padding:0}
+    .wrap.sidebar-oculto .menu-grupo{position:relative}
+    .wrap.sidebar-oculto .submenu{
+      position:absolute; left:100%; top:0; margin-left:10px; width:200px; min-width:200px;
+      max-height:none; overflow:visible; padding:6px; background:#fff; border:1px solid var(--linea);
+      border-radius:var(--radius); box-shadow:var(--sombra); opacity:0; pointer-events:none;
+      transform:translateX(-8px); transition:opacity .2s ease, transform .2s ease
+    }
+    .wrap.sidebar-oculto .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(0)}
+    .wrap.sidebar-oculto .submenu .tab-txt{display:inline}
+    .wrap.sidebar-oculto .submenu button{flex-direction:row; justify-content:flex-start; padding:10px 12px; width:100%; height:auto}
     .card h2{font-size:1.15rem}
     .card .cap{font-size:.9rem}
     .selector button{font-size:1rem; padding:10px 20px}
