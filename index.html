@@ -42,6 +42,20 @@
   .tabs::-webkit-scrollbar{display:none}
   .tabs button{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 12px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:12px; transition:color .15s, background .15s; flex:0 0 auto; white-space:nowrap}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
+  .menu-nivel1{list-style:none; margin:0; padding:0}
+  .menu-grupo{margin-bottom:2px}
+  .menu-grupo-btn{display:flex; align-items:center; gap:11px; width:100%; padding:13px 14px; font-family:'Inter',sans-serif; font-size:1.02rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:10px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s}
+  .menu-grupo-btn:hover,.menu-grupo-btn:focus-visible{background:var(--acento-suave); color:var(--acento); outline:none}
+  .menu-grupo.abierto>.menu-grupo-btn{color:var(--tinta)}
+  .menu-chevron{margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
+  .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
+  .submenu{list-style:none; margin:0; padding:0; max-height:0; opacity:0; overflow:hidden; transition:max-height .3s ease, opacity .25s ease}
+  .menu-grupo.abierto .submenu{max-height:420px; opacity:1}
+  .submenu button{padding-left:34px}
+  @media (hover:hover) and (pointer:fine){
+    .menu-grupo:hover .submenu{max-height:420px; opacity:1}
+    .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}
+  }
   .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
   .tab-ico svg{width:19px; height:19px}
   .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:var(--sombra); flex:0 0 auto; align-self:center; transition:background .15s}
@@ -214,16 +228,36 @@
   </header>
 
   <nav class="tabs">
-    <button class="on" data-tab="resumen"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span><span class="tab-txt">Resumen</span></button>
-    <button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button>
-    <button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button>
-    <button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button>
-    <button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button>
-    <button data-tab="mermas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span><span class="tab-txt">Mermas</span></button>
-    <button data-tab="registros"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l3 3v15H5V6z"/><path d="M9 11h6M9 15h6M9 7h3"/></svg></span><span class="tab-txt">Registros</span></button>
-    <button data-tab="revisar"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><span class="tab-txt">Por revisar</span> <span id="badgeRev" class="badge" style="display:none"></span></button>
-    <button data-tab="cierre"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.4"/><rect x="3" y="14" width="18" height="6" rx="1.4"/><path d="M7 7h.01M7 17h.01"/></svg></span><span class="tab-txt">Cierre de caja</span></button>
-    <button data-tab="cartolas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></span><span class="tab-txt">Cartolas</span></button>
+    <ul class="menu-nivel1">
+      <li class="menu-grupo">
+        <div class="menu-grupo-btn" role="button" tabindex="0" aria-expanded="false">
+          <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M10 19V9M16 19v-6M22 19H2"/></svg></span>
+          <span class="tab-txt">Análisis</span>
+          <svg class="menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+        <ul class="submenu">
+          <li><button class="on" data-tab="resumen"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span><span class="tab-txt">Resumen</span></button></li>
+          <li><button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button></li>
+          <li><button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button></li>
+          <li><button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button></li>
+          <li><button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button></li>
+          <li><button data-tab="mermas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span><span class="tab-txt">Mermas</span></button></li>
+        </ul>
+      </li>
+      <li class="menu-grupo">
+        <div class="menu-grupo-btn" role="button" tabindex="0" aria-expanded="false">
+          <span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg></span>
+          <span class="tab-txt">Operación</span>
+          <svg class="menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+        <ul class="submenu">
+          <li><button data-tab="registros"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l3 3v15H5V6z"/><path d="M9 11h6M9 15h6M9 7h3"/></svg></span><span class="tab-txt">Registros</span></button></li>
+          <li><button data-tab="revisar"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><span class="tab-txt">Por revisar</span> <span id="badgeRev" class="badge" style="display:none"></span></button></li>
+          <li><button data-tab="cierre"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.4"/><rect x="3" y="14" width="18" height="6" rx="1.4"/><path d="M7 7h.01M7 17h.01"/></svg></span><span class="tab-txt">Cierre de caja</span></button></li>
+          <li><button data-tab="cartolas"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></span><span class="tab-txt">Cartolas</span></button></li>
+        </ul>
+      </li>
+    </ul>
   </nav>
 
   <div class="main-content">
@@ -501,6 +535,32 @@ document.getElementById('btnSidebarToggle').addEventListener('click',()=>{
 try{
   if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
 }catch(e){}
+
+// ---- Submenús del menú lateral (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
+document.querySelectorAll('.menu-grupo-btn').forEach(btn=>{
+  const grupo = btn.closest('.menu-grupo');
+  const alternar = () => {
+    const abierto = grupo.classList.toggle('abierto');
+    btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  };
+  btn.addEventListener('click', alternar);
+  btn.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); alternar(); }
+  });
+});
+// Cada botón de pestaña, además de su propio onclick ya existente, abre su grupo contenedor
+// (esto se suma al manejador original con addEventListener, no lo reemplaza).
+document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const grupo=b.closest('.menu-grupo');
+    if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+  });
+});
+// Al cargar, abre el grupo que ya contiene la pestaña activa (la que tenga class="on")
+document.querySelectorAll('.tabs button.on').forEach(b=>{
+  const grupo=b.closest('.menu-grupo');
+  if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+});
 
 function render(){
   const m=mesData(mesActual);
