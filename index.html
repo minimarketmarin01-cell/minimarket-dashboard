@@ -162,16 +162,24 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
-    .wrap{--sidebar-w:230px; max-width:1500px; padding:0 32px 60px; display:grid; grid-template-columns:var(--sidebar-w) minmax(0,1fr); column-gap:28px; align-items:start; grid-template-areas:"header header" "nav main" "pie pie"; transition:grid-template-columns .28s ease, column-gap .28s ease}
-    .wrap.sidebar-oculto{--sidebar-w:0px; column-gap:0px}
-    header.top{grid-area:header}
+    .wrap{--sidebar-w:230px; --sidebar-x:max(32px, calc((100vw - 1500px)/2 + 32px)); max-width:1500px; padding:0 32px 60px; display:block}
+    .wrap.sidebar-oculto{--sidebar-w:0px}
+    header.top{padding-left:calc(var(--sidebar-w) + 28px); transition:padding-left .28s ease}
     header.top h1{font-size:1.9rem}
-    .tabs{grid-area:nav; position:sticky; top:24px; left:auto; right:auto; bottom:auto; flex-direction:column; align-items:stretch; height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra); transition:opacity .2s ease, padding .2s ease; opacity:1}
-    .wrap.sidebar-oculto .tabs{opacity:0; pointer-events:none; padding:0; border-width:0; box-shadow:none}
+    .tabs{
+      position:fixed; top:24px; bottom:24px; left:var(--sidebar-x); width:230px; z-index:30;
+      display:flex; flex-direction:column; align-items:stretch;
+      overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px;
+      background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);
+      transition:opacity .2s ease, transform .28s ease; opacity:1; transform:translateX(0)
+    }
+    .wrap.sidebar-oculto .tabs{opacity:0; pointer-events:none; transform:translateX(-16px)}
     .tabs button{flex-direction:row; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:nowrap}
     .tab-ico{font-size:1.15rem}
-    .main-content{grid-area:main; min-width:0; padding-bottom:0}
-    .pie{grid-area:pie}
+    .main-content{min-width:0; padding-bottom:0; margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
+    .wrap.sidebar-oculto .main-content{margin-left:0}
+    .pie{margin-left:calc(var(--sidebar-w) + 28px); transition:margin-left .28s ease}
+    .wrap.sidebar-oculto .pie{margin-left:0}
     .btn-sidebar-toggle{display:inline-flex}
     .card h2{font-size:1.15rem}
     .card .cap{font-size:.9rem}
@@ -183,7 +191,7 @@
     .graf-control{height:190px!important}
   }
   @media screen and (min-width:1300px){
-    .wrap{max-width:1700px}
+    .wrap{max-width:1700px; --sidebar-x:max(32px, calc((100vw - 1700px)/2 + 32px))}
     .graf-mini{height:220px!important}
     .graf-dia{height:380px!important}
     .graf-dona{height:440px!important}
