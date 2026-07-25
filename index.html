@@ -180,6 +180,278 @@
      tipografía, espaciado y gráficos — no solo reacomodar columnas.
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
+  /* ===== TABLET HORIZONTAL (768px - 899px) ===== */
+@media screen and (min-width: 768px) and (max-width: 899px) and (orientation: landscape) {
+  .wrap {
+    --sidebar-w: 220px;
+    padding: 0 16px 60px;
+  }
+  .wrap.sidebar-oculto {
+    --sidebar-w: 64px;
+  }
+
+  .layout-desktop {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .tabs {
+    position: sticky;
+    top: 20px;
+    flex: 0 0 var(--sidebar-w);
+    width: var(--sidebar-w);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border-top: none;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: var(--radius);
+    box-shadow: var(--sombra);
+    transition: width .28s ease, flex-basis .28s ease;
+  }
+
+  .menu-nivel1 {
+    display: block;
+    overflow: visible;
+  }
+
+  .menu-grupo {
+    margin-bottom: 2px;
+  }
+
+  .tabs button,
+  .menu-grupo-btn {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    font-size: .9rem;
+    padding: 10px 12px;
+    white-space: normal;
+    border-radius: 10px;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .tabs button .tab-txt,
+  .menu-grupo-btn .tab-txt {
+    white-space: normal;
+    overflow-wrap: break-word;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .menu-chevron {
+    display: block;
+    margin-left: auto;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    transition: transform .25s ease;
+  }
+
+  .menu-grupo.abierto .menu-chevron {
+    transform: rotate(90deg);
+  }
+
+  .submenu {
+    position: static;
+    transform: none;
+    margin-bottom: 0;
+    width: auto;
+    min-width: 0;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height .3s ease, opacity .25s ease;
+  }
+
+  .menu-grupo.abierto .submenu {
+    max-height: 500px;
+    opacity: 1;
+    transform: none;
+  }
+
+  .submenu button {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 8px 12px 8px 30px;
+    font-size: .8rem;
+    border-radius: 8px;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .submenu-n2 a.submenu-link {
+    padding-left: 44px;
+  }
+
+  .wrap.sidebar-oculto .submenu-n2 {
+    display: block;
+    margin-left: 0;
+  }
+  .wrap.sidebar-oculto .submenu-n2 a.submenu-link {
+    padding-left: 30px;
+    font-size: .78rem;
+  }
+
+  .main-content {
+    flex: 1 1 0%;
+    min-width: 0;
+    padding-bottom: 0;
+  }
+
+  .btn-sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .wrap.sidebar-oculto .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .wrap.sidebar-oculto .hero {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tabs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 10px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--linea);
+  }
+  .tabs-header-txt {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--gris);
+  }
+  .wrap.sidebar-oculto .tabs-header {
+    justify-content: center;
+  }
+  .wrap.sidebar-oculto .tabs-header-txt {
+    display: none;
+  }
+
+  /* Contraído: solo iconos */
+  .wrap.sidebar-oculto .tabs {
+    padding: 8px 6px;
+    align-items: center;
+  }
+  .wrap.sidebar-oculto .tab-txt {
+    display: none;
+  }
+  .wrap.sidebar-oculto .menu-chevron {
+    display: none;
+  }
+  .wrap.sidebar-oculto .tabs button,
+  .wrap.sidebar-oculto .menu-grupo-btn {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+  .wrap.sidebar-oculto .menu-grupo {
+    position: relative;
+  }
+  .wrap.sidebar-oculto .submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 8px;
+    width: 200px;
+    min-width: 200px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: var(--radius);
+    box-shadow: var(--sombra);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  .wrap.sidebar-oculto .menu-grupo.abierto .submenu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+  .wrap.sidebar-oculto .submenu .tab-txt {
+    display: inline;
+  }
+  .wrap.sidebar-oculto .submenu button {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 8px 10px;
+    width: 100%;
+    height: auto;
+    white-space: normal;
+    box-sizing: border-box;
+  }
+
+  /* Ajustes de tarjetas y gráficos para tablet */
+  .card h2 {
+    font-size: 1.05rem;
+  }
+  .card .cap {
+    font-size: .85rem;
+  }
+  .selector button {
+    font-size: .9rem;
+    padding: 8px 16px;
+  }
+  table {
+    font-size: .9rem;
+  }
+
+  .hero {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mini {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .card {
+    padding: 14px;
+  }
+  .kpi {
+    padding: 12px 14px;
+  }
+  .kpi .val {
+    font-size: 1.3rem;
+  }
+
+  .graf-mini {
+    height: 90px !important;
+  }
+  .graf-dia {
+    height: 160px !important;
+  }
+  .graf-dona {
+    height: 220px !important;
+  }
+  .graf-control {
+    height: 110px !important;
+  }
+}
   @media screen and (min-width:900px){
     .tab-txt{display:inline}
     .wrap{--sidebar-w:250px; max-width:1500px; padding:0 32px 60px}
