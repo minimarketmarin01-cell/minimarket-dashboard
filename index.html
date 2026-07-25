@@ -42,7 +42,7 @@
   .menu-nivel1{display:flex; gap:2px; list-style:none; margin:0; padding:0; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
   .menu-nivel1::-webkit-scrollbar{display:none}
   .menu-grupo{position:relative; flex:0 0 auto; margin-bottom:0}
-  .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 13px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:14px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s, transform .1s; flex:0 0 auto; white-space:nowrap}
+  .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 13px; min-height:48px; min-width:48px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:14px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s, transform .1s; flex:0 0 auto; white-space:nowrap; touch-action:manipulation}
   .tabs button:active, .menu-grupo-btn:active, .btn:active{transform:scale(.97)}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
   .menu-grupo-btn:hover,.menu-grupo-btn:focus-visible{background:var(--acento-suave); color:var(--acento); outline:none}
@@ -63,7 +63,7 @@
   .btn-sidebar-toggle:hover{background:var(--acento-suave)}
   .btn-sidebar-toggle svg{width:19px; height:19px}
   .tab-txt{white-space:nowrap; min-width:0}
-  .main-content{padding-bottom:76px}
+  .main-content{padding-bottom:86px}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
@@ -602,38 +602,67 @@ try{
   if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
 }catch(e){}
 
-// ---- Submenús del menú lateral (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
+// ---- Submenús del menú lateral/inferior (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
+function esEscritorioExpandido(){
+  return window.innerWidth>=900 && !document.querySelector('.wrap').classList.contains('sidebar-oculto');
+}
+function cerrarTodosLosGrupos(exceptoEste){
+  document.querySelectorAll('.menu-grupo.abierto').forEach(g=>{
+    if(g===exceptoEste) return;
+    g.classList.remove('abierto');
+    const gb=g.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','false');
+  });
+}
 document.querySelectorAll('.menu-grupo-btn').forEach(btn=>{
   const grupo = btn.closest('.menu-grupo');
   const alternar = () => {
-    const abierto = grupo.classList.toggle('abierto');
-    btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    const yaAbierto = grupo.classList.contains('abierto');
+    cerrarTodosLosGrupos(grupo); // solo uno abierto a la vez — evita paneles superpuestos
+    grupo.classList.toggle('abierto', !yaAbierto);
+    btn.setAttribute('aria-expanded', !yaAbierto ? 'true' : 'false');
   };
-  btn.addEventListener('click', alternar);
+  btn.addEventListener('click', e=>{ e.stopPropagation(); alternar(); });
   btn.addEventListener('keydown', e=>{
-    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); alternar(); }
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); alternar(); }
+    if(e.key==='Escape'){ cerrarTodosLosGrupos(); }
   });
 });
 // Cada botón de pestaña, además de su propio onclick ya existente, abre su grupo contenedor
-// (esto se suma al manejador original con addEventListener, no lo reemplaza).
+// en escritorio (acordeón inline) y CIERRA el popover en móvil/tablet colapsado tras elegir.
 document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
   b.addEventListener('click', ()=>{
     const grupo=b.closest('.menu-grupo');
-    if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+    if(!grupo) return;
+    if(esEscritorioExpandido()){
+      grupo.classList.add('abierto');
+      const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true');
+    } else {
+      cerrarTodosLosGrupos(); // popover: se cierra apenas se elige una opción
+    }
   });
 });
-// Al cargar, abre el grupo que ya contiene la pestaña activa (la que tenga class="on")
-document.querySelectorAll('.tabs button.on').forEach(b=>{
-  const grupo=b.closest('.menu-grupo');
-  if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+// Cerrar el popover al tocar/hacer clic fuera de cualquier grupo
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.menu-grupo')) cerrarTodosLosGrupos();
 });
+// Al cargar, abre el grupo de la pestaña activa SOLO en escritorio con sidebar expandido
+// (ahí el submenú es un acordeón inline, no un popover flotante — en móvil/tablet colapsado
+// abrirlo por defecto tapaba los demás botones de la barra, que es el bug reportado).
+if(esEscritorioExpandido()){
+  document.querySelectorAll('.tabs button.on').forEach(b=>{
+    const grupo=b.closest('.menu-grupo');
+    if(grupo){ grupo.classList.add('abierto'); const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true'); }
+  });
+}
 // Tercer nivel: enlaces directos a cada gráfico — usan el mismo botón de pestaña ya
 // existente para cambiar de vista (no duplican esa lógica), y después hacen scroll.
 document.querySelectorAll('.submenu-link').forEach(a=>{
   a.addEventListener('click', e=>{
     e.preventDefault();
+    e.stopPropagation();
     const btnPadre=document.querySelector(`.tabs button[data-tab="${a.dataset.tabPadre}"]`);
     if(btnPadre && !btnPadre.classList.contains('on')) btnPadre.click();
+    cerrarTodosLosGrupos();
     const destino=document.querySelector(a.getAttribute('href'));
     requestAnimationFrame(()=>{ if(destino) destino.scrollIntoView({behavior:'smooth', block:'start'}); });
   });
