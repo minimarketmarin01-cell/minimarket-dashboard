@@ -30,7 +30,7 @@
     --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{overflow-x:hidden; max-width:100%}
+  html,body{max-width:100%}
   body{font-family:'Inter',system-ui,sans-serif; background:var(--papel); color:var(--tinta); -webkit-font-smoothing:antialiased; line-height:1.45; font-variant-numeric:tabular-nums}
   .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px}
   .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
@@ -62,8 +62,8 @@
   .tabs-header{display:none}
   .btn-sidebar-toggle:hover{background:var(--acento-suave)}
   .btn-sidebar-toggle svg{width:19px; height:19px}
-  .tab-txt{white-space:nowrap; min-width:0}
-  .main-content{padding-bottom:86px}
+  .tab-txt{white-space:nowrap; min-width:0; display:none}
+  .main-content{overflow-x:hidden; padding-bottom:86px}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
@@ -180,6 +180,7 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
   @media screen and (min-width:900px){
+    .tab-txt{display:inline}
     .wrap{--sidebar-w:230px; max-width:1500px; padding:0 32px 60px}
     .wrap.sidebar-oculto{--sidebar-w:64px}
     header.top h1{font-size:1.9rem}
