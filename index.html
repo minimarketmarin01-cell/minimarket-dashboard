@@ -174,9 +174,9 @@
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
 /* ===== TABLET HORIZONTAL (600px - 899px) ===== */
-@media screen and (min-width: 480px) and (max-width: 899px) and (orientation: landscape) {
+@media screen and (min-width: 600px) and (max-width: 1199px) {
   .wrap {
-    --sidebar-w: 160px;
+    --sidebar-w: 180px;
     padding: 0 12px 60px;
   }
   .wrap.sidebar-oculto {
@@ -882,7 +882,10 @@ document.getElementById('btnSidebarToggle').addEventListener('click',()=>{
   try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(e){}
 });
 try{
-  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
+  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');// Forzar que el menú esté expandido en pantallas ≥600px
+if (window.innerWidth >= 600) {
+  document.querySelector('.wrap').classList.remove('sidebar-oculto');
+}
 }catch(e){}
 
 // ---- Submenús del menú lateral/inferior (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
