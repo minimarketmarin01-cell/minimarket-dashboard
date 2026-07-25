@@ -28,6 +28,13 @@
     --gris:#727a8c; --acento:#2f6df0; --acento2:#3f7f8c;
     --radius:18px;
     --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
+  --sidebar-w: 250px;            /* ancho del menú expandido en desktop */
+  --sidebar-w-tablet: 220px;     /* ancho del menú en tablet */
+  --graf-mini-h: 112px;
+  --graf-dia-h: 220px;
+  --graf-dona-h: 300px;
+  --graf-control-h: 140px;
+  --card-padding: clamp(12px,2.2vw,24px);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{max-width:100%}
@@ -180,7 +187,7 @@
      tipografía, espaciado y gráficos — no solo reacomodar columnas.
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
-  @media screen and (min-width:900px){
+  @media screen and (min-width: 768px) and (orientation: landscape), screen and (min-width: 900px) {   .tab-txt{display:inline}   .wrap{--sidebar-w: var(--sidebar-w-tablet); max-width:1500px; padding:0 32px 60px}   .wrap.sidebar-oculto{--sidebar-w:64px}   header.top h1{font-size:1.9rem}   .layout-desktop{display:flex; align-items:flex-start; gap:28px}   .tabs{     position:sticky; top:24px; flex:0 0 var(--sidebar-w); width:var(--sidebar-w); z-index:30;     display:flex; flex-direction:column; align-items:stretch;     border-top:none; padding:10px;     background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);     transition:width .28s ease, flex-basis .28s ease; opacity:1   }   .menu-nivel1{display:block; overflow:visible}   .menu-grupo{margin-bottom:2px}   .tabs button, .menu-grupo-btn{flex-direction:row; align-items:flex-start; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:normal; border-radius:10px; text-align:left; box-sizing:border-box}   .tabs button .tab-txt, .menu-grupo-btn .tab-txt{white-space:normal; overflow-wrap:break-word; flex:1 1 auto; min-width:0}   .tabs button .tab-ico, .menu-grupo-btn .tab-ico{flex:0 0 auto; margin-top:1px}   .menu-chevron{display:block; margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}   .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}   .tab-ico{font-size:1.15rem}   .submenu{position:static; transform:none; margin-bottom:0; width:auto; min-width:0; box-shadow:none; border:none; padding:0; max-height:0; overflow:hidden; opacity:0; transition:max-height .3s ease, opacity .25s ease}   .menu-grupo.abierto .submenu{max-height:600px; opacity:1; transform:none; left:auto; bottom:auto; margin-bottom:0}   .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px 10px 34px; font-size:.85rem; border-radius:8px; min-height:0; min-width:0}   .submenu-n2 a.submenu-link{padding-left:50px}   .wrap.sidebar-oculto .submenu-n2{display:block; margin-left:0}   .wrap.sidebar-oculto .submenu-n2 a.submenu-link{padding-left:36px; font-size:.82rem}   @media (hover:hover) and (pointer:fine){     .wrap:not(.sidebar-oculto) .menu-grupo:hover .submenu{max-height:600px; opacity:1}     .wrap:not(.sidebar-oculto) .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}   }   .main-content{flex:1 1 0%; min-width:0; padding-bottom:0}   .btn-sidebar-toggle{display:inline-flex}   .wrap.sidebar-oculto .grid{grid-template-columns:repeat(3,minmax(0,1fr))}   .wrap.sidebar-oculto .hero{grid-template-columns:repeat(4,minmax(0,1fr))}   .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 8px 12px; margin-bottom:6px; border-bottom:1px solid var(--linea)}   .tabs-header-txt{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--gris)}   .wrap.sidebar-oculto .tabs-header{justify-content:center}   .wrap.sidebar-oculto .tabs-header-txt{display:none}   /* Contraído: solo iconos */   .wrap.sidebar-oculto .tabs{padding:10px 8px; align-items:center}   .wrap.sidebar-oculto .tab-txt{display:none}   .wrap.sidebar-oculto .menu-chevron{display:none}   .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; width:44px; height:44px; padding:0}   .wrap.sidebar-oculto .menu-grupo{position:relative}   .wrap.sidebar-oculto .submenu{     position:absolute; left:100%; top:0; margin-left:10px; width:230px; min-width:230px; max-height:80vh; overflow-y:auto;     max-height:none; overflow:visible; padding:6px; background:#fff; border:1px solid var(--linea);     border-radius:var(--radius); box-shadow:var(--sombra); opacity:0; pointer-events:none;     transform:translateX(-8px); transition:opacity .2s ease, transform .2s ease   }   .wrap.sidebar-oculto .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(0)}   .wrap.sidebar-oculto .submenu .tab-txt{display:inline}   .wrap.sidebar-oculto .submenu button{flex-direction:row; align-items:flex-start; justify-content:flex-start; padding:10px 12px; width:100%; height:auto; white-space:normal; box-sizing:border-box}   .wrap.sidebar-oculto .submenu .tab-txt{white-space:normal; overflow-wrap:break-word}   .card h2{font-size:1.15rem}   .card .cap{font-size:.9rem}   .selector button{font-size:1rem; padding:10px 20px}   table{font-size:1rem}   .graf-mini{height:var(--graf-mini-h)!important}   .graf-dia{height:var(--graf-dia-h)!important}   .graf-dona{height:var(--graf-dona-h)!important}   .graf-control{height:var(--graf-control-h)!important}    /* Ajustes específicos para tablet (≤1024px) */   @media (max-width: 1024px) and (orientation: landscape) {     :root {       --sidebar-w: var(--sidebar-w-tablet);       --graf-mini-h: 90px;       --graf-dia-h: 160px;       --graf-dona-h: 240px;       --graf-control-h: 110px;       --card-padding: 14px;     }     .wrap { padding: 0 16px 60px; }     .tabs button, .menu-grupo-btn { font-size: .9rem; padding: 10px 12px; }     .hero { grid-template-columns: 1fr 1fr; gap: 8px; }     .mini { grid-template-columns: repeat(4,1fr); gap: 8px; }     .grid { grid-template-columns: 1fr 1fr; gap: 10px; }     .card { padding: var(--card-padding); }     .kpi { padding: 14px 16px; }     .kpi .val { font-size: 1.4rem; }     .graf-dia { height: var(--graf-dia-h)!important; }     .graf-control { height: var(--graf-control-h)!important; }     .graf-dona { height: var(--graf-dona-h)!important; }     .graf-mini { height: var(--graf-mini-h)!important; }   } }
     .tab-txt{display:inline}
     .wrap{--sidebar-w:250px; max-width:1500px; padding:0 32px 60px}
     .wrap.sidebar-oculto{--sidebar-w:64px}
@@ -240,18 +247,20 @@
     .card .cap{font-size:.9rem}
     .selector button{font-size:1rem; padding:10px 20px}
     table{font-size:1rem}
-    .graf-mini{height:190px!important}
-    .graf-dia{height:320px!important}
-    .graf-dona{height:380px!important}
-    .graf-control{height:190px!important}
+.graf-mini{height:var(--graf-mini-h)!important}
+.graf-dia{height:var(--graf-dia-h)!important}
+.graf-dona{height:var(--graf-dona-h)!important}
+.graf-control{height:var(--graf-control-h)!important
   }
   @media screen and (min-width:1300px){
-    .wrap{max-width:1700px}
-    .graf-mini{height:220px!important}
-    .graf-dia{height:380px!important}
-    .graf-dona{height:440px!important}
-    .graf-control{height:220px!important}
+  .wrap{max-width:1700px}
+  :root {
+    --graf-mini-h: 220px;
+    --graf-dia-h: 380px;
+    --graf-dona-h: 440px;
+    --graf-control-h: 220px;
   }
+}
 </style>
 </head>
 <body>
