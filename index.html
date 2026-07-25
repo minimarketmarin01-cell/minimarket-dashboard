@@ -70,8 +70,7 @@
   .alerta{display:none; align-items:flex-start; gap:10px; background:var(--ambar-suave); border:1px solid #ecd8a3; color:#6e5011; padding:12px 14px; border-radius:12px; font-size:.9rem; margin-bottom:16px}
   .alerta.ver{display:flex}
   .hero{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:clamp(7px,1.4vw,14px); margin-bottom:clamp(8px,1.4vw,14px)}
-  .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(10px,2vw,22px) clamp(10px,2vw,24px) clamp(9px,1.8vw,20px); box-shadow:var(--sombra); position:relative; overflow:hidden; min-width:0; animation:entrada-suave .25s ease both}
-  @media (prefers-reduced-motion:reduce){ .card,.kpi{animation:none} }
+  .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(10px,2vw,22px) clamp(10px,2vw,24px) clamp(9px,1.8vw,20px); box-shadow:var(--sombra); position:relative; overflow:hidden; min-width:0}
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--acento)}
   .kpi.acc-verde{background:var(--verde-suave); border-color:#cbe6d8} .kpi.acc-verde::before{background:var(--verde)}
   .kpi.acc-rojo{background:var(--rojo-suave); border-color:#eecabf} .kpi.acc-rojo::before{background:var(--rojo)}
@@ -90,8 +89,7 @@
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
   .mini .kpi .val{font-size:clamp(.86rem,.72rem + 1vw,1.5rem); font-weight:700}
   .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,16px); margin-top:clamp(8px,1.6vw,16px)}
-  @keyframes entrada-suave{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)}}
-  .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(12px,2.2vw,24px); box-shadow:var(--sombra); min-width:0; animation:entrada-suave .25s ease both}
+  .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(12px,2.2vw,24px); box-shadow:var(--sombra); min-width:0}
   .card h2{font-family:'Manrope',sans-serif; font-size:.98rem; font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
   .card .cap{font-size:.78rem; color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
