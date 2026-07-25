@@ -173,10 +173,10 @@
      tipografía, espaciado y gráficos — no solo reacomodar columnas.
      Antes el contenido se veía "chico" porque usaba el mismo tamaño de
      fuente que el celular aunque hubiera mucho más espacio disponible. */
-/* ===== TABLET HORIZONTAL (480px - 899px) ===== */
-@media screen and (min-width: 480px) and (max-width: 1199px) {
+/* ===== TABLET HORIZONTAL (600px - 899px) ===== */
+@media screen and (min-width: 600px) and (max-width: 899px) and (orientation: landscape) {
   .wrap {
-    --sidebar-w: 180px;
+    --sidebar-w: 200px;
     padding: 0 12px 60px;
   }
   .wrap.sidebar-oculto {
@@ -882,10 +882,7 @@ document.getElementById('btnSidebarToggle').addEventListener('click',()=>{
   try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(e){}
 });
 try{
-  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');// Forzar que el menú esté expandido en pantallas ≥600px
-if (window.innerWidth >= 600) {
-  document.querySelector('.wrap').classList.remove('sidebar-oculto');
-}
+  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
 }catch(e){}
 
 // ---- Submenús del menú lateral/inferior (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
@@ -1667,24 +1664,6 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   });
 }
-// Bloqueo de orientación por JS: actúa de inmediato, sin depender de que
-// Android regenere el WebAPK a partir del manifest (eso puede tardar días).
-// Solo funciona en modo instalado (standalone) o pantalla completa; en una
-// pestaña normal de Chrome el navegador ignora esto silenciosamente, lo cual
-// está bien porque ahí manda el bloqueo de rotación del propio sistema.
-function fijarOrientacion(){
-  try{
-    // Solo bloquear en celular físico (lado corto <500px). En tablet/desktop
-    // se deja girar libremente para aprovechar el modo horizontal.
-    const ladoCorto=Math.min(screen.width||9999, screen.height||9999);
-    if(ladoCorto<500 && screen.orientation && screen.orientation.lock){
-      screen.orientation.lock('portrait').catch(()=>{});
-    }
-  }catch(e){}
-}
-fijarOrientacion();
-window.addEventListener('load', fijarOrientacion);
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fijarOrientacion(); });
   document.getElementById('dropCartola').addEventListener('click',()=>document.getElementById('fileCartola').click());
 document.getElementById('fileCartola').addEventListener('change', async (e)=>{
   const archivo = e.target.files[0];
