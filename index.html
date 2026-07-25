@@ -41,18 +41,19 @@
   .tabs{position:fixed; left:0; right:0; bottom:0; z-index:40; background:#fff; border-top:1px solid var(--linea); border-radius:20px 20px 0 0; padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px)); box-shadow:0 -10px 28px rgba(15,27,48,.10)}
   .menu-nivel1{display:flex; gap:2px; list-style:none; margin:0; padding:0; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
   .menu-nivel1::-webkit-scrollbar{display:none}
-  .menu-grupo{position:relative; flex:0 0 auto; margin-bottom:0}
+  .menu-grupo{position:relative; flex:0 0 auto; margin-bottom:0; display:flex}
   .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 13px; min-height:48px; min-width:48px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:14px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s, transform .1s; flex:0 0 auto; white-space:nowrap; touch-action:manipulation}
+  .menu-grupo-btn{display:none}
   .tabs button:active, .menu-grupo-btn:active, .btn:active{transform:scale(.97)}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
   .menu-grupo-btn:hover,.menu-grupo-btn:focus-visible{background:var(--acento-suave); color:var(--acento); outline:none}
   .menu-grupo.abierto>.menu-grupo-btn{color:var(--tinta)}
   .menu-chevron{display:none}
   /* En móvil el submenú es un flyout que se abre HACIA ARRIBA sobre la barra inferior */
-  .submenu{list-style:none; margin:0; padding:6px; position:absolute; left:50%; bottom:100%; margin-bottom:8px; transform:translateX(-50%) translateY(6px); width:max-content; min-width:170px; max-height:none; background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra); opacity:0; overflow:visible; pointer-events:none; transition:opacity .2s ease, transform .2s ease}
-  .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0)}
+  .submenu{list-style:none; margin:0; padding:0; position:static; display:flex; gap:2px; width:auto; min-width:0; max-height:none; background:none; border:none; box-shadow:none; opacity:1; overflow:visible; pointer-events:auto; transform:none}
   .submenu li{list-style:none}
-  .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px; font-size:.85rem; border-radius:8px}
+  .submenu-n2{display:none}
+  .submenu li{list-style:none}
   .submenu-n2{list-style:none; margin:2px 0 4px; padding:0}
   .submenu-n2 a.submenu-link{display:block; padding:8px 12px 8px 26px; font-size:.78rem; color:var(--gris); text-decoration:none; border-radius:8px; -webkit-tap-highlight-color:transparent}
   .submenu-n2 a.submenu-link:hover,.submenu-n2 a.submenu-link:active{background:var(--acento-suave); color:var(--acento)}
@@ -186,7 +187,7 @@
     .tabs{
       position:sticky; top:24px; flex:0 0 var(--sidebar-w); width:var(--sidebar-w); z-index:30;
       display:flex; flex-direction:column; align-items:stretch;
-      max-height:calc(100vh - 48px); overflow-y:auto; overflow-x:hidden; border-top:none; padding:10px;
+      border-top:none; padding:10px;
       background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);
       transition:width .28s ease, flex-basis .28s ease; opacity:1
     }
@@ -201,7 +202,7 @@
     /* Submenú expandido normal: empuja contenido hacia abajo dentro del propio sidebar */
     .submenu{position:static; transform:none; margin-bottom:0; width:auto; min-width:0; box-shadow:none; border:none; padding:0; max-height:0; overflow:hidden; opacity:0; transition:max-height .3s ease, opacity .25s ease}
     .menu-grupo.abierto .submenu{max-height:600px; opacity:1; transform:none; left:auto; bottom:auto; margin-bottom:0}
-    .submenu button{padding-left:34px}
+    .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px 10px 34px; font-size:.85rem; border-radius:8px; min-height:0; min-width:0}
     .submenu-n2 a.submenu-link{padding-left:50px}
     .wrap.sidebar-oculto .submenu-n2{display:none}
     @media (hover:hover) and (pointer:fine){
