@@ -370,8 +370,12 @@ z-index:1000;
     transform: translateX(-4px);
     transition: opacity .2s ease, transform .2s ease;
   }
-  .wrap.sidebar-oculto .menu-grupo.abierto .submenu {
-display:block;
+  .wrap.sidebar-oculto ..menu-grupo.abierto .submenu {
+    display: block !important;
+}
+
+.submenu li {
+  list-style: none;
 }
   .wrap.sidebar-oculto .submenu .tab-txt {
     display: inline;
@@ -677,7 +681,7 @@ display:block;
 .wrap{
     padding-left:88px;
 }
-/* ===== TRANSICIONES Y ESTADOS =====*/
+/* ===== TRANSICIONES PARA TABLET/DESKTOP ===== */
 .menu-grupo {
   transition: all .2s ease;
 }
@@ -686,14 +690,18 @@ display:block;
   transition: background .15s, color .15s;
 }
 
-/* Submenú visible en tablet/desktop cuando grupo está abierto */
 @media screen and (min-width: 600px) {
   .menu-grupo.abierto .submenu {
     display: block !important;
     opacity: 1 !important;
     pointer-events: auto !important;
   }
-}
+
+  .wrap.sidebar-oculto .menu-grupo.abierto .submenu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
 }
 </style>
 </head>
@@ -1007,7 +1015,61 @@ document.getElementById('modalOtroIngreso').addEventListener('click',e=>{ if(e.t
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalOtroIngreso').classList.contains('hidden')) cerrarDetalleOtroIngreso(); });
 let DATA=null, mesActual=null, charts={}, dirty={};
 let sortState={col:null, dir:null}; // dir: 'asc' | 'desc' | null(=orden original)
+// ===== MENÚ LATERAL RESPONSIVO (Tablet/Desktop) =====
+const wrap = document.querySelector('.wrap');
+const btnToggle = document.getElementById('btnSidebarToggle');
+const menuGrupos = document.querySelectorAll('.menu-grupo');
+let sidebarVisible = true;
 
+// Toggle sidebar (contraer/expandir)
+if (btnToggle) {
+  btnToggle.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sidebarVisible = !sidebarVisible;
+    if (sidebarVisible) {
+      wrap.classList.remove('sidebar-oculto');
+    } else {
+      wrap.classList.add('sidebar-oculto');
+      // Cerrar submenús al contraer
+      menuGrupos.forEach(g => g.classList.remove('abierto'));
+    }
+  });
+}
+
+// Abrir/cerrar submenús al hacer clic en .menu-grupo-btn (tablet/desktop)
+menuGrupos.forEach((grupo) => {
+  const grupoBtn = grupo.querySelector('.menu-grupo-btn');
+  if (grupoBtn) {
+    grupoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Cerrar otros grupos
+      menuGrupos.forEach((g) => {
+        if (g !== grupo) g.classList.remove('abierto');
+      });
+      
+      // Toggle actual
+      grupo.classList.toggle('abierto');
+    });
+  }
+});
+
+// Cerrar submenús al hacer clic en botones dentro del submenú
+document.querySelectorAll('.submenu button[data-tab]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    menuGrupos.forEach((g) => g.classList.remove('abierto'));
+  });
+});
+
+// Cerrar al hacer clic fuera
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.menu-grupo') && 
+      !e.target.closest('.tabs-header')) {
+    menuGrupos.forEach((g) => g.classList.remove('abierto'));
+  }
+});
 fetch(FINANZAS_GET_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
   .catch(e=>{document.getElementById('hero').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
 
