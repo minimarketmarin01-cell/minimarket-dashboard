@@ -210,32 +210,33 @@ overflow:visible;
   }
 
   .tabs button,
-  .menu-grupo-btn {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    width: 100%;
-    font-size: 0.72rem;
-    padding: 6px 8px;
-    white-space: normal;
-    border-radius: 8px;
-    text-align: left;
-    box-sizing: border-box;
-    min-height: 32px;
-  }
+.menu-grupo-btn{
 
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+align-items:center;
+
+width:48px;
+
+height:48px;
+
+padding:0;
+margin:0 auto;
+gap:0;
+  
+border-radius:12px
+}
   .tabs button .tab-txt,
   .menu-grupo-btn .tab-txt {
-    white-space: normal;
-    overflow-wrap: break-word;
-    flex: 1 1 auto;
-    min-width: 0;
-    font-size: 0.7rem;
+    display:none;
   }
 
   .tab-ico {
-    font-size: 0.9rem;
+    font-size:22px;
     flex: 0 0 auto;
   }
 
@@ -251,28 +252,25 @@ overflow:visible;
   .menu-grupo.abierto .menu-chevron {
     transform: rotate(90deg);
   }
+.submenu{
+display:none;
+position:absolute;
+left:72px;
+top:0;
+width:220px;
+background:#fff;
 
-  .submenu {
-    position: static;
-    transform: none;
-    margin-bottom: 0;
-    width: auto;
-    min-width: 0;
-    box-shadow: none;
-    border: none;
-    padding: 0;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-height .3s ease, opacity .25s ease;
-  }
+border:1px solid #ddd;
 
-  .menu-grupo.abierto .submenu {
-    max-height: 400px;
-    opacity: 1;
-    transform: none;
-  }
+border-radius:12px;
 
+box-shadow:0 8px 20px rgba(0,0,0,.15);
+
+padding:8px;
+
+z-index:1000;
+
+}
   .submenu button {
     flex-direction: row;
     justify-content: flex-start;
@@ -373,10 +371,8 @@ overflow:visible;
     transition: opacity .2s ease, transform .2s ease;
   }
   .wrap.sidebar-oculto .menu-grupo.abierto .submenu {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(0);
-  }
+display:block;
+}
   .wrap.sidebar-oculto .submenu .tab-txt {
     display: inline;
   }
