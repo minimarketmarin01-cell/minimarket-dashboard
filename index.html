@@ -454,30 +454,52 @@ display:block;
     .wrap.sidebar-oculto{--sidebar-w:64px}
     header.top h1{font-size:1.9rem}
     .layout-desktop{display:flex; align-items:flex-start; gap:28px}
-    .tabs{
-      position:sticky; top:24px; flex:0 0 var(--sidebar-w); width:var(--sidebar-w); z-index:30;
-      display:flex; flex-direction:column; align-items:stretch;
-      border-top:none; padding:10px;
-      background:#fff; border:1px solid var(--linea); border-radius:var(--radius); box-shadow:var(--sombra);
-      transition:width .28s ease, flex-basis .28s ease; opacity:1
-    }
-    .menu-nivel1{display:block; overflow:visible}
-    .menu-grupo{margin-bottom:2px}
-    .tabs button,
-.menu-grupo-btn{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    width:48px;
-    height:48px;
-    padding:0;
-  margin:0 auto;
-gap:0;
+  .tabs{
+  position: sticky;
+  top: 16px;
+  width: 72px;
+  flex: 0 0 72px;
 
-border-radius:12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  padding: 8px 4px;
+
+  overflow: visible;
 }
-    .tabs button .tab-txt, .menu-grupo-btn .tab-txt{white-space:normal; overflow-wrap:break-word; flex:1 1 auto; min-width:0}
+    .menu-nivel1{display:block; overflow:visible}
+    .menu-grupo{
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.tabs button,
+.menu-grupo-btn{
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:center;
+
+  align-items:center;
+
+  width:56px;
+
+  height:56px;
+
+  margin:0 auto;
+
+  padding:0;
+
+  gap:0;
+
+  border-radius:12px;
+
+}
+    .tabs button .tab-txt, .menu-grupo-btn .tab-txt{display:none;
+    }
     .tabs button .tab-ico, .menu-grupo-btn .tab-ico{flex:0 0 auto; margin-top:1px}
     .menu-chevron{display:block; margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
     .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
@@ -505,7 +527,7 @@ box-shadow:0 8px 20px rgba(0,0,0,.15);
 
 padding:8px;
 
-z-index:1000;
+z-index:999;
 
 }
     .menu-grupo.abierto .submenu{
