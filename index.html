@@ -176,7 +176,7 @@
 /* ===== TABLET HORIZONTAL (600px - 899px) ===== */
 @media screen and (min-width: 600px) and (max-width: 899px) and (orientation: landscape) {
   .wrap {
-    --sidebar-w: 200px;
+    --sidebar-w: 72px;
     padding: 0 12px 60px;
   }
   .wrap.sidebar-oculto {
@@ -189,23 +189,17 @@
     gap: 16px;
   }
 
-  .tabs {
-    position: sticky;
-    top: 16px;
-    flex: 0 0 var(--sidebar-w);
-    width: var(--sidebar-w);
-    z-index: 30;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    border-top: none;
-    padding: 6px;
-    background: #fff;
-    border: 1px solid var(--linea);
-    border-radius: var(--radius);
-    box-shadow: var(--sombra);
-    transition: width .28s ease, flex-basis .28s ease;
-  }
+  .tabs{
+position:sticky;
+top:16px;
+width:72px;
+flex:0 0 72px;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:8px;
+overflow:visible;
+}
 
   .menu-nivel1 {
     display: block;
@@ -473,7 +467,16 @@
     }
     .menu-nivel1{display:block; overflow:visible}
     .menu-grupo{margin-bottom:2px}
-    .tabs button, .menu-grupo-btn{flex-direction:row; align-items:flex-start; justify-content:flex-start; gap:11px; width:100%; font-size:1.02rem; padding:13px 14px; white-space:normal; border-radius:10px; text-align:left; box-sizing:border-box}
+    .tabs button,
+.menu-grupo-btn{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    width:48px;
+    height:48px;
+    padding:0;
+}
     .tabs button .tab-txt, .menu-grupo-btn .tab-txt{white-space:normal; overflow-wrap:break-word; flex:1 1 auto; min-width:0}
     .tabs button .tab-ico, .menu-grupo-btn .tab-ico{flex:0 0 auto; margin-top:1px}
     .menu-chevron{display:block; margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
@@ -530,6 +533,102 @@
     .graf-dona{height:440px!important}
     .graf-control{height:220px!important}
   }
+  /* =====================================================
+   TABLET HORIZONTAL Y CELULAR HORIZONTAL
+   ===================================================== */
+
+@media screen and (min-width:600px) and (max-width:899px) and (orientation:landscape){
+
+:root{
+    --sidebar-w:72px;
+}
+
+.layout-desktop{
+    display:flex;
+}
+
+.tabs{
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    width:72px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:10px;
+    padding:16px 8px;
+    background:#fff;
+    border-right:1px solid #e5e7eb;
+    overflow:visible;
+    z-index:1000;
+}
+
+.tabs button,
+.menu-grupo-btn{
+
+    width:48px;
+    height:48px;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:0;
+
+    border-radius:12px;
+}
+
+.tab-txt{
+    display:none;
+}
+
+.tab-ico{
+    margin:0;
+    font-size:22px;
+}
+
+.menu-chevron{
+    display:none;
+}
+
+.menu-grupo{
+    position:relative;
+    width:100%;
+}
+
+.submenu{
+
+    position:absolute;
+
+    left:64px;
+
+    top:0;
+
+    width:220px;
+
+    display:none;
+
+    background:#fff;
+
+    border-radius:12px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+
+    padding:8px;
+
+}
+
+.menu-grupo.abierto .submenu{
+    display:block;
+}
+
+.wrap{
+    padding-left:88px;
+}
+
+}
 </style>
 </head>
 <body>
@@ -887,7 +986,7 @@ try{
 
 // ---- Submenús del menú lateral/inferior (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
 function esEscritorioExpandido(){
-  return window.innerWidth>=900 && !document.querySelector('.wrap').classList.contains('sidebar-oculto');
+  return window.matchMedia("(min-width:600px) and (max-width:899px) and (orientation:landscape)").matches || window.innerWidth>=900 && !document.querySelector('.wrap').classList.contains('sidebar-oculto');
 }
 function cerrarTodosLosGrupos(exceptoEste){
   document.querySelectorAll('.menu-grupo.abierto').forEach(g=>{
