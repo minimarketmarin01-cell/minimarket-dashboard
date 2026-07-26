@@ -472,6 +472,10 @@ display:block;
     width:48px;
     height:48px;
     padding:0;
+  margin:0 auto;
+gap:0;
+
+border-radius:12px;
 }
     .tabs button .tab-txt, .menu-grupo-btn .tab-txt{white-space:normal; overflow-wrap:break-word; flex:1 1 auto; min-width:0}
     .tabs button .tab-ico, .menu-grupo-btn .tab-ico{flex:0 0 auto; margin-top:1px}
@@ -479,8 +483,36 @@ display:block;
     .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
     .tab-ico{font-size:1.15rem}
     /* Submenú expandido normal: empuja contenido hacia abajo dentro del propio sidebar */
-    .submenu{position:static; transform:none; margin-bottom:0; width:auto; min-width:0; box-shadow:none; border:none; padding:0; max-height:0; overflow:hidden; opacity:0; transition:max-height .3s ease, opacity .25s ease}
-    .menu-grupo.abierto .submenu{max-height:600px; opacity:1; transform:none; left:auto; bottom:auto; margin-bottom:0}
+    .submenu{
+
+display:none;
+
+position:absolute;
+
+left:72px;
+
+top:0;
+
+width:220px;
+
+background:#fff;
+
+border:1px solid #ddd;
+
+border-radius:12px;
+
+box-shadow:0 8px 20px rgba(0,0,0,.15);
+
+padding:8px;
+
+z-index:1000;
+
+}
+    .menu-grupo.abierto .submenu{
+
+display:block;
+
+}
     .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px 10px 34px; font-size:.85rem; border-radius:8px; min-height:0; min-width:0}
     .submenu-n2 a.submenu-link{padding-left:50px}
     .wrap.sidebar-oculto .submenu-n2{display:block; margin-left:0}
