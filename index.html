@@ -705,7 +705,10 @@ if (btnToggle) {
     // Los gráficos no se destruyen ni recargan: como ya no hay animación de
     // ancho, un solo resize en el siguiente frame (con el layout ya
     // aplicado) es suficiente y no compite con el resize interno de Chart.js.
-    requestAnimationFrame(()=>requestAnimationFrame(resizeCharts));
+    setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+    resizeCharts();
+}, 350);
   });
 }
 window.addEventListener('resize', resizeCharts);
