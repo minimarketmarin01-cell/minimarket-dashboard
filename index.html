@@ -90,11 +90,22 @@
   /* Contraído: solo iconos, en cualquier resolución. El texto y los
      submenús desaparecen, pero el grupo/submenú que estaba abierto se
      conserva en el DOM (clase .abierto) para reaparecer al re-expandir. */
-  .wrap.sidebar-oculto .tab-txt{display:none}
-  .wrap.sidebar-oculto .menu-chevron{display:none}
-  .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; padding:9px 4px}
-  .wrap.sidebar-oculto .submenu,
-  .wrap.sidebar-oculto .submenu-n2{display:none !important}
+.wrap.sidebar-oculto .tab-txt{display:none}
+.wrap.sidebar-oculto .menu-chevron{display:none}
+.wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; padding:9px 4px}
+.wrap.sidebar-oculto .menu-grupo:not(.abierto) .submenu,
+.wrap.sidebar-oculto .menu-grupo:not(.abierto) .submenu-n2{display:none !important}
+.wrap.sidebar-oculto:has(.menu-grupo.abierto) .tabs,
+.wrap.sidebar-oculto:has(.menu-grupo.abierto) .menu-nivel1{overflow:visible}
+.wrap.sidebar-oculto .menu-grupo.abierto>.submenu{
+  display:block; position:absolute; left:calc(100% + 8px); top:0;
+  min-width:210px; max-height:80vh; overflow-y:auto;
+  background:#fff; border:1px solid var(--linea); border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18); padding:6px; z-index:80;
+}
+.wrap.sidebar-oculto .menu-grupo.abierto .submenu-n2{display:block}
+.wrap.sidebar-oculto .menu-grupo.abierto .submenu .tab-txt{display:inline-block}
+.wrap.sidebar-oculto .menu-grupo.abierto .submenu button{justify-content:flex-start; padding:9px 8px}
 
   .main-content{overflow-x:hidden; padding-bottom:20px; flex:1 1 0%; min-width:0}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
