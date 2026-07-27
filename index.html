@@ -680,7 +680,6 @@ try{
   if(localStorage.getItem('sidebarOculto')==='1') wrap.classList.add('sidebar-oculto');
 }catch(e){}
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
-let _resizeChartsTimer = null;
 function resizeCharts(){
   Object.values(charts).forEach(c=>{
     try{
@@ -688,9 +687,13 @@ function resizeCharts(){
     }catch(err){}
   });
 }
-function _scheduleResizeCharts(delay){
-  clearTimeout(_resizeChartsTimer);
-  _resizeChartsTimer = setTimeout(resizeCharts, delay || 250);
+function resizeChartsDuranteTransicion(){
+  const inicio = performance.now();
+  const paso = (ahora)=>{
+    resizeCharts();
+    if(ahora - inicio < 320) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
 }
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
@@ -700,36 +703,13 @@ if (btnToggle) {
     try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(err){}
     // Al contraer solo se ocultan los iconos (vía CSS); el grupo/submenú que
     // estaba abierto se conserva y reaparece igual al volver a expandir.
-    // Los gráficos no se destruyen ni recargan: solo se recalcula su tamaño
-    // cuando termina la transición de ancho del riel (funciona igual en
-    // móvil/tablet 600px, 900px y escritorio, ya que el riel es el mismo).
-    _scheduleResizeCharts(250);
+    // Los gráficos no se destruyen ni recargan: se recalcula su tamaño en
+    // cada frame mientras dura la transición del riel (~320ms), así queda
+    // bien sin depender de que el navegador dispare "transitionend".
+    resizeChartsDuranteTransicion();
   });
 }
-document.querySelector('.tabs')?.addEventListener('transitionend', (e)=>{
-  if(e.propertyName==='width' || e.propertyName==='flex-basis') _scheduleResizeCharts(50);
-});
-window.addEventListener('resize', ()=>_scheduleResizeCharts(150));
-// Abrir/cerrar el submenú de cada grupo al tocar su icono
-menuGrupos.forEach((grupo) => {
-  const grupoBtn = grupo.querySelector('.menu-grupo-btn');
-  if (!grupoBtn) return;
-  const alternar = () => {
-    const yaAbierto = grupo.classList.contains('abierto');
-    cerrarTodosLosGrupos(grupo); // solo un submenú abierto a la vez
-    grupo.classList.toggle('abierto', !yaAbierto);
-    grupoBtn.setAttribute('aria-expanded', !yaAbierto ? 'true' : 'false');
-  };
-  grupoBtn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); alternar(); });
-  grupoBtn.addEventListener('keydown', e=>{
-    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); alternar(); }
-    if(e.key==='Escape'){ cerrarTodosLosGrupos(); }
-  });
-});
-
-// Cerrar cualquier submenú abierto al tocar fuera del menú
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.menu-grupo') && !e.target.closest('.tabs-header')) {
+window.addEventListener('resize', resizeCharts);
     cerrarTodosLosGrupos();
   }
 });
