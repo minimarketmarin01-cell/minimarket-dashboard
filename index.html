@@ -32,41 +32,71 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{max-width:100%}
   body{font-family:'Inter',system-ui,sans-serif; background:var(--papel); color:var(--tinta); -webkit-font-smoothing:antialiased; line-height:1.45; font-variant-numeric:tabular-nums}
-  .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px; --sidebar-w:190px}
+  .wrap.sidebar-oculto{--sidebar-w:56px}
   .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
   header.top{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:14px}
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
   .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
-  .tabs{position:fixed; left:0; right:0; bottom:0; z-index:40; background:#fff; border-top:1px solid var(--linea); border-radius:20px 20px 0 0; padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px)); box-shadow:0 -10px 28px rgba(15,27,48,.10)}
-  .menu-nivel1{display:flex; gap:2px; list-style:none; margin:0; padding:0; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none}
-  .menu-nivel1::-webkit-scrollbar{display:none}
-  .menu-grupo{position:relative; flex:0 0 auto; margin-bottom:0; display:flex}
-  .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:8px 13px; min-height:48px; min-width:48px; font-size:.62rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:14px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s, transform .1s; flex:0 0 auto; white-space:nowrap; touch-action:manipulation}
-  .menu-grupo-btn{   display:none; /* Oculto en mobile */   transition:background .15s, color .15s } @media screen and (min-width:600px){   .menu-grupo-btn{display:flex} }
-  .tabs button:active, .menu-grupo-btn:active, .btn:active{transform:scale(.97)}
+  /* Riel lateral: columna vertical fija a la izquierda, siempre en la misma
+     posición (sticky), en TODAS las resoluciones. Expandir/contraer solo
+     cambia su ancho (--sidebar-w); nunca se superpone al contenido. */
+  .layout-desktop{display:flex; align-items:flex-start; gap:12px}
+  .tabs{
+    position:sticky; top:0; align-self:flex-start;
+    width:var(--sidebar-w); flex:0 0 var(--sidebar-w);
+    max-height:100vh; overflow-y:auto; overflow-x:hidden;
+    background:#fff; border:1px solid var(--linea); border-radius:var(--radius);
+    padding:6px; box-shadow:var(--sombra); z-index:40;
+    transition:width .2s ease, flex-basis .2s ease;
+  }
+  .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 8px; margin-bottom:4px; border-bottom:1px solid var(--linea)}
+  .tabs-header-txt{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gris); white-space:nowrap; overflow:hidden}
+  .wrap.sidebar-oculto .tabs-header{justify-content:center}
+  .wrap.sidebar-oculto .tabs-header-txt{display:none}
+  .btn-sidebar-toggle{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:none; flex:0 0 auto; transition:background .15s}
+  .btn-sidebar-toggle:hover{background:var(--acento-suave)}
+  .btn-sidebar-toggle svg{width:17px; height:17px}
+  .chev-toggle{transition:transform .25s ease}
+  .wrap.sidebar-oculto .chev-toggle{transform:rotate(180deg)}
+
+  .menu-nivel1{display:flex; flex-direction:column; gap:2px; list-style:none; margin:0; padding:0; overflow-y:auto; overflow-x:hidden}
+  .menu-grupo{position:relative; width:100%; margin-bottom:2px; display:block}
+  .tabs button, .menu-grupo-btn{font-family:'Inter',sans-serif; border:none; background:none; display:flex; flex-direction:row; align-items:center; justify-content:flex-start; gap:8px; width:100%; padding:9px 8px; min-height:40px; font-size:.78rem; font-weight:600; color:var(--gris); cursor:pointer; border-radius:10px; -webkit-tap-highlight-color:transparent; user-select:none; transition:color .15s, background .15s, transform .1s; white-space:nowrap; touch-action:manipulation; box-sizing:border-box}
+  .tabs button:active, .menu-grupo-btn:active, .btn:active{transform:scale(.98)}
   .tabs button.on{color:var(--acento); background:var(--acento-suave); font-weight:700}
   .menu-grupo-btn:hover,.menu-grupo-btn:focus-visible{background:var(--acento-suave); color:var(--acento); outline:none}
   .menu-grupo.abierto>.menu-grupo-btn{color:var(--tinta)}
-  .menu-chevron{display:none}
-  /* En móvil el submenú es un flyout que se abre HACIA ARRIBA sobre la barra inferior */
-  .submenu{list-style:none; margin:0; padding:0; position:static; display:flex; gap:2px; width:auto; min-width:0; max-height:none; background:none; border:none; box-shadow:none; opacity:1; overflow:visible; pointer-events:auto; transform:none}
+  .menu-chevron{display:block; margin-left:auto; width:13px; height:13px; flex:0 0 auto; transition:transform .25s ease}
+  .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
+
+  /* Submenús: se despliegan DEBAJO del botón principal, dentro del propio
+     riel (sin popup/overlay/flyout). La sangría marca la jerarquía y solo
+     un grupo permanece abierto a la vez (lo controla el JS existente). */
+  .submenu{list-style:none; margin:0; padding:2px 0 4px 8px; display:none; position:static; width:auto}
+  .menu-grupo.abierto .submenu{display:block}
   .submenu li{list-style:none}
-  .submenu-n2{display:none}
-  .submenu li{list-style:none}
-  .submenu-n2{list-style:none; margin:2px 0 4px; padding:0}
-  .submenu-n2 a.submenu-link{display:block; padding:8px 12px 8px 26px; font-size:.78rem; color:var(--gris); text-decoration:none; border-radius:8px; -webkit-tap-highlight-color:transparent}
+  .submenu button{padding:8px 8px 8px 20px; font-size:.74rem; border-radius:8px; min-height:0}
+  .submenu-n2{display:none; list-style:none; margin:2px 0 4px; padding:0}
+  .menu-grupo.abierto .submenu-n2{display:block}
+  .submenu-n2 a.submenu-link{display:block; padding:7px 8px 7px 34px; font-size:.7rem; color:var(--gris); text-decoration:none; border-radius:8px; -webkit-tap-highlight-color:transparent}
   .submenu-n2 a.submenu-link:hover,.submenu-n2 a.submenu-link:active{background:var(--acento-suave); color:var(--acento)}
-  .tab-ico{font-size:1.2rem; line-height:1; display:inline-flex}
-  .tab-ico svg{width:19px; height:19px}
-  .btn-sidebar-toggle{display:none; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:none; flex:0 0 auto; transition:background .15s}
-  .tabs-header{display:none}
-  .btn-sidebar-toggle:hover{background:var(--acento-suave)}
-  .btn-sidebar-toggle svg{width:19px; height:19px}
-  .chev-toggle{transition:transform .25s ease}
-  .wrap.sidebar-oculto .chev-toggle{transform:rotate(180deg)}
-  .tab-txt{white-space:nowrap; min-width:0; display:none}
-  .main-content{overflow-x:hidden; padding-bottom:86px}
+
+  .tab-ico{font-size:1.1rem; line-height:1; display:inline-flex; flex:0 0 auto}
+  .tab-ico svg{width:18px; height:18px}
+  .tab-txt{white-space:normal; overflow-wrap:break-word; min-width:0; display:inline-block; flex:1 1 auto; text-align:left; line-height:1.2}
+
+  /* Contraído: solo iconos, en cualquier resolución. El texto y los
+     submenús desaparecen, pero el grupo/submenú que estaba abierto se
+     conserva en el DOM (clase .abierto) para reaparecer al re-expandir. */
+  .wrap.sidebar-oculto .tab-txt{display:none}
+  .wrap.sidebar-oculto .menu-chevron{display:none}
+  .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; padding:9px 4px}
+  .wrap.sidebar-oculto .submenu,
+  .wrap.sidebar-oculto .submenu-n2{display:none !important}
+
+  .main-content{overflow-x:hidden; padding-bottom:20px; flex:1 1 0%; min-width:0}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
   .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
@@ -176,219 +206,30 @@
 /* ===== TABLET HORIZONTAL (600px - 899px) ===== */
 @media screen and (min-width: 600px) and (max-width: 899px) and (orientation: landscape) {
   .wrap {
-    --sidebar-w: 72px;
+    --sidebar-w: 200px;
     padding: 0 12px 60px;
   }
   .wrap.sidebar-oculto {
     --sidebar-w: 56px;
   }
-
   .layout-desktop {
-    display: flex;
-    align-items: flex-start;
     gap: 16px;
   }
-
-  .tabs{
-position:sticky;
-top:16px;
-width:72px;
-flex:0 0 72px;
-display:flex;
-flex-direction:column;
-align-items:center;
-padding:8px;
-overflow:visible;
-}
-
-  .menu-nivel1 {
-    display: block;
-    overflow: visible;
+  .tabs {
+    top: 16px;
   }
-  .menu-grupo {
-    margin-bottom: 1px;
-  }
-
-  .tabs button,
-.menu-grupo-btn{
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-width:48px;
-
-height:48px;
-
-padding:0;
-margin:0 auto;
-gap:0;
-  
-border-radius:12px
-}
-  .tabs button .tab-txt,
-  .menu-grupo-btn .tab-txt {
-    display:none;
-  }
-
   .tab-ico {
-    font-size:22px;
-    flex: 0 0 auto;
+    font-size: 1.15rem;
   }
-
   .menu-chevron {
-    display: block;
-    margin-left: auto;
     width: 12px;
     height: 12px;
-    flex: 0 0 auto;
-    transition: transform .25s ease;
   }
-
-  .menu-grupo.abierto .menu-chevron {
-    transform: rotate(90deg);
-  }
-.submenu{
-display:none;
-position:absolute;
-left:72px;
-top:0;
-width:220px;
-background:#fff;
-
-border:1px solid #ddd;
-
-border-radius:12px;
-
-box-shadow:0 8px 20px rgba(0,0,0,.15);
-
-padding:8px;
-
-z-index:1000;
-
-}
   .submenu button {
-    flex-direction: row;
-    justify-content: flex-start;
-    width: 100%;
-    padding: 4px 8px 4px 20px;
-    font-size: 0.65rem;
-    border-radius: 6px;
-    min-height: 0;
-    min-width: 0;
+    font-size: 0.72rem;
   }
-
   .submenu-n2 a.submenu-link {
-    padding-left: 32px;
-    font-size: 0.6rem;
-  }
-
-  .wrap.sidebar-oculto .submenu-n2 a.submenu-link {
-    padding-left: 24px;
-  }
-
-  .main-content {
-    flex: 1 1 0%;
-    min-width: 0;
-    padding-bottom: 0;
-  }
-
-  .btn-sidebar-toggle {
-    display: inline-flex !important;
-    width: 24px;
-    height: 24px;
-    font-size: 0.7rem;
-    border: none;
-    background: none;
-    color: var(--gris);
-    cursor: pointer;
-  }
-
-  .tabs-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 4px 6px;
-    margin-bottom: 4px;
-    border-bottom: 1px solid var(--linea);
-  }
-  .tabs-header-txt {
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--gris);
-  }
-  .wrap.sidebar-oculto .tabs-header {
-    justify-content: center;
-  }
-  .wrap.sidebar-oculto .tabs-header-txt {
-    display: none;
-  }
-
-  /* Contraído: solo iconos */
-  .wrap.sidebar-oculto .tabs {
-    padding: 6px 4px;
-    align-items: center;
-  }
-  .wrap.sidebar-oculto .tab-txt {
-    display: none;
-  }
-  .wrap.sidebar-oculto .menu-chevron {
-    display: none;
-  }
-  .wrap.sidebar-oculto .tabs button,
-  .wrap.sidebar-oculto .menu-grupo-btn {
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-  }
-  .wrap.sidebar-oculto .menu-grupo {
-    position: relative;
-  }
-  .wrap.sidebar-oculto .submenu {
-    position: absolute;
-    left: 100%;
-    top: 0;
-    margin-left: 6px;
-    width: 180px;
-    min-width: 180px;
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 4px;
-    background: #fff;
-    border: 1px solid var(--linea);
-    border-radius: var(--radius);
-    box-shadow: var(--sombra);
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-4px);
-    transition: opacity .2s ease, transform .2s ease;
-  }
-  .wrap.sidebar-oculto ..menu-grupo.abierto .submenu {
-    display: block !important;
-}
-
-.submenu li {
-  list-style: none;
-}
-  .wrap.sidebar-oculto .submenu .tab-txt {
-    display: inline;
-  }
-  .wrap.sidebar-oculto .submenu button {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 4px 8px;
-    width: 100%;
-    height: auto;
-    white-space: normal;
-    box-sizing: border-box;
+    font-size: 0.66rem;
   }
 
   /* Ajustes de tarjetas y gráficos para tablet 3:4 */
@@ -453,124 +294,23 @@ z-index:1000;
 }
 
   @media screen and (min-width:900px){
-    .tab-txt{display:inline}
     .wrap{--sidebar-w:250px; max-width:1500px; padding:0 32px 60px}
     .wrap.sidebar-oculto{--sidebar-w:64px}
     header.top h1{font-size:1.9rem}
-    .layout-desktop{display:flex; align-items:flex-start; gap:28px}
-  .tabs{
-  position: sticky;
-  top: 16px;
-  width: 72px;
-  flex: 0 0 72px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-
-  padding: 8px 4px;
-
-  overflow: visible;
-}
-    .menu-nivel1{display:block; overflow:visible}
-    .menu-grupo{
-  position: relative;
-  width: 100%;
-  margin-bottom: 8px;
-}
-.tabs button,
-.menu-grupo-btn{
-
-  display:flex;
-
-  flex-direction:column;
-
-  justify-content:center;
-
-  align-items:center;
-
-  width:56px;
-
-  height:56px;
-
-  margin:0 auto;
-
-  padding:0;
-
-  gap:0;
-
-  border-radius:12px;
-
-}
-    .tabs button .tab-txt, .menu-grupo-btn .tab-txt{display:none;
-    }
-    .tabs button .tab-ico, .menu-grupo-btn .tab-ico{flex:0 0 auto; margin-top:1px}
-    .menu-chevron{display:block; margin-left:auto; width:14px; height:14px; flex:0 0 auto; transition:transform .25s ease}
-    .menu-grupo.abierto .menu-chevron{transform:rotate(90deg)}
+    .layout-desktop{gap:28px}
+    .tabs{top:16px; padding:8px 6px}
+    .menu-grupo{margin-bottom:6px}
+    .tabs button, .menu-grupo-btn{padding:10px 10px; min-height:44px; font-size:.85rem}
+    .menu-chevron{width:14px; height:14px}
     .tab-ico{font-size:1.15rem}
-    /* Submenú expandido normal: empuja contenido hacia abajo dentro del propio sidebar */
-    .submenu{
-
-display:none;
-
-position:absolute;
-
-left:72px;
-
-top:0;
-
-width:220px;
-
-background:#fff;
-
-border:1px solid #ddd;
-
-border-radius:12px;
-
-box-shadow:0 8px 20px rgba(0,0,0,.15);
-
-padding:8px;
-
-z-index:999;
-
-}
-    .menu-grupo.abierto .submenu{
-
-display:block;
-
-}
-    .submenu button{flex-direction:row; justify-content:flex-start; width:100%; padding:10px 12px 10px 34px; font-size:.85rem; border-radius:8px; min-height:0; min-width:0}
-    .submenu-n2 a.submenu-link{padding-left:50px}
-    .wrap.sidebar-oculto .submenu-n2{display:block; margin-left:0}
-    .wrap.sidebar-oculto .submenu-n2 a.submenu-link{padding-left:36px; font-size:.82rem}
-    @media (hover:hover) and (pointer:fine){
-      .wrap:not(.sidebar-oculto) .menu-grupo:hover .submenu{max-height:600px; opacity:1}
-      .wrap:not(.sidebar-oculto) .menu-grupo:hover .menu-chevron{transform:rotate(90deg)}
-    }
-    .main-content{flex:1 1 0%; min-width:0; padding-bottom:0}
-    .btn-sidebar-toggle{display:inline-flex}
+    .submenu{padding:2px 0 6px 12px}
+    .submenu button{padding:10px 10px 10px 22px}
+    .submenu-n2 a.submenu-link{padding-left:40px}
     .wrap.sidebar-oculto .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
     .wrap.sidebar-oculto .hero{grid-template-columns:repeat(4,minmax(0,1fr))}
-    .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 8px 12px; margin-bottom:6px; border-bottom:1px solid var(--linea)}
-    .tabs-header-txt{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--gris)}
-    .wrap.sidebar-oculto .tabs-header{justify-content:center}
-    .wrap.sidebar-oculto .tabs-header-txt{display:none}
-    /* --- Contraído: solo íconos, texto oculto, submenú como flyout lateral --- */
-    .wrap.sidebar-oculto .tabs{padding:10px 8px; align-items:center}
-    .wrap.sidebar-oculto .tab-txt{display:none}
-    .wrap.sidebar-oculto .menu-chevron{display:none}
-    .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{justify-content:center; width:44px; height:44px; padding:0}
-    .wrap.sidebar-oculto .menu-grupo{position:relative}
-    .wrap.sidebar-oculto .submenu{
-      position:absolute; left:100%; top:0; margin-left:10px; width:230px; min-width:230px; max-height:80vh; overflow-y:auto;
-      max-height:none; overflow:visible; padding:6px; background:#fff; border:1px solid var(--linea);
-      border-radius:var(--radius); box-shadow:var(--sombra); opacity:0; pointer-events:none;
-      transform:translateX(-8px); transition:opacity .2s ease, transform .2s ease
-    }
-    .wrap.sidebar-oculto .menu-grupo.abierto .submenu{opacity:1; pointer-events:auto; transform:translateX(0)}
-    .wrap.sidebar-oculto .submenu .tab-txt{display:inline}
-    .wrap.sidebar-oculto .submenu button{flex-direction:row; align-items:flex-start; justify-content:flex-start; padding:10px 12px; width:100%; height:auto; white-space:normal; box-sizing:border-box}
-    .wrap.sidebar-oculto .submenu .tab-txt{white-space:normal; overflow-wrap:break-word}
+    .tabs-header{padding:4px 8px 12px; margin-bottom:6px}
+    .tabs-header-txt{font-size:.72rem; letter-spacing:.08em}
+    .wrap.sidebar-oculto .tabs button, .wrap.sidebar-oculto .menu-grupo-btn{padding:10px 4px}
     .card h2{font-size:1.15rem}
     .card .cap{font-size:.9rem}
     .selector button{font-size:1rem; padding:10px 20px}
@@ -587,122 +327,8 @@ display:block;
     .graf-dona{height:440px!important}
     .graf-control{height:220px!important}
   }
-  /* =====================================================
-   TABLET HORIZONTAL Y CELULAR HORIZONTAL
-   ===================================================== */
-
-@media screen and (min-width:600px) and (max-width:899px) and (orientation:landscape){
-
-:root{
-    --sidebar-w:72px;
-}
-
-.layout-desktop{
-    display:flex;
-}
-
-.tabs{
-    position:fixed;
-    left:0;
-    top:0;
-    bottom:0;
-    width:72px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:flex-start;
-    gap:10px;
-    padding:16px 8px;
-    background:#fff;
-    border-right:1px solid #e5e7eb;
-    overflow:visible;
-    z-index:1000;
-}
-
-.tabs button,
-.menu-grupo-btn{
-
-    width:48px;
-    height:48px;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    padding:0;
-
-    border-radius:12px;
-}
-
-.tab-txt{
-    display:none;
-}
-
-.tab-ico{
-    margin:0;
-    font-size:22px;
-}
-
-.menu-chevron{
-    display:none;
-}
-
-.menu-grupo{
-    position:relative;
-    width:100%;
-}
-
-.submenu{
-
-    position:absolute;
-
-    left:64px;
-
-    top:0;
-
-    width:220px;
-
-    display:none;
-
-    background:#fff;
-
-    border-radius:12px;
-
-    box-shadow:0 10px 25px rgba(0,0,0,.15);
-
-    padding:8px;
-
-}
-
-.menu-grupo.abierto .submenu{
-    display:block;
-}
-
-.wrap{
-    padding-left:88px;
-}
-/* ===== TRANSICIONES PARA TABLET/DESKTOP ===== */
-.menu-grupo {
-  transition: all .2s ease;
-}
-
-.menu-grupo-btn {
-  transition: background .15s, color .15s;
-}
-
-@media screen and (min-width: 600px) {
-  .menu-grupo.abierto .submenu {
-    display: block !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  .wrap.sidebar-oculto .menu-grupo.abierto .submenu {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(0);
-  }
-}
+  /* ===== Transiciones suaves al abrir/cerrar submenús ===== */
+  .menu-grupo-btn{ transition: background .15s, color .15s; }
 </style>
 </head>
 <body>
@@ -1016,60 +642,69 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getEle
 let DATA=null, mesActual=null, charts={}, dirty={};
 let sortState={col:null, dir:null}; // dir: 'asc' | 'desc' | null(=orden original)
 // ===== MENÚ LATERAL RESPONSIVO (Tablet/Desktop) =====
+// Única fuente de verdad para expandir/contraer el riel y abrir/cerrar submenús.
+// (Antes había tres bloques de este mismo código repetidos en el archivo, con
+// "const"/"let" duplicados: eso rompía el parseo de todo el <script> y por
+// eso el menú a veces no reaccionaba. Se dejó un solo bloque, consolidado.)
 const wrap = document.querySelector('.wrap');
 const btnToggle = document.getElementById('btnSidebarToggle');
 const menuGrupos = document.querySelectorAll('.menu-grupo');
-let sidebarVisible = true;
 
-// Toggle sidebar (contraer/expandir)
+function esEscritorioExpandido(){
+  // El riel es una columna vertical igual en todas las resoluciones; el
+  // submenú siempre se despliega inline (nunca como popover), así que lo
+  // único que importa es si el riel está expandido o contraído.
+  return !wrap.classList.contains('sidebar-oculto');
+}
+function cerrarTodosLosGrupos(exceptoEste){
+  document.querySelectorAll('.menu-grupo.abierto').forEach(g=>{
+    if(g===exceptoEste) return;
+    g.classList.remove('abierto');
+    const gb=g.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','false');
+  });
+}
+
+// Restaurar preferencia guardada de menú contraído/expandido
+try{
+  if(localStorage.getItem('sidebarOculto')==='1') wrap.classList.add('sidebar-oculto');
+}catch(e){}
+
+// Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    sidebarVisible = !sidebarVisible;
-    if (sidebarVisible) {
-      wrap.classList.remove('sidebar-oculto');
-    } else {
-      wrap.classList.add('sidebar-oculto');
-      // Cerrar submenús al contraer
-      menuGrupos.forEach(g => g.classList.remove('abierto'));
-    }
+    const oculto = wrap.classList.toggle('sidebar-oculto');
+    try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(err){}
+    // Al contraer solo se ocultan los iconos (vía CSS); el grupo/submenú que
+    // estaba abierto se conserva y reaparece igual al volver a expandir.
   });
 }
 
-// Abrir/cerrar submenús al hacer clic en .menu-grupo-btn (tablet/desktop)
+// Abrir/cerrar el submenú de cada grupo al tocar su icono
 menuGrupos.forEach((grupo) => {
   const grupoBtn = grupo.querySelector('.menu-grupo-btn');
-  if (grupoBtn) {
-    grupoBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Cerrar otros grupos
-      menuGrupos.forEach((g) => {
-        if (g !== grupo) g.classList.remove('abierto');
-      });
-      
-      // Toggle actual
-      grupo.classList.toggle('abierto');
-    });
-  }
-});
-
-// Cerrar submenús al hacer clic en botones dentro del submenú
-document.querySelectorAll('.submenu button[data-tab]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    menuGrupos.forEach((g) => g.classList.remove('abierto'));
+  if (!grupoBtn) return;
+  const alternar = () => {
+    const yaAbierto = grupo.classList.contains('abierto');
+    cerrarTodosLosGrupos(grupo); // solo un submenú abierto a la vez
+    grupo.classList.toggle('abierto', !yaAbierto);
+    grupoBtn.setAttribute('aria-expanded', !yaAbierto ? 'true' : 'false');
+  };
+  grupoBtn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); alternar(); });
+  grupoBtn.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); alternar(); }
+    if(e.key==='Escape'){ cerrarTodosLosGrupos(); }
   });
 });
 
-// Cerrar al hacer clic fuera
+// Cerrar cualquier submenú abierto al tocar fuera del menú
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.menu-grupo') && 
-      !e.target.closest('.tabs-header')) {
-    menuGrupos.forEach((g) => g.classList.remove('abierto'));
+  if (!e.target.closest('.menu-grupo') && !e.target.closest('.tabs-header')) {
+    cerrarTodosLosGrupos();
   }
 });
+
 fetch(FINANZAS_GET_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
   .catch(e=>{document.getElementById('hero').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
 
@@ -1103,61 +738,24 @@ function restaurarTab(){
   if(btn) btn.click();
 }
 
-// ---- Ocultar/mostrar sidebar (solo aplica en tablet/escritorio, ≥900px) ----
-document.getElementById('btnSidebarToggle').addEventListener('click',()=>{
-  const oculto=document.querySelector('.wrap').classList.toggle('sidebar-oculto');
-  try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(e){}
-});
-try{
-  if(localStorage.getItem('sidebarOculto')==='1') document.querySelector('.wrap').classList.add('sidebar-oculto');
-}catch(e){}
-
-// ---- Submenús del menú lateral/inferior (código nuevo, no reemplaza el manejador de pestañas ya existente) ----
-function esEscritorioExpandido(){
-  return window.matchMedia("(min-width:600px) and (max-width:899px) and (orientation:landscape)").matches || window.innerWidth>=900 && !document.querySelector('.wrap').classList.contains('sidebar-oculto');
-}
-function cerrarTodosLosGrupos(exceptoEste){
-  document.querySelectorAll('.menu-grupo.abierto').forEach(g=>{
-    if(g===exceptoEste) return;
-    g.classList.remove('abierto');
-    const gb=g.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','false');
-  });
-}
-document.querySelectorAll('.menu-grupo-btn').forEach(btn=>{
-  const grupo = btn.closest('.menu-grupo');
-  const alternar = () => {
-    const yaAbierto = grupo.classList.contains('abierto');
-    cerrarTodosLosGrupos(grupo); // solo uno abierto a la vez — evita paneles superpuestos
-    grupo.classList.toggle('abierto', !yaAbierto);
-    btn.setAttribute('aria-expanded', !yaAbierto ? 'true' : 'false');
-  };
-  btn.addEventListener('click', e=>{ e.stopPropagation(); alternar(); });
-  btn.addEventListener('keydown', e=>{
-    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); alternar(); }
-    if(e.key==='Escape'){ cerrarTodosLosGrupos(); }
-  });
-});
-// Cada botón de pestaña, además de su propio onclick ya existente, abre su grupo contenedor
-// en escritorio (acordeón inline) y CIERRA el popover en móvil/tablet colapsado tras elegir.
+// Cada botón de pestaña (nivel 2), además de su propio onclick de arriba, abre su
+// grupo contenedor como acordeón inline (el riel es la misma columna vertical
+// en móvil, tablet y escritorio; con el riel contraído no hay nada que abrir,
+// ya que el submenú permanece oculto hasta volver a expandir).
 document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
   b.addEventListener('click', ()=>{
     const grupo=b.closest('.menu-grupo');
     if(!grupo) return;
     if(esEscritorioExpandido()){
+      cerrarTodosLosGrupos(grupo); // solo el grupo de la pestaña activa queda abierto
       grupo.classList.add('abierto');
       const gb=grupo.querySelector('.menu-grupo-btn'); if(gb) gb.setAttribute('aria-expanded','true');
     } else {
-      cerrarTodosLosGrupos(); // popover: se cierra apenas se elige una opción
+      cerrarTodosLosGrupos();
     }
   });
 });
-// Cerrar el popover al tocar/hacer clic fuera de cualquier grupo
-document.addEventListener('click', e=>{
-  if(!e.target.closest('.menu-grupo')) cerrarTodosLosGrupos();
-});
-// Al cargar, abre el grupo de la pestaña activa SOLO en escritorio con sidebar expandido
-// (ahí el submenú es un acordeón inline, no un popover flotante — en móvil/tablet colapsado
-// abrirlo por defecto tapaba los demás botones de la barra, que es el bug reportado).
+// Al cargar, abre el grupo de la pestaña activa si el riel está expandido.
 if(esEscritorioExpandido()){
   document.querySelectorAll('.tabs button.on').forEach(b=>{
     const grupo=b.closest('.menu-grupo');
@@ -1883,69 +1481,6 @@ async function post(body){
   });
   return resp.json();
 }
-// ===== MENÚ LATERAL RESPONSIVE (Tablet/Desktop) =====
-const wrap = document.querySelector('.wrap');
-const btnToggle = document.getElementById('btnSidebarToggle');
-const menuGrupos = document.querySelectorAll('.menu-grupo');
-let sidebarVisible = true; // true = expandido, false = contraído
-
-// Toggle sidebar
-if (btnToggle) {
-  btnToggle.addEventListener('click', () => {
-    sidebarVisible = !sidebarVisible;
-    if (sidebarVisible) {
-      wrap.classList.remove('sidebar-oculto');
-    } else {
-      wrap.classList.add('sidebar-oculto');
-    }
-  });
-}
-
-// Abrir/cerrar submenús en tablet/desktop al hacer clic en .menu-grupo-btn
-menuGrupos.forEach((grupo) => {
-  const grupoBtn = grupo.querySelector('.menu-grupo-btn');
-  if (grupoBtn) {
-    grupoBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      
-      // Cerrar otros grupos abiertos
-      menuGrupos.forEach((g) => {
-        if (g !== grupo) {
-          g.classList.remove('abierto');
-          const expandBtn = g.querySelector('[data-tab]');
-          if (expandBtn) expandBtn.classList.remove('on');
-        }
-      });
-      
-      // Toggle actual grupo
-      grupo.classList.toggle('abierto');
-      const tabBtn = grupo.querySelector('[data-tab]');
-      if (tabBtn) tabBtn.classList.toggle('on');
-    });
-  }
-});
-
-// Cerrar submenús al hacer clic fuera
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.menu-grupo') && !e.target.closest('.submenu')) {
-    menuGrupos.forEach((g) => {
-      g.classList.remove('abierto');
-      const btn = g.querySelector('[data-tab]');
-      if (btn) btn.classList.remove('on');
-    });
-  }
-});
-
-// Cerrar submenú al seleccionar una pestaña
-document.querySelectorAll('.submenu button[data-tab]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    menuGrupos.forEach((g) => {
-      g.classList.remove('abierto');
-      const grupoBtn = g.querySelector('[data-tab]');
-      if (grupoBtn) grupoBtn.classList.remove('on');
-    });
-  });
-});
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
