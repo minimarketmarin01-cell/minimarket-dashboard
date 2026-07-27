@@ -696,11 +696,19 @@ if (btnToggle) {
     try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(err){}
     // Al contraer solo se ocultan los iconos (vía CSS); el grupo/submenú que
     // estaba abierto se conserva y reaparece igual al volver a expandir.
-    // Los gráficos no se destruyen ni se recrean: solo se recalcula su tamaño
-    // mientras el riel hace la transición de ancho y al terminarla.
-    requestAnimationFrame(resizeCharts);
-    setTimeout(resizeCharts, 220);
   });
+}
+function resizeCharts(){
+  Object.values(charts).forEach(c=>{
+    try{
+      if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
+    }catch(err){}
+  });
+}
+const _mainContentEl = document.querySelector('.main-content');
+if (_mainContentEl && typeof ResizeObserver !== 'undefined') {
+  const _roMainContent = new ResizeObserver(()=>resizeCharts());
+  _roMainContent.observe(_mainContentEl);
 }
 window.addEventListener('resize', resizeCharts);
 
