@@ -680,7 +680,6 @@ try{
   if(localStorage.getItem('sidebarOculto')==='1') wrap.classList.add('sidebar-oculto');
 }catch(e){}
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
-// Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
 let _resizeChartsTimer = null;
 function resizeCharts(){
   Object.values(charts).forEach(c=>{
@@ -711,25 +710,6 @@ document.querySelector('.tabs')?.addEventListener('transitionend', (e)=>{
   if(e.propertyName==='width' || e.propertyName==='flex-basis') _scheduleResizeCharts(50);
 });
 window.addEventListener('resize', ()=>_scheduleResizeCharts(150));
-let _resizeChartsTimer = null;
-function resizeCharts(){
-  Object.values(charts).forEach(c=>{
-    try{
-      if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
-    }catch(err){}
-  });
-}
-function _scheduleResizeCharts(){
-  clearTimeout(_resizeChartsTimer);
-  _resizeChartsTimer = setTimeout(resizeCharts, 250);
-}
-const _tabsEl = document.querySelector('.tabs');
-if (_tabsEl) {
-  _tabsEl.addEventListener('transitionend', (e)=>{
-    if(e.propertyName==='width' || e.propertyName==='flex-basis') _scheduleResizeCharts();
-  });
-}
-window.addEventListener('resize', _scheduleResizeCharts);
 // Abrir/cerrar el submenú de cada grupo al tocar su icono
 menuGrupos.forEach((grupo) => {
   const grupoBtn = grupo.querySelector('.menu-grupo-btn');
