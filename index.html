@@ -679,15 +679,7 @@ function cerrarTodosLosGrupos(exceptoEste){
 try{
   if(localStorage.getItem('sidebarOculto')==='1') wrap.classList.add('sidebar-oculto');
 }catch(e){}
-
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
-function resizeCharts(){
-  Object.values(charts).forEach(c=>{
-    try{
-      if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
-    }catch(err){}
-  });
-}
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
     e.preventDefault();
@@ -698,6 +690,7 @@ if (btnToggle) {
     // estaba abierto se conserva y reaparece igual al volver a expandir.
   });
 }
+let _resizeChartsTimer = null;
 function resizeCharts(){
   Object.values(charts).forEach(c=>{
     try{
@@ -705,13 +698,17 @@ function resizeCharts(){
     }catch(err){}
   });
 }
-const _mainContentEl = document.querySelector('.main-content');
-if (_mainContentEl && typeof ResizeObserver !== 'undefined') {
-  const _roMainContent = new ResizeObserver(()=>resizeCharts());
-  _roMainContent.observe(_mainContentEl);
+function _scheduleResizeCharts(){
+  clearTimeout(_resizeChartsTimer);
+  _resizeChartsTimer = setTimeout(resizeCharts, 250);
 }
-window.addEventListener('resize', resizeCharts);
-
+const _tabsEl = document.querySelector('.tabs');
+if (_tabsEl) {
+  _tabsEl.addEventListener('transitionend', (e)=>{
+    if(e.propertyName==='width' || e.propertyName==='flex-basis') _scheduleResizeCharts();
+  });
+}
+window.addEventListener('resize', _scheduleResizeCharts);
 // Abrir/cerrar el submenú de cada grupo al tocar su icono
 menuGrupos.forEach((grupo) => {
   const grupoBtn = grupo.querySelector('.menu-grupo-btn');
