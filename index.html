@@ -49,7 +49,7 @@
     max-height:100vh; overflow-y:auto; overflow-x:hidden;
     background:#fff; border:1px solid var(--linea); border-radius:var(--radius);
     padding:6px; box-shadow:var(--sombra); z-index:40;
-    transition:width .2s ease, flex-basis .2s ease;
+    transition:none;
   }
   .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 8px; margin-bottom:4px; border-bottom:1px solid var(--linea)}
   .tabs-header-txt{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gris); white-space:nowrap; overflow:hidden}
@@ -679,6 +679,7 @@ function cerrarTodosLosGrupos(exceptoEste){
 try{
   if(localStorage.getItem('sidebarOculto')==='1') wrap.classList.add('sidebar-oculto');
 }catch(e){}
+// Abrir/cerrar el submenú de cada grupo al tocar su icono
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
 function resizeCharts(){
   Object.values(charts).forEach(c=>{
@@ -686,14 +687,6 @@ function resizeCharts(){
       if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
     }catch(err){}
   });
-}
-function resizeChartsDuranteTransicion(){
-  const inicio = performance.now();
-  const paso = (ahora)=>{
-    resizeCharts();
-    if(ahora - inicio < 320) requestAnimationFrame(paso);
-  };
-  requestAnimationFrame(paso);
 }
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
@@ -703,13 +696,14 @@ if (btnToggle) {
     try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(err){}
     // Al contraer solo se ocultan los iconos (vía CSS); el grupo/submenú que
     // estaba abierto se conserva y reaparece igual al volver a expandir.
-    // Los gráficos no se destruyen ni recargan: se recalcula su tamaño en
-    // cada frame mientras dura la transición del riel (~320ms), así queda
-    // bien sin depender de que el navegador dispare "transitionend".
-    resizeChartsDuranteTransicion();
+    // Los gráficos no se destruyen ni recargan: como ya no hay animación de
+    // ancho, un solo resize en el siguiente frame (con el layout ya
+    // aplicado) es suficiente y no compite con el resize interno de Chart.js.
+    requestAnimationFrame(()=>requestAnimationFrame(resizeCharts));
   });
 }
-window.addEventListener('resize', resizeCharts);// Abrir/cerrar el submenú de cada grupo al tocar su icono
+window.addEventListener('resize', resizeCharts);
+// Abrir/cerrar el submenú de cada grupo al tocar su icono  
 menuGrupos.forEach((grupo) => {
   const grupoBtn = grupo.querySelector('.menu-grupo-btn');
   if (!grupoBtn) return;
