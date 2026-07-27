@@ -681,6 +681,9 @@ try{
 }catch(e){}
 
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
+function resizeCharts(){
+  Object.values(charts).forEach(c=>{ try{ c && c.resize(); }catch(err){} });
+}
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
     e.preventDefault();
@@ -689,8 +692,13 @@ if (btnToggle) {
     try{ localStorage.setItem('sidebarOculto', oculto?'1':'0'); }catch(err){}
     // Al contraer solo se ocultan los iconos (vía CSS); el grupo/submenú que
     // estaba abierto se conserva y reaparece igual al volver a expandir.
+    // Los gráficos no se destruyen ni se recrean: solo se recalcula su tamaño
+    // mientras el riel hace la transición de ancho y al terminarla.
+    requestAnimationFrame(resizeCharts);
+    setTimeout(resizeCharts, 220);
   });
 }
+window.addEventListener('resize', resizeCharts);
 
 // Abrir/cerrar el submenú de cada grupo al tocar su icono
 menuGrupos.forEach((grupo) => {
