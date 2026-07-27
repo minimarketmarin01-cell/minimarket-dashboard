@@ -682,7 +682,11 @@ try{
 
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
 function resizeCharts(){
-  Object.values(charts).forEach(c=>{ try{ c && c.resize(); }catch(err){} });
+  Object.values(charts).forEach(c=>{
+    try{
+      if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
+    }catch(err){}
+  });
 }
 if (btnToggle) {
   btnToggle.addEventListener('click', (e) => {
