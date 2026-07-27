@@ -706,7 +706,14 @@ if (btnToggle) {
     // ancho, un solo resize en el siguiente frame (con el layout ya
     // aplicado) es suficiente y no compite con el resize interno de Chart.js.
     setTimeout(() => {
-    window.dispatchEvent(new Event('resize'));
+    window.dispatchEvent(new Event("resize"));
+
+    Object.values(charts).forEach(chart => {
+        if (!chart) return;
+        chart.resize();
+        chart.update("none");
+    });
+
     resizeCharts();
 }, 350);
   });
