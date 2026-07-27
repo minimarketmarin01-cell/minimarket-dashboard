@@ -684,8 +684,14 @@ try{
 function resizeCharts(){
   Object.values(charts).forEach(c=>{
     try{
-      if(c && c.canvas && c.canvas.offsetParent !== null) c.resize();
-    }catch(err){}
+      if(!c) return;
+
+      c.resize();
+
+      if(typeof c.update==="function"){
+        c.update("none");
+      }
+    }catch(e){}
   });
 }
 if (btnToggle) {
