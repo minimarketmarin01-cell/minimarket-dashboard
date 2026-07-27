@@ -709,7 +709,26 @@ if (btnToggle) {
     resizeChartsDuranteTransicion();
   });
 }
-window.addEventListener('resize', resizeCharts);
+window.addEventListener('resize', resizeCharts);// Abrir/cerrar el submenú de cada grupo al tocar su icono
+menuGrupos.forEach((grupo) => {
+  const grupoBtn = grupo.querySelector('.menu-grupo-btn');
+  if (!grupoBtn) return;
+  const alternar = () => {
+    const yaAbierto = grupo.classList.contains('abierto');
+    cerrarTodosLosGrupos(grupo); // solo un submenú abierto a la vez
+    grupo.classList.toggle('abierto', !yaAbierto);
+    grupoBtn.setAttribute('aria-expanded', !yaAbierto ? 'true' : 'false');
+  };
+  grupoBtn.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); alternar(); });
+  grupoBtn.addEventListener('keydown', e=>{
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); alternar(); }
+    if(e.key==='Escape'){ cerrarTodosLosGrupos(); }
+  });
+});
+
+// Cerrar cualquier submenú abierto al tocar fuera del menú
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.menu-grupo') && !e.target.closest('.tabs-header')) {
     cerrarTodosLosGrupos();
   }
 });
