@@ -1042,14 +1042,28 @@ function dibujarSinRotacion(){
     <div class="cap" style="margin-top:8px">💡 Candidatos a liquidar (recuperar algo de esa plata) o dejar de reponer para liberar espacio en góndola.</div>`;
 }
 function nuevoChart(id,cfg){
-  if(charts[id])charts[id].destroy();
-  // Fuerza que TODO gráfico llene el ancho real de su contenedor (la tarjeta),
-  // en vez de limitarse a la proporción 2:1 por defecto de Chart.js — eso era
-  // lo que dejaba espacio en blanco a la derecha en pantallas anchas.
+  if(charts[id]) charts[id].destroy();
+
   cfg.options = cfg.options || {};
   cfg.options.responsive = true;
   cfg.options.maintainAspectRatio = false;
-  charts[id]=new Chart(document.getElementById(id),cfg);
+  cfg.options.resizeDelay = 300;
+  cfg.options.animation = false;
+
+  const canvas = document.getElementById(id);
+  const parent = canvas.parentElement;
+
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  parent.style.width = "100%";
+  parent.style.height = "100%";
+
+  charts[id] = new Chart(canvas, cfg);
+
+  requestAnimationFrame(() => {
+    charts[id].resize();
+    charts[id].update("none");
+  });
 }
 function dibujarRent(){
   const serie=[...DATA.meses].filter((v,i,a)=>a.findIndex(x=>x.ym===v.ym)===i).sort((a,b)=>a.ym<b.ym?-1:1);
