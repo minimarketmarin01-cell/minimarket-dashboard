@@ -468,6 +468,124 @@
     .wrap.sidebar-oculto .graf-control{height:220px!important}
   }
 
+  /* ==================================================================
+     CELULAR VERTICAL (<600px) — navegación por barra inferior.
+     Motivo medido: con el riel lateral abierto se comía 44–51% del ancho
+     (contenido reducido a 126–178px) y el menú quedaba a ~360px desde
+     arriba, fuera del alcance del pulgar. La barra inferior devuelve el
+     100% del ancho y queda en zona de pulgar.
+     Todo va dentro del media query: en ≥600px el riel lateral manda y
+     esta barra ni siquiera se renderiza.
+     ================================================================== */
+  .barra-inf{display:none}
+  .bi-sheet-ov{display:none}
+
+  @media screen and (max-width:599px){
+    /* --- Riel lateral fuera; los botones siguen en el DOM para que
+       .click() programático (restaurarTab, barra inferior) funcione. --- */
+    .layout-desktop > .tabs{display:none}
+    .layout-desktop{display:block}
+    .main-content{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+
+    /* --- Barra inferior fija --- */
+    .barra-inf{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:60;
+      background:rgba(255,255,255,.97); backdrop-filter:blur(10px);
+      border-top:1px solid var(--linea);
+      padding:6px 2px calc(6px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -2px 14px rgba(16,24,40,.07);
+    }
+    .bi-item{
+      flex:1 1 0; min-width:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:3px;
+      background:none; border:none; cursor:pointer; padding:6px 2px;
+      color:#79839a; font-family:'Inter',sans-serif; border-radius:10px;
+      -webkit-tap-highlight-color:transparent; min-height:52px;
+      transition:color .15s, background .15s;
+    }
+    .bi-item .bi-ico{position:relative; display:inline-flex; line-height:0}
+    .bi-item .bi-ico svg{width:22px; height:22px}
+    .bi-item .bi-txt{font-size:.63rem; font-weight:600; letter-spacing:.01em;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%}
+    .bi-item.on{color:var(--acento); background:var(--acento-suave)}
+    .bi-item.on .bi-txt{font-weight:800}
+    .bi-badge{
+      position:absolute; top:-5px; right:-8px; min-width:16px; height:16px;
+      padding:0 4px; border-radius:999px; background:var(--rojo); color:#fff;
+      font-size:.6rem; font-weight:800; display:flex; align-items:center;
+      justify-content:center; line-height:1;
+    }
+
+    /* --- Hoja "Más" --- */
+    .bi-sheet-ov{
+      display:flex; position:fixed; inset:0; z-index:70; align-items:flex-end;
+      background:rgba(16,24,40,.42);
+    }
+    .bi-sheet-ov.hidden{display:none}
+    .bi-sheet{
+      width:100%; background:#fff; border-radius:18px 18px 0 0;
+      padding:8px 14px calc(16px + env(safe-area-inset-bottom,0px));
+      max-height:76vh; overflow-y:auto; box-shadow:0 -6px 26px rgba(16,24,40,.2);
+    }
+    .bi-sheet-tirador{width:38px; height:4px; border-radius:999px; background:#d7dced; margin:2px auto 12px}
+    .bi-sheet h3{font-family:'Manrope',sans-serif; font-size:.7rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.1em; color:#98a1b3; margin:0 0 6px 4px}
+    .bi-sheet-item{
+      display:flex; align-items:center; gap:12px; width:100%;
+      background:none; border:none; cursor:pointer; text-align:left;
+      padding:13px 10px; border-radius:11px; font-family:'Inter',sans-serif;
+      font-size:.92rem; font-weight:500; color:#5b6577; min-height:48px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .bi-sheet-item .bi-ico{display:inline-flex; line-height:0; color:#8b94a7; flex:0 0 auto}
+    .bi-sheet-item .bi-ico svg{width:20px; height:20px}
+    .bi-sheet-item.on{background:var(--acento-suave); color:var(--acento); font-weight:700}
+    .bi-sheet-item.on .bi-ico{color:var(--acento)}
+
+    /* --- Densidad de contenido en celular --- */
+    .hero{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px}
+    .kpi.hero-util{grid-column:1 / -1}
+    .mini{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+    .kpi{padding:12px 13px 11px}
+    .kpi .val{font-size:clamp(1rem,4.6vw,1.35rem)}
+    .card{padding:14px}
+    .masthead{margin:0 -12px 10px}
+    /* Selector de mes: carrusel horizontal en vez de envolver en 3 líneas */
+    .selector{flex-wrap:nowrap; overflow-x:auto; margin:12px 0;
+      scrollbar-width:none; -webkit-overflow-scrolling:touch}
+    .selector::-webkit-scrollbar{display:none}
+    .selector button{flex:0 0 auto}
+
+    /* --- Registros: la tabla de 8 columnas no cabe en 360px.
+       Se convierte en una tarjeta por movimiento, con la etiqueta de
+       cada campo tomada de data-lbl. --- */
+    .tabla-scroll{max-height:none; border:none; overflow:visible}
+    #tablaEdit thead{display:none}
+    #tablaEdit, #tablaEdit tbody, #tablaEdit tr, #tablaEdit td{display:block; width:100%}
+    #tablaEdit tr{
+      border:1px solid var(--linea); border-radius:13px; background:#fff;
+      padding:10px 12px; margin-bottom:10px; box-shadow:var(--sombra);
+    }
+    #tablaEdit tr.dirty{border-color:var(--ambar); background:var(--ambar-suave)}
+    #tablaEdit td{
+      display:flex; align-items:center; gap:10px;
+      border:none; padding:4px 0; text-align:left;
+    }
+    #tablaEdit td::before{
+      content:attr(data-lbl); flex:0 0 74px; font-size:.65rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.05em; color:var(--gris);
+    }
+    #tablaEdit td:last-child::before{content:''; flex:0 0 0}
+    #tablaEdit td:last-child{justify-content:flex-end; padding-top:8px}
+    #tablaEdit td input, #tablaEdit td select{
+      flex:1 1 auto; width:100% !important; min-width:0;
+      padding:7px 9px; border:1px solid var(--linea); border-radius:8px;
+      font-size:.86rem; background:#fff;
+    }
+    #tablaEdit td.num input{text-align:right}
+    .barra-guardar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+  }
+
   /* ===== Transición suave solo en los ítems de navegación ===== */
   .tabs .menu-nivel1 button{ transition: background .15s, color .15s; }
 </style>
@@ -727,6 +845,50 @@
   </div>
 
   <div class="pie" id="pie"></div>
+
+  <!-- ============================================================
+       BARRA INFERIOR — solo celular vertical (<600px).
+       No duplica lógica de pestañas: cada botón hace .click() sobre
+       el botón del riel lateral que ya existe, así que el cambio de
+       vista, el estado .on y el localStorage siguen manejándose en
+       un solo lugar. En tablet/PC esta barra no se renderiza y manda
+       el riel lateral de siempre.
+       ============================================================ -->
+  <nav class="barra-inf" id="barraInf" aria-label="Navegación principal">
+    <button class="bi-item" data-ir="resumen">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span>
+      <span class="bi-txt">Resumen</span>
+    </button>
+    <button class="bi-item" data-ir="cierre">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.4"/><rect x="3" y="14" width="18" height="6" rx="1.4"/><path d="M7 7h.01M7 17h.01"/></svg></span>
+      <span class="bi-txt">Cierre</span>
+    </button>
+    <button class="bi-item" data-ir="revisar">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span class="bi-badge" id="biBadgeRev" style="display:none"></span></span>
+      <span class="bi-txt">Revisar</span>
+    </button>
+    <button class="bi-item" data-ir="registros">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l3 3v15H5V6z"/><path d="M9 11h6M9 15h6M9 7h3"/></svg></span>
+      <span class="bi-txt">Registros</span>
+    </button>
+    <button class="bi-item" id="biMas" aria-haspopup="dialog" aria-expanded="false">
+      <span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>
+      <span class="bi-txt">Más</span>
+    </button>
+  </nav>
+
+  <div class="bi-sheet-ov hidden" id="biSheetOv" role="dialog" aria-modal="true" aria-labelledby="biSheetTit">
+    <div class="bi-sheet">
+      <div class="bi-sheet-tirador"></div>
+      <h3 id="biSheetTit">Análisis del mes</h3>
+      <button class="bi-sheet-item" data-ir="rentabilidad"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Rentabilidad</button>
+      <button class="bi-sheet-item" data-ir="costos"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span>Costos</button>
+      <button class="bi-sheet-item" data-ir="retiro"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span>Retiro utilidad</button>
+      <button class="bi-sheet-item" data-ir="surtido"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Surtido</button>
+      <button class="bi-sheet-item" data-ir="mermas"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span>Mermas</button>
+      <button class="bi-sheet-item" data-ir="cartolas"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg></span>Cartolas</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -938,7 +1100,7 @@ function init(){
   }catch(e){}
   document.getElementById('sello').textContent='actualizado '+new Date(DATA.generado).toLocaleString('es-CL');
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
-  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab();
+  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab(); sincronizarBarraInferior();
 }
 function poblarCategorias(){
   const dl=document.getElementById('listaCategorias'); if(!dl)return;
@@ -960,6 +1122,65 @@ document.querySelectorAll('.tabs button[data-tab]').forEach(b=>b.onclick=()=>{
   ['resumen','rentabilidad','costos','retiro','surtido','mermas','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
   try{ localStorage.setItem('tabActiva', b.dataset.tab); }catch(e){}
 });
+// ================= BARRA INFERIOR (solo celular vertical) =================
+// No duplica la lógica de pestañas: cada botón delega en el botón del riel
+// lateral que ya existe (.tabs button[data-tab]), que es quien cambia la
+// vista, marca .on y escribe localStorage. Aquí solo se refleja el estado.
+const BI_SECUNDARIAS = ['rentabilidad','costos','retiro','surtido','mermas','cartolas'];
+const biSheetOv = document.getElementById('biSheetOv');
+
+function biAbrirSheet(){
+  biSheetOv.classList.remove('hidden');
+  document.getElementById('biMas').setAttribute('aria-expanded','true');
+}
+function biCerrarSheet(){
+  biSheetOv.classList.add('hidden');
+  document.getElementById('biMas').setAttribute('aria-expanded','false');
+}
+function biIrA(tab){
+  const btn = document.querySelector(`.tabs button[data-tab="${tab}"]`);
+  if(btn) btn.click();               // reutiliza el handler existente
+  biCerrarSheet();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function sincronizarBarraInferior(){
+  const activo = document.querySelector('.tabs button[data-tab].on');
+  const tab = activo ? activo.dataset.tab : 'resumen';
+  document.querySelectorAll('.barra-inf .bi-item[data-ir]').forEach(b=>{
+    b.classList.toggle('on', b.dataset.ir === tab);
+  });
+  // "Más" queda marcado cuando la vista activa es una de las secundarias
+  document.getElementById('biMas').classList.toggle('on', BI_SECUNDARIAS.indexOf(tab) >= 0);
+  document.querySelectorAll('.bi-sheet-item[data-ir]').forEach(b=>{
+    b.classList.toggle('on', b.dataset.ir === tab);
+  });
+  // Espeja el badge de "Por revisar" del riel lateral
+  const badge = document.getElementById('badgeRev');
+  const biBadge = document.getElementById('biBadgeRev');
+  if(badge && biBadge){
+    const hay = badge.style.display !== 'none' && badge.textContent.trim() !== '';
+    biBadge.style.display = hay ? 'flex' : 'none';
+    biBadge.textContent = badge.textContent;
+  }
+}
+document.querySelectorAll('.barra-inf .bi-item[data-ir], .bi-sheet-item[data-ir]').forEach(b=>{
+  b.addEventListener('click', ()=> biIrA(b.dataset.ir));
+});
+document.getElementById('biMas').addEventListener('click', ()=>{
+  biSheetOv.classList.contains('hidden') ? biAbrirSheet() : biCerrarSheet();
+});
+biSheetOv.addEventListener('click', e=>{ if(e.target === biSheetOv) biCerrarSheet(); });
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') biCerrarSheet(); });
+// Cualquier cambio de pestaña (venga del riel, de la barra o de restaurarTab)
+// refresca el estado visual de la barra inferior.
+document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
+  b.addEventListener('click', ()=> setTimeout(sincronizarBarraInferior, 0));
+});
+// Estado inicial: se marca de inmediato, sin esperar a que lleguen los datos.
+// Si el Worker tarda o falla, la barra igual refleja la vista que se está
+// viendo (Resumen) en vez de quedar con ningún ítem activo.
+sincronizarBarraInferior();
+
 function restaurarTab(){
   let tab='resumen';
   try{ tab = localStorage.getItem('tabActiva') || 'resumen'; }catch(e){}
@@ -1076,17 +1297,27 @@ function dibujarControl(m){
     return (it.meta!==null && it.pc>it.meta) ? '#b23b3b' : '#1f7a54';  // rojo si sobrepasa meta
   };
   // plugin inline: dibuja "$monto · %" al final de cada barra
+  // En celular se acorta la etiqueta ($ compacto) y se reduce el padding
+  // derecho: con right:120 en una pantalla de 360px la barra quedaba en 240px.
+  const esFonoCtrl = window.matchMedia('(max-width:599px)').matches;
+  const clpCorto=n=>{n=Math.round(n||0);const sg=n<0?'-':'';n=Math.abs(n);
+    if(n>=1000000)return sg+'$'+(n/1000000).toFixed(1).replace('.0','')+'M';
+    if(n>=1000)return sg+'$'+Math.round(n/1000)+'K';return sg+'$'+n;};
   const etiquetas={id:'etiquetas',afterDatasetsDraw(ch){
-    const {ctx}=ch; ctx.save(); ctx.font='600 10px system-ui'; ctx.textBaseline='middle';
+    const {ctx}=ch; ctx.save();
+    ctx.font=esFonoCtrl?'700 8.5px Inter, system-ui':'600 10px system-ui';
+    ctx.textBaseline='middle';
     ch.getDatasetMeta(0).data.forEach((bar,i)=>{
-      const it=items[i]; const txt=clp(it.v)+' · '+(it.pc||0).toFixed(1)+'%';
+      const it=items[i];
+      const txt=esFonoCtrl ? clpCorto(it.v)+' '+(it.pc||0).toFixed(0)+'%'
+                           : clp(it.v)+' · '+(it.pc||0).toFixed(1)+'%';
       ctx.fillStyle='#333'; ctx.textAlign='left';
-      ctx.fillText(txt, bar.x+6, bar.y);
+      ctx.fillText(txt, bar.x+5, bar.y);
     });
     ctx.restore();
   }};
   nuevoChart('chControl',{type:'bar',data:{labels:items.map(i=>i.n),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
-    options:{indexAxis:'y',layout:{padding:{right:120}},plugins:{legend:{display:false},
+    options:{indexAxis:'y',layout:{padding:{right:esFonoCtrl?66:120}},plugins:{legend:{display:false},
       tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+(it.meta!==null?' (meta ≤'+it.meta+'%)':'');}}}},
       scales:{x:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#eee'}},y:{grid:{display:false}}}},
     plugins:[etiquetas]});
@@ -1398,10 +1629,23 @@ function dona(id,obj,lecturaId,tipoTexto){
     });
     ctx.restore();
   }};
+  // En celular vertical las etiquetas externas no caben: reservan 52px por
+  // lado, así que en 360px la dona quedaba en ~250px y los nombres cortados.
+  // Ahí se usa leyenda debajo (en vertical sobra alto); en tablet/PC se
+  // mantienen las etiquetas externas con línea guía, que se leen mejor.
+  const esFono = window.matchMedia('(max-width:599px)').matches;
   nuevoChart(id,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:1.5,borderColor:'#fff'}]},
-    options:{cutout:'58%',layout:{padding:{left:52,right:52,top:16,bottom:16}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
-    plugins:[etiquetasExt]});
+    options:{cutout:esFono?'54%':'58%',
+      layout:{padding: esFono ? {left:6,right:6,top:6,bottom:4} : {left:52,right:52,top:16,bottom:16}},
+      plugins:{
+        legend: esFono
+          ? {display:true,position:'bottom',labels:{boxWidth:9,boxHeight:9,padding:7,font:{size:9.5,family:'Inter'},
+              generateLabels:ch=>labels.map((l,i)=>({
+                text:(l.length>14?l.slice(0,13)+'…':l)+' '+(tot?(vals[i]/tot*100).toFixed(0):0)+'%',
+                fillStyle:cols[i],strokeStyle:cols[i],lineWidth:0,index:i}))}}
+          : {display:false},
+        tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
+    plugins: esFono ? [] : [etiquetasExt]});
   if(!lecturaId || !ents.length) return;
   const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
   const esProv = tipoTexto==='proveedor';
@@ -1517,13 +1761,13 @@ function pintarTabla(){
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
     const d=dirty[f.rowIndex]||{};
     tr.innerHTML=`
-      <td><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
-      <td><input value="${d.fecha??f.fecha}" data-c="fecha" style="width:92px"></td>
-      <td><input value="${d.categoria??f.categoria}" data-c="categoria"></td>
-      <td>${selTipo(d.tipo??f.tipo)}</td>
-      <td>${selCuenta(d.cuenta??f.cuenta)}</td>
-      <td class="num"><input type="number" value="${d.monto??f.monto}" data-c="monto" style="width:96px;text-align:right"></td>
-      <td><input value="${d.nop??f.nop}" data-c="nop" style="width:90px" readonly></td>
+      <td data-lbl="Nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
+      <td data-lbl="Fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" style="width:92px"></td>
+      <td data-lbl="Categoría"><input value="${d.categoria??f.categoria}" data-c="categoria"></td>
+      <td data-lbl="Tipo">${selTipo(d.tipo??f.tipo)}</td>
+      <td data-lbl="Cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
+      <td class="num" data-lbl="Monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" style="width:96px;text-align:right"></td>
+      <td data-lbl="N° op."><input value="${d.nop??f.nop}" data-c="nop" style="width:90px" readonly></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
     tr.querySelectorAll('input,select').forEach(inp=>inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value)));
     tr.querySelector('.btn-del').onclick=()=>eliminarFila(f);
@@ -1666,7 +1910,7 @@ async function refrescarDatosSilencioso(){
   try{
     const d=await fetch(FINANZAS_GET_URL).then(r=>r.json());
     DATA=d;
-    render(); initTabla(); initRevisar(); poblarCategorias();
+    render(); initTabla(); initRevisar(); poblarCategorias(); sincronizarBarraInferior();
   }catch(e){ /* si falla, los datos se refrescarán al recargar manualmente */ }
 }
 
