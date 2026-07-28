@@ -586,6 +586,40 @@
     .barra-guardar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
   }
 
+  /* ==================================================================
+     CELULAR VERTICAL — contención de los canvas de Chart.js.
+     CAUSA DEL BUG: nuevoChart() hace parent.style.height="100%" sobre el
+     contenedor .graf-*, pisando su height inline. Como .card tiene alto
+     automático, ese 100% no resuelve contra nada: Chart.js mide → dibuja →
+     el contenedor crece → su ResizeObserver vuelve a disparar → bucle
+     infinito. De ahí el anillo de varias pantallas y el freeze táctil.
+     Se fija el alto con !important (gana sobre el inline que pone el JS),
+     lo que corta el bucle de raíz. Aislado a portrait ≤600px: tablet,
+     landscape y desktop no se tocan.
+     ================================================================== */
+  @media (max-width:600px) and (orientation:portrait){
+    /* Se listan también con .wrap.sidebar-oculto porque esa regla (0,3,0)
+       tiene más especificidad que .graf-dona (0,1,0) y si no, ganaría ella. */
+    .graf-dona, .wrap.sidebar-oculto .graf-dona{
+      height:340px !important; max-height:340px !important; min-height:0 !important}
+    .graf-dia, .wrap.sidebar-oculto .graf-dia{
+      height:230px !important; max-height:230px !important; min-height:0 !important}
+    .graf-mini, .wrap.sidebar-oculto .graf-mini{
+      height:150px !important; max-height:150px !important; min-height:0 !important}
+    .graf-control, .wrap.sidebar-oculto .graf-control{
+      height:215px !important; max-height:215px !important; min-height:0 !important}
+
+    /* Red de seguridad: aunque el canvas intente crecer, no puede desbordar
+       ni empujar la página. */
+    .graf-dona, .graf-dia, .graf-mini, .graf-control{
+      overflow:hidden; position:relative; touch-action:pan-y}
+    .graf-dona canvas, .graf-dia canvas, .graf-mini canvas, .graf-control canvas{
+      max-height:100% !important; max-width:100% !important;
+      /* pan-y deja pasar el scroll vertical de la página aunque el dedo
+         empiece encima del gráfico (antes el tap quedaba capturado). */
+      touch-action:pan-y !important}
+  }
+
   /* ===== Transición suave solo en los ítems de navegación ===== */
   .tabs .menu-nivel1 button{ transition: background .15s, color .15s; }
 </style>
@@ -971,7 +1005,16 @@ try{
 }catch(e){}
 // Abrir/cerrar el submenú de cada grupo al tocar su icono
 // Contraer/expandir el riel lateral (icono <, tablet/escritorio ≥600px landscape)
+// Bandera anti-reentrada: redibujar los gráficos cambia el alto de
+// .main-content, lo que vuelve a disparar el ResizeObserver y realimenta el
+// ciclo (resize → layout → resize…). Mientras dura un redibujo se ignoran
+// los eventos de observación. Es un no-op cuando no hay bucle, así que no
+// altera el comportamiento en desktop/tablet.
+let _resizeEnCurso = false;
 function resizeCharts(){
+  _resizeEnCurso = true;
+  clearTimeout(resizeCharts._libera);
+  resizeCharts._libera = setTimeout(()=>{ _resizeEnCurso = false; }, 260);
   Object.values(charts).forEach(c=>{
     try{
       if(!c) return;
@@ -1052,6 +1095,7 @@ if (typeof ResizeObserver !== 'undefined') {
         // Se vigila ancho Y alto: al contraer el riel en tablet/3:4 ahora
         // también cambian las alturas de .graf-dona/.graf-dia, y un cambio
         // solo de alto no disparaba el redibujo de Chart.js.
+        if (_resizeEnCurso) { lastW = w; lastH = h; continue; }
         if (Math.abs(w - lastW) > 1 || Math.abs(h - lastH) > 1) {
           lastW = w;
           lastH = h;
@@ -1470,6 +1514,8 @@ function dibujarSinRotacion(){
     </tbody></table>
     <div class="cap" style="margin-top:8px">💡 Candidatos a liquidar (recuperar algo de esa plata) o dejar de reponer para liberar espacio en góndola.</div>`;
 }
+// Única condición de "celular vertical" usada por los gráficos.
+const ESFONO_V = () => window.matchMedia('(max-width:600px) and (orientation:portrait)').matches;
 function nuevoChart(id,cfg){
   if(charts[id]) charts[id].destroy();
 
@@ -1485,7 +1531,11 @@ function nuevoChart(id,cfg){
   canvas.style.width = "100%";
   canvas.style.height = "100%";
   parent.style.width = "100%";
-  parent.style.height = "100%";
+  // En celular vertical NO se toca el alto del contenedor: el CSS del media
+  // query portrait ya lo fija. Escribir height:"100%" aquí era justamente lo
+  // que disparaba el bucle de resize infinito (contenedor sin alto definido).
+  // En tablet/landscape/desktop se mantiene el comportamiento de siempre.
+  if (!ESFONO_V()) parent.style.height = "100%";
 
   charts[id] = new Chart(canvas, cfg);
 
@@ -1612,6 +1662,9 @@ function dona(id,obj,lecturaId,tipoTexto){
   // Plugin: etiquetas externas (nombre · % · monto) con línea guía, como en el POS.
   // Solo etiqueta los segmentos con ≥3% para no saturar; el resto se ve en tooltip.
   const etiquetasExt={id:'etExt',afterDraw(ch){
+    // Guard: si el canvas aún no tiene layout, chartArea viene undefined y
+    // leer .left lanzaba una excepción que abortaba el dibujo del gráfico.
+    if(!ch.chartArea) return;
     const {ctx}=ch; const meta=ch.getDatasetMeta(0); const cx=ch.chartArea.left+(ch.chartArea.right-ch.chartArea.left)/2; const cy=ch.chartArea.top+(ch.chartArea.bottom-ch.chartArea.top)/2;
     ctx.save(); ctx.font='600 8.5px Inter, system-ui';
     meta.data.forEach((arc,i)=>{
@@ -1629,23 +1682,68 @@ function dona(id,obj,lecturaId,tipoTexto){
     });
     ctx.restore();
   }};
-  // En celular vertical las etiquetas externas no caben: reservan 52px por
-  // lado, así que en 360px la dona quedaba en ~250px y los nombres cortados.
-  // Ahí se usa leyenda debajo (en vertical sobra alto); en tablet/PC se
-  // mantienen las etiquetas externas con línea guía, que se leen mejor.
-  const esFono = window.matchMedia('(max-width:599px)').matches;
+  // ---- Etiquetas externas para CELULAR VERTICAL ----------------------
+  // Reemplaza la leyenda de 25 filas (que estiraba el canvas y no se leía)
+  // por etiquetas alrededor de la dona con línea guía, tipo POS: nombre,
+  // % y monto. Solo se etiquetan los segmentos con peso real y se separan
+  // verticalmente para que no se pisen entre sí.
+  const etiquetasFono={id:'etFono',afterDraw(ch){
+    if(!ch.chartArea) return;
+    const {ctx}=ch, meta=ch.getDatasetMeta(0), ca=ch.chartArea;
+    if(!meta.data.length) return;
+    const cx=(ca.left+ca.right)/2, cy=(ca.top+ca.bottom)/2;
+    // Candidatos: ≥2,5% del total, máximo 10, para no saturar la pantalla.
+    let cands=[];
+    meta.data.forEach((arc,i)=>{
+      const pct=tot?vals[i]/tot*100:0;
+      if(pct<2.5) return;
+      const ang=(arc.startAngle+arc.endAngle)/2;
+      cands.push({i,pct,ang,r:arc.outerRadius,
+        der:Math.cos(ang)>=0,
+        ya:cy+Math.sin(ang)*(arc.outerRadius+9),
+        xa:cx+Math.cos(ang)*arc.outerRadius,
+        yb:cy+Math.sin(ang)*arc.outerRadius});
+    });
+    cands.sort((a,b)=>b.pct-a.pct); cands=cands.slice(0,10);
+    // Anti-colisión: por lado, se ordenan y se separan un mínimo de 21px.
+    const GAP=21;
+    [true,false].forEach(lado=>{
+      const arr=cands.filter(c=>c.der===lado).sort((a,b)=>a.ya-b.ya);
+      for(let k=1;k<arr.length;k++)
+        if(arr[k].ya-arr[k-1].ya<GAP) arr[k].ya=arr[k-1].ya+GAP;
+      if(arr.length){
+        const sobra=arr[arr.length-1].ya-(ca.bottom-2);
+        if(sobra>0) arr.forEach(c=>c.ya-=sobra);
+        const falta=(ca.top+9)-arr[0].ya;
+        if(falta>0) arr.forEach(c=>c.ya+=falta);
+      }
+    });
+    ctx.save();
+    cands.forEach(c=>{
+      const codo=c.der?cx+c.r+11:cx-c.r-11;
+      const fin=c.der?codo+7:codo-7;
+      ctx.strokeStyle=cols[c.i]; ctx.lineWidth=1.1;
+      ctx.beginPath(); ctx.moveTo(c.xa,c.yb); ctx.lineTo(codo,c.ya); ctx.lineTo(fin,c.ya); ctx.stroke();
+      ctx.textAlign=c.der?'left':'right';
+      const tx=c.der?fin+3:fin-3;
+      const nom=labels[c.i].length>10?labels[c.i].slice(0,9)+'…':labels[c.i];
+      ctx.fillStyle='#2a3446'; ctx.font='700 8.6px Inter, system-ui';
+      ctx.fillText(nom, tx, c.ya-3.5);
+      ctx.fillStyle='#7b8496'; ctx.font='600 7.8px Inter, system-ui';
+      ctx.fillText(c.pct.toFixed(1)+'% · '+clpK(vals[c.i]), tx, c.ya+5.5);
+    });
+    ctx.restore();
+  }};
+  const esFono = ESFONO_V();
   nuevoChart(id,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:1.5,borderColor:'#fff'}]},
-    options:{cutout:esFono?'54%':'58%',
-      layout:{padding: esFono ? {left:6,right:6,top:6,bottom:4} : {left:52,right:52,top:16,bottom:16}},
+    options:{cutout:esFono?'56%':'58%',
+      // En celular se reserva espacio lateral para las etiquetas, igual que
+      // en escritorio pero algo más ajustado.
+      layout:{padding: esFono ? {left:62,right:62,top:12,bottom:12} : {left:52,right:52,top:16,bottom:16}},
       plugins:{
-        legend: esFono
-          ? {display:true,position:'bottom',labels:{boxWidth:9,boxHeight:9,padding:7,font:{size:9.5,family:'Inter'},
-              generateLabels:ch=>labels.map((l,i)=>({
-                text:(l.length>14?l.slice(0,13)+'…':l)+' '+(tot?(vals[i]/tot*100).toFixed(0):0)+'%',
-                fillStyle:cols[i],strokeStyle:cols[i],lineWidth:0,index:i}))}}
-          : {display:false},
+        legend:{display:false},
         tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
-    plugins: esFono ? [] : [etiquetasExt]});
+    plugins:[ esFono ? etiquetasFono : etiquetasExt ]});
   if(!lecturaId || !ents.length) return;
   const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
   const esProv = tipoTexto==='proveedor';
