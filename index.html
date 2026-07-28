@@ -43,6 +43,10 @@
     /* Etiquetas dentro de los <canvas>: Chart.js no lee CSS, así que el JS
        consume estos mismos números vía getComputedStyle para no duplicar. */
     --fs-chart-nom:15px; --fs-chart-val:14px; --fs-chart-pct:13.5px;
+    /* Ejes y etiquetas de barra (chControl y demás gráficos cartesianos):
+       antes no tenían font definido y caían al default de Chart.js (12px),
+       por eso se veían más chicos que el resto de la página. */
+    --fs-chart-eje:14px; --fs-chart-barra:14px;
     --radius:18px;
     --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
   }
@@ -359,13 +363,16 @@
     height: 70px !important;
   }
   .graf-dia {
-    height: 120px !important;
+    /* 120px no alcanzaban: con etiquetas de 14px el escalonado chocaba
+       contra el techo del área de gráfico y volvían a pisarse. */
+    height: clamp(250px, 52vh, 320px) !important;
   }
   .graf-dona {
     height: 160px !important;
   }
   .graf-control {
-    height: 90px !important;
+    /* 8 barras con texto de 14px: ~32px de banda cada una + eje X. */
+    height: 285px !important;
   }
 
   header.top h1 {
@@ -411,16 +418,16 @@
     .selector button{font-size:var(--fs-lg); padding:10px 20px}
     table{font-size:var(--fs-lg)}
     .graf-mini{height:190px!important}
-    .graf-dia{height:320px!important}
+    .graf-dia{height:360px!important}
     .graf-dona{height:380px!important}
-    .graf-control{height:190px!important}
+    .graf-control{height:340px!important}
   }
   @media screen and (min-width:1300px){
     .wrap{max-width:1700px}
-    .graf-mini{height:220px!important}
-    .graf-dia{height:380px!important}
+    .graf-mini{height:260px!important}
+    .graf-dia{height:420px!important}
     .graf-dona{height:440px!important}
-    .graf-control{height:220px!important}
+    .graf-control{height:360px!important}
   }
   /* ==================================================================
      FIX TABLET / 3:4 — el ancho liberado al contraer el riel ahora SÍ
@@ -448,7 +455,7 @@
     .wrap.sidebar-oculto .graf-mini{height:clamp(130px,17vw,210px)!important}
     .wrap.sidebar-oculto .graf-dia{height:clamp(210px,30vw,360px)!important}
     .wrap.sidebar-oculto .graf-dona{height:clamp(260px,38vw,430px)!important}
-    .wrap.sidebar-oculto .graf-control{height:clamp(150px,21vw,250px)!important}
+    .wrap.sidebar-oculto .graf-control{height:clamp(250px,42vw,320px)!important}
   }
 
   /* --- Tablet HORIZONTAL 600–899px con el riel contraído --- */
@@ -472,7 +479,7 @@
        agranda. Con clamp(260px,38vw,…) solo ganaba +33px. */
     .wrap.sidebar-oculto .graf-dona{height:clamp(300px,46vw,430px)!important}
     .wrap.sidebar-oculto .graf-dia{height:clamp(240px,34vw,380px)!important}
-    .wrap.sidebar-oculto .graf-control{height:clamp(170px,24vw,260px)!important}
+    .wrap.sidebar-oculto .graf-control{height:clamp(270px,45vw,340px)!important}
   }
 
   /* --- Tablet 3:4 en horizontal (1024×768) cae en ≥900px: ahí el grid ya
@@ -482,7 +489,7 @@
     .wrap.sidebar-oculto .graf-mini{height:220px!important}
     .wrap.sidebar-oculto .graf-dia{height:370px!important}
     .wrap.sidebar-oculto .graf-dona{height:440px!important}
-    .wrap.sidebar-oculto .graf-control{height:220px!important}
+    .wrap.sidebar-oculto .graf-control{height:360px!important}
   }
 
   /* ==================================================================
@@ -620,6 +627,7 @@
     :root{
       --fs-xs:13.5px; --fs-sm:14.5px; --fs-md:15.5px; --fs-lg:17px; --fs-xl:19px;
       --fs-chart-nom:13px; --fs-chart-val:12px; --fs-chart-pct:11.5px;
+      --fs-chart-eje:12.5px; --fs-chart-barra:12.5px;
     }
     /* Se listan también con .wrap.sidebar-oculto porque esa regla (0,3,0)
        tiene más especificidad que .graf-dona (0,1,0) y si no, ganaría ella. */
@@ -630,7 +638,7 @@
     .graf-mini, .wrap.sidebar-oculto .graf-mini{
       height:150px !important; max-height:150px !important; min-height:0 !important}
     .graf-control, .wrap.sidebar-oculto .graf-control{
-      height:215px !important; max-height:215px !important; min-height:0 !important}
+      height:290px !important; max-height:290px !important; min-height:0 !important}
 
     /* Red de seguridad: aunque el canvas intente crecer, no puede desbordar
        ni empujar la página. */
@@ -841,7 +849,7 @@
       <div class="grid">
         <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
         <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:140px;position:relative"><canvas id="chControl"></canvas></div></div>
+        <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
@@ -1445,23 +1453,35 @@ function dibujarControl(m){
   const clpCorto=n=>{n=Math.round(n||0);const sg=n<0?'-':'';n=Math.abs(n);
     if(n>=1000000)return sg+'$'+(n/1000000).toFixed(1).replace('.0','')+'M';
     if(n>=1000)return sg+'$'+Math.round(n/1000)+'K';return sg+'$'+n;};
+  // Texto de cada barra, con la misma escala tipográfica del resto de la página.
+  const txtBarra = it => esFonoCtrl
+    ? clpCorto(it.v)+' '+(it.pc||0).toFixed(0)+'%'
+    : clp(it.v)+' · '+(it.pc||0).toFixed(1)+'%';
+  const FUENTE_BARRA = fuenteChart('--fs-chart-barra',14,'600');
+  // Padding derecho DINÁMICO: se mide el texto más largo en vez de usar el
+  // 120 fijo de antes, que con la fuente nueva cortaba los montos grandes.
+  const padDer = Math.ceil(Math.max(
+    ...items.map(it=>medirTexto(txtBarra(it), FUENTE_BARRA))
+  )) + 14;
   const etiquetas={id:'etiquetas',afterDatasetsDraw(ch){
     const {ctx}=ch; ctx.save();
-    ctx.font=esFonoCtrl?'700 8.5px Inter, system-ui':'600 10px system-ui';
+    ctx.font=FUENTE_BARRA;
     ctx.textBaseline='middle';
     ch.getDatasetMeta(0).data.forEach((bar,i)=>{
       const it=items[i];
-      const txt=esFonoCtrl ? clpCorto(it.v)+' '+(it.pc||0).toFixed(0)+'%'
-                           : clp(it.v)+' · '+(it.pc||0).toFixed(1)+'%';
-      ctx.fillStyle='#333'; ctx.textAlign='left';
-      ctx.fillText(txt, bar.x+5, bar.y);
+      ctx.fillStyle='#28313f'; ctx.textAlign='left';
+      ctx.fillText(txtBarra(it), bar.x+6, bar.y);
     });
     ctx.restore();
   }};
   nuevoChart('chControl',{type:'bar',data:{labels:items.map(i=>i.n),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
-    options:{indexAxis:'y',layout:{padding:{right:esFonoCtrl?66:120}},plugins:{legend:{display:false},
+    options:{indexAxis:'y',layout:{padding:{right:padDer}},plugins:{legend:{display:false},
       tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+(it.meta!==null?' (meta ≤'+it.meta+'%)':'');}}}},
-      scales:{x:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#eee'}},y:{grid:{display:false}}}},
+      scales:{
+        x:{max:100,grid:{color:'#eee'},
+           ticks:{callback:v=>v+'%', font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#7b8496'}},
+        y:{grid:{display:false},
+           ticks:{font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#28313f', crossAlign:'far'}}}},
     plugins:[etiquetas]});
   const sobrepasados=items.filter(it=>it.meta!==null && it.pc>it.meta);
   const txtControl = sobrepasados.length
@@ -1657,14 +1677,20 @@ function dibujarRent(){
   const pend=(n*sxy-sx*sy)/(n*sxx-sx*sx || 1), inter=(sy-pend*sx)/n;
   const tendencia=xs.map(x=>+(pend*x+inter).toFixed(2));
 
+  // Escala tipográfica del sistema (misma que donuts y Estructura de costos).
+  const FS_R_PCT=fsChart('--fs-chart-nom',15), FS_R_VAL=fsChart('--fs-chart-val',14);
+  const SEP_R=Math.round(FS_R_VAL*1.15);   // separación entre las 2 líneas
   const etiquetas={id:'etiquetasRent',afterDatasetsDraw(ch){
+    if(!ch.chartArea) return;
     const {ctx}=ch; ctx.save(); ctx.textAlign='center';
     ch.getDatasetMeta(0).data.forEach((bar,i)=>{
       const s=serie[i]; const color=s.rentabilidad>=0?'#177a56':'#b6402f';
-      ctx.font='700 11px Manrope, system-ui'; ctx.fillStyle=color;
-      ctx.fillText(pct(s.rentabilidad), bar.x, bar.y-20);
-      if(!s.ref){ ctx.font='600 9px Inter, system-ui'; ctx.fillStyle='#9a988c';
-        ctx.fillText(clpCompacto(s.utilidad), bar.x, bar.y-9); }
+      // El % va arriba; el monto justo debajo, separado en proporción a la
+      // fuente para que al subir la escala no se monten uno sobre otro.
+      ctx.font='700 '+FS_R_PCT+'px Manrope, system-ui'; ctx.fillStyle=color;
+      ctx.fillText(pct(s.rentabilidad), bar.x, bar.y-SEP_R-8);
+      if(!s.ref){ ctx.font=fuenteChart('--fs-chart-val',14); ctx.fillStyle='#9a988c';
+        ctx.fillText(clpCompacto(s.utilidad), bar.x, bar.y-8); }
     });
     ctx.restore();
   }};
@@ -1674,9 +1700,9 @@ function dibujarRent(){
       {type:'line',data:tendencia,borderColor:'#2f6df0',borderWidth:2.5,borderDash:[0],pointRadius:0,tension:0,fill:false,order:1,
         segment:{borderColor:c=>'#2f6df0'}}
     ]},
-    options:{layout:{padding:{top:28,bottom:2}},plugins:{legend:{display:false},
+    options:{layout:{padding:{top:Math.round(FS_R_PCT+FS_R_VAL+22),bottom:2}},plugins:{legend:{display:false},
       tooltip:{filter:c=>c.datasetIndex===0,callbacks:{label:c=>{const s=serie[c.dataIndex]; return s.ref?['Rentabilidad '+pct(c.raw)]:['Utilidad '+clp(s.utilidad)+' ('+pct(c.raw)+')','Ingreso total '+clp(s.ingreso)];}}}},
-      scales:{y:{display:false},x:{grid:{display:false},border:{display:false},ticks:{font:{size:10,weight:'600',family:'Inter'},color:'#8a8878'}}}},
+      scales:{y:{display:false},x:{grid:{display:false},border:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),weight:'600',family:'Inter'},color:'#8a8878'}}}},
     plugins:[etiquetas]});
   const actual=DATA.meses.find(x=>x.ym===mesActual);
   const dirTexto = pend>0.15?'mejorando':(pend<-0.15?'bajando':'estable');
@@ -1716,21 +1742,63 @@ function dibujarDia(m){
     const diasVista=dias.slice(lo-1,hi);
     const clpCompacto=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
     const mostrarEtiquetas=diasVista.length<=10; // con pocos días caben las etiquetas de $ sobre cada barra
+    const FS_DIA=fsChart('--fs-chart-barra',14);
     const etiquetas={id:'etiquetasDia',afterDatasetsDraw(ch){
       if(!mostrarEtiquetas)return;
-      const {ctx}=ch; ctx.save(); ctx.textAlign='center'; ctx.font='700 8px Inter, system-ui';
-      // ingresos (dataset 0) en azul, arriba de su barra
-      ch.getDatasetMeta(0).data.forEach((bar,i)=>{ ctx.fillStyle='#2f6df0'; ctx.fillText(clpCompacto(m.dias[diasVista[i]].ingreso), bar.x, bar.y-5); });
-      // gastos (dataset 1) en rojo, arriba de su barra
-      ch.getDatasetMeta(1).data.forEach((bar,i)=>{ ctx.fillStyle='#b6402f'; ctx.fillText(clpCompacto(m.dias[diasVista[i]].egreso), bar.x, bar.y-5); });
+      if(!ch.chartArea) return;
+      const {ctx}=ch; ctx.save(); ctx.textAlign='center';
+      ctx.font=fuenteChart('--fs-chart-barra',14,'700');
+      const LH=FS_DIA+3;
+      // Se recolectan las etiquetas de ambas series antes de pintar, para
+      // poder resolver colisiones: las barras de ingreso y egreso del mismo
+      // día quedan pegadas y, cuando tienen alturas parecidas (ej. $607K y
+      // $592K), a 8px ya casi se tocaban — con la fuente nueva se montarían.
+      const et=[];
+      [0,1].forEach(di=>{
+        ch.getDatasetMeta(di).data.forEach((bar,i)=>{
+          const dd=m.dias[diasVista[i]];
+          const txt=clpCompacto(di===0?dd.ingreso:dd.egreso);
+          et.push({x:bar.x, y:bar.y-7, txt, w:ctx.measureText(txt).width,
+                   color:di===0?'#2f6df0':'#b6402f'});
+        });
+      });
+      et.sort((a,b)=>a.x-b.x);
+      // Escalonado vertical: si dos etiquetas se pisan en horizontal y están
+      // a alturas similares, la segunda sube una línea. Varias pasadas porque
+      // al subir una puede chocar con otra ya colocada más arriba.
+      for(let pasada=0; pasada<3; pasada++){
+        for(let i=1;i<et.length;i++){
+          for(let j=0;j<i;j++){
+            const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
+            if(pisaX && Math.abs(et[i].y-et[j].y) < LH) et[i].y = et[j].y - LH;
+          }
+        }
+      }
+      const techo=ch.chartArea.top + FS_DIA*0.25;
+      et.forEach(e=>{ if(e.y<techo) e.y=techo; });
+      // Red de seguridad: si al toparse con el techo dos etiquetas vuelven a
+      // quedar encimadas (contenedor muy bajo), se descarta la de menor monto
+      // en vez de dibujar texto sobre texto.
+      for(let i=0;i<et.length;i++){
+        if(et[i].omitir) continue;
+        for(let j=0;j<i;j++){
+          if(et[j].omitir) continue;
+          const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
+          if(pisaX && Math.abs(et[i].y-et[j].y) < LH){ et[i].omitir=true; break; }
+        }
+      }
+      et.filter(e=>!e.omitir).forEach(e=>{ ctx.fillStyle=e.color; ctx.fillText(e.txt, e.x, e.y); });
       ctx.restore();
     }};
     nuevoChart('chDia',{type:'bar',data:{labels:diasVista.map(d=>d.slice(-2)),datasets:[
       {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:6,barPercentage:.9,categoryPercentage:.7},
       {label:'Costos+gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:6,barPercentage:.9,categoryPercentage:.7}
-    ]},options:{layout:{padding:{top:mostrarEtiquetas?18:6}},plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10.5}}},
+    ]},options:{layout:{padding:{top:mostrarEtiquetas?Math.round(FS_DIA*2.6):6}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,padding:12,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
-      scales:{y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:9.5}},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{font:{size:9.5}}}}},
+      scales:{
+        y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
+        x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f'}}}},
       plugins:[etiquetas]});
 
     // Lectura de interpretación + consejo, calculada en vivo desde los días visibles.
