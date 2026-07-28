@@ -26,6 +26,23 @@
     --ambar:#a8760f; --ambar-suave:#faf1de;
     --acento-suave:#e8effd;
     --gris:#727a8c; --acento:#2f6df0; --acento2:#3f7f8c;
+    /* ===== SISTEMA TIPOGRÁFICO — legibilidad a ~50 cm =====
+       Pisos en px (no rem) para que el mínimo se respete aunque el usuario
+       o el navegador cambien la base. Referencia a 96dpi:
+         --fs-xs  14px  microetiquetas (unidades, badges, pies)
+         --fs-sm  15px  texto secundario (.cap, sublíneas)
+         --fs-md  16px  cuerpo, tablas, ítems de menú
+         --fs-lg  17.5px datos y etiquetas clave
+         --fs-xl  20px  títulos de tarjeta
+       El tramo medio del clamp escala con el viewport para monitores grandes. */
+    --fs-xs:clamp(14px, .80rem + .10vw, 15.5px);
+    --fs-sm:clamp(15px, .86rem + .12vw, 16.5px);
+    --fs-md:clamp(16px, .93rem + .14vw, 18px);
+    --fs-lg:clamp(17.5px, 1.02rem + .18vw, 20px);
+    --fs-xl:clamp(20px, 1.15rem + .28vw, 24px);
+    /* Etiquetas dentro de los <canvas>: Chart.js no lee CSS, así que el JS
+       consume estos mismos números vía getComputedStyle para no duplicar. */
+    --fs-chart-nom:15px; --fs-chart-val:14px; --fs-chart-pct:13.5px;
     --radius:18px;
     --sombra:0 2px 8px rgba(15,27,48,.05), 0 16px 32px -16px rgba(15,27,48,.14);
   }
@@ -37,8 +54,8 @@
   .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
   header.top{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:14px}
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
-  header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:.92rem}
-  .sello{font-size:.7rem; text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
+  header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:var(--fs-lg)}
+  .sello{font-size:var(--fs-sm); text-transform:uppercase; letter-spacing:.11em; color:var(--gris); font-weight:600}
   /* Riel lateral: columna vertical fija a la izquierda, siempre en la misma
      posición (sticky), en TODAS las resoluciones. Expandir/contraer solo
      cambia su ancho (--sidebar-w); nunca se superpone al contenido. */
@@ -52,7 +69,7 @@
     transition:none;
   }
   .tabs-header{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 8px; margin-bottom:4px; border-bottom:1px solid var(--linea)}
-  .tabs-header-txt{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gris); white-space:nowrap; overflow:hidden}
+  .tabs-header-txt{font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gris); white-space:nowrap; overflow:hidden}
   .wrap.sidebar-oculto .tabs-header{justify-content:center}
   .wrap.sidebar-oculto .tabs-header-txt{display:none}
   .btn-sidebar-toggle{display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; border:1px solid var(--linea); background:#fff; color:var(--tinta); cursor:pointer; box-shadow:none; flex:0 0 auto; transition:background .15s}
@@ -80,7 +97,7 @@
   .menu-grupo-btn{
     display:flex; align-items:center; gap:7px; width:100%;
     padding:10px 8px 5px; margin:0;
-    font-family:'Inter',sans-serif; font-size:.62rem; font-weight:700;
+    font-family:'Inter',sans-serif; font-size:var(--fs-xs); font-weight:700;
     text-transform:uppercase; letter-spacing:.1em; color:#98a1b3;
     background:none; border:none; cursor:default; user-select:none;
     white-space:nowrap; box-sizing:border-box; min-height:0;
@@ -96,7 +113,7 @@
     font-family:'Inter',sans-serif; border:none; background:none;
     display:flex; flex-direction:row; align-items:center; justify-content:flex-start;
     gap:10px; width:100%; padding:9px 10px; min-height:38px;
-    font-size:.79rem; font-weight:500; color:#5b6577; cursor:pointer;
+    font-size:var(--fs-md); font-weight:500; color:#5b6577; cursor:pointer;
     border-radius:9px; -webkit-tap-highlight-color:transparent; user-select:none;
     transition:color .15s, background .15s; white-space:nowrap;
     touch-action:manipulation; box-sizing:border-box; position:relative;
@@ -110,7 +127,7 @@
   .submenu{list-style:none; margin:0; padding:0; display:block; position:static; width:auto}
   .menu-grupo.abierto .submenu{display:block}
   .submenu li{list-style:none}
-  .submenu button{padding:9px 10px; font-size:.79rem; border-radius:9px; min-height:38px}
+  .submenu button{padding:9px 10px; font-size:var(--fs-md); border-radius:9px; min-height:38px}
 
   /* --- Nivel 3 (enlaces a gráficos): lista plana indentada que aparece
      bajo el ítem ACTIVO. Selector de hermano adyacente (button.on +
@@ -119,13 +136,13 @@
   .submenu-n2{display:none; list-style:none; margin:1px 0 6px; padding:0 0 0 20px; border-left:1px solid var(--linea)}
   .submenu button.on + .submenu-n2{display:block}
   .submenu-n2 a.submenu-link{
-    display:block; padding:6px 8px 6px 12px; font-size:.71rem; color:#79839a;
+    display:block; padding:6px 8px 6px 12px; font-size:var(--fs-sm); color:#79839a;
     text-decoration:none; border-radius:7px; -webkit-tap-highlight-color:transparent;
     white-space:normal; line-height:1.3;
   }
   .submenu-n2 a.submenu-link:hover,.submenu-n2 a.submenu-link:active{background:var(--acento-suave); color:var(--acento)}
 
-  .tab-ico{font-size:1.1rem; line-height:1; display:inline-flex; flex:0 0 auto; color:#8b94a7}
+  .tab-ico{font-size:var(--fs-xl); line-height:1; display:inline-flex; flex:0 0 auto; color:#8b94a7}
   .tab-ico svg{width:18px; height:18px}
   .tab-txt{white-space:normal; overflow-wrap:break-word; min-width:0; display:inline-block; flex:1 1 auto; text-align:left; line-height:1.2}
 
@@ -157,9 +174,9 @@
      del contenido jamás se pierde. */
   .main-content{overflow:visible; padding-bottom:20px; flex:1 1 0%; min-width:0}
   .selector{display:flex; gap:6px; margin:16px 0; flex-wrap:wrap}
-  .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:.87rem; cursor:pointer; font-weight:600}
+  .selector button{border:1px solid var(--linea); background:#fff; color:var(--tinta); padding:8px 16px; border-radius:999px; font-size:var(--fs-md); cursor:pointer; font-weight:600}
   .selector button.on{background:var(--tinta); color:#fff; border-color:var(--tinta)}
-  .alerta{display:none; align-items:flex-start; gap:10px; background:var(--ambar-suave); border:1px solid #ecd8a3; color:#6e5011; padding:12px 14px; border-radius:12px; font-size:.9rem; margin-bottom:16px}
+  .alerta{display:none; align-items:flex-start; gap:10px; background:var(--ambar-suave); border:1px solid #ecd8a3; color:#6e5011; padding:12px 14px; border-radius:12px; font-size:var(--fs-lg); margin-bottom:16px}
   .alerta.ver{display:flex}
   .hero{display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:clamp(7px,1.4vw,14px); margin-bottom:clamp(8px,1.4vw,14px)}
   .kpi{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(10px,2vw,22px) clamp(10px,2vw,24px) clamp(9px,1.8vw,20px); box-shadow:var(--sombra); position:relative; overflow:visible; min-width:0}
@@ -169,54 +186,54 @@
   .kpi.acc-verde{background:var(--verde-suave); border-color:#cbe6d8} .kpi.acc-verde::before{background:var(--verde)}
   .kpi.acc-rojo{background:var(--rojo-suave); border-color:#eecabf} .kpi.acc-rojo::before{background:var(--rojo)}
   .kpi.acc-ambar{background:var(--ambar-suave); border-color:#ecd8a3} .kpi.acc-ambar::before{background:var(--ambar)}
-  .kpi .lbl{font-size:clamp(.64rem,.6rem + .3vw,.82rem); text-transform:uppercase; letter-spacing:.06em; color:var(--gris); margin-bottom:clamp(4px,1vw,7px); font-weight:600}
+  .kpi .lbl{font-size:var(--fs-sm); text-transform:uppercase; letter-spacing:.06em; color:var(--gris); margin-bottom:clamp(4px,1vw,7px); font-weight:600}
   /* FIX sidebar-resize: antes white-space:nowrap + overflow:hidden + ellipsis
      recortaba montos en pesos cuando el sidebar expandido angostaba la tarjeta
      KPI (el font-size usa vw, no el ancho real del contenedor, así que el
      texto podía quedar más ancho que la caja). Ahora el valor puede hacer
      wrap a una 2ª línea: nunca se pierde información, solo cambia el alto. */
   .kpi .val{font-family:'Manrope',sans-serif; font-size:clamp(1.1rem,.85rem + 2vw,2.3rem); font-weight:800; letter-spacing:-.02em; display:block; max-width:100%; overflow:visible; overflow-wrap:break-word; word-break:break-word; white-space:normal}
-  .kpi .sub{font-size:clamp(.66rem,.6rem + .3vw,.9rem); color:var(--gris); margin-top:clamp(2px,.6vw,4px)}
+  .kpi .sub{font-size:var(--fs-sm); color:var(--gris); margin-top:clamp(2px,.6vw,4px)}
   .kpi.hero-util{background:var(--tinta); color:#fff; border-color:var(--tinta); position:relative; overflow:visible}
   .kpi.hero-util::after{content:'';position:absolute;bottom:-50px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(63,127,140,.28),transparent 70%);pointer-events:none}
   .kpi.hero-util::before{background:linear-gradient(90deg,var(--acento),var(--acento2))}
   .kpi.hero-util .lbl,.kpi.hero-util .sub{color:#a9b7cf}
   .kpi .val.pos{color:var(--verde)} .kpi .val.neg{color:var(--rojo)}
   .kpi.hero-util .val.pos{color:#7fdcae} .kpi.hero-util .val.neg{color:#f0a3a3}
-  .badge{display:inline-block; font-size:.64rem; text-transform:uppercase; background:#fff; color:var(--ambar); padding:3px 9px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:700}
+  .badge{display:inline-block; font-size:var(--fs-xs); text-transform:uppercase; background:#fff; color:var(--ambar); padding:3px 9px; border-radius:999px; margin-left:6px; vertical-align:middle; font-weight:700}
   .mini{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(6px,1.2vw,12px); margin-bottom:clamp(8px,1.4vw,14px)}
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
-  .mini .kpi .val{font-size:clamp(.86rem,.72rem + 1vw,1.5rem); font-weight:700}
+  .mini .kpi .val{font-size:var(--fs-xl); font-weight:700}
   .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,16px); margin-top:clamp(8px,1.6vw,16px)}
   .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(12px,2.2vw,24px); box-shadow:var(--sombra); min-width:0}
-  .card h2{font-family:'Manrope',sans-serif; font-size:.98rem; font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
-  .card .cap{font-size:.78rem; color:var(--gris); margin-bottom:12px; line-height:1.5}
+  .card h2{font-family:'Manrope',sans-serif; font-size:var(--fs-lg); font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
+  .card .cap{font-size:var(--fs-md); color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
   canvas{max-width:100%}
   /* FIX sidebar-resize: se quita overflow:hidden (podía recortar filas/columnas
      si la tabla no cabía tras un cambio de ancho); el border-radius queda solo
      de forma decorativa en las esquinas visibles, sin recortar contenido. */
-  table{width:100%; border-collapse:collapse; font-size:.86rem; border-radius:12px}
+  table{width:100%; border-collapse:collapse; font-size:var(--fs-md); border-radius:12px}
   th,td{text-align:right; padding:9px 8px; border-bottom:1px solid var(--linea)}
   th:first-child,td:first-child{text-align:left}
-  th{font-size:.71rem; text-transform:uppercase; color:var(--gris); font-weight:700; background:#f6f8fc}
+  th{font-size:var(--fs-sm); text-transform:uppercase; color:var(--gris); font-weight:700; background:#f6f8fc}
   td.pos{color:var(--verde); font-weight:700} td.neg{color:var(--rojo); font-weight:700}
   tbody tr:hover td{background:#f6f8fc}
   tr.foco td{background:var(--acento-suave)}
   .notas{list-style:none; display:flex; flex-direction:column; gap:10px}
-  .notas li{display:flex; gap:10px; align-items:flex-start; font-size:.9rem; padding:11px 13px; border-radius:11px; border:1px solid var(--linea)}
+  .notas li{display:flex; gap:10px; align-items:flex-start; font-size:var(--fs-lg); padding:11px 13px; border-radius:11px; border:1px solid var(--linea)}
   .notas li.ok{background:var(--verde-suave)} .notas li.warn{background:var(--ambar-suave)} .notas li.bad{background:var(--rojo-suave)}
-  .faltan{font-size:.86rem; color:var(--gris)} .faltan li{margin:5px 0 5px 18px}
-  .pie{margin-top:22px; text-align:center; font-size:.72rem; color:var(--gris)}
+  .faltan{font-size:var(--fs-md); color:var(--gris)} .faltan li{margin:5px 0 5px 18px}
+  .pie{margin-top:22px; text-align:center; font-size:var(--fs-sm); color:var(--gris)}
   .cargando{text-align:center; padding:60px 20px; color:var(--gris)}
   .filtros{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; position:sticky; top:0; z-index:10; background:var(--papel); padding:10px 0 8px}
-  .filtros input,.filtros select{padding:11px 14px; border:1px solid var(--linea); border-radius:12px; font-size:1rem; background:#fff; font-family:inherit; min-height:44px}
+  .filtros input,.filtros select{padding:11px 14px; border:1px solid var(--linea); border-radius:12px; font-size:var(--fs-lg); background:#fff; font-family:inherit; min-height:44px}
   .filtros input[type=search]{flex:1; min-width:160px}
-  .tabla-edit{width:100%; border-collapse:collapse; font-size:.82rem}
+  .tabla-edit{width:100%; border-collapse:collapse; font-size:var(--fs-md)}
   .tabla-edit th{position:sticky; top:0; background:#f6f8fc; z-index:1}
   .tabla-edit td{text-align:left; padding:6px 8px}
   .tabla-edit td.num{text-align:right}
-  .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:.82rem; font-family:inherit}
+  .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:var(--fs-md); font-family:inherit}
   .tabla-edit input:focus,.tabla-edit select:focus{border-color:var(--acento); background:#fff; outline:none}
   .tabla-edit tr.dirty{background:#fff7e6}
   /* Tarjeta KPI clickeable (ej. "Otro ingreso" → abre detalle) */
@@ -227,8 +244,8 @@
   /* Caja genérica de modal de detalle (reutiliza .modal-overlay ya existente) */
   .modal-box{background:#fff; border-radius:16px; padding:20px; max-width:640px; width:100%; box-shadow:var(--sombra); max-height:85vh; display:flex; flex-direction:column}
   .modal-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:2px}
-  .modal-head h3{font-family:'Manrope',sans-serif; font-size:1.05rem; font-weight:800}
-  .modal-x{background:none; border:none; font-size:1.15rem; color:var(--gris); cursor:pointer; padding:4px 9px; border-radius:8px; line-height:1}
+  .modal-head h3{font-family:'Manrope',sans-serif; font-size:var(--fs-xl); font-weight:800}
+  .modal-x{background:none; border:none; font-size:var(--fs-xl); color:var(--gris); cursor:pointer; padding:4px 9px; border-radius:8px; line-height:1}
   .modal-x:hover{background:#eef1f8; color:var(--tinta)}
   .modal-body-scroll{overflow:auto; margin-top:10px}
   /* Encabezados ordenables de la tabla Registros */
@@ -242,16 +259,16 @@
      cabe, aparece scroll horizontal DENTRO de su tarjeta en vez de recortarse
      o desbordar la página. */
   .tabla-scroll-x{width:100%; overflow-x:auto}
-  .btn{border:none; border-radius:12px; padding:12px 20px; font-size:.92rem; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; min-height:44px; transition:transform .1s, opacity .15s}
+  .btn{border:none; border-radius:12px; padding:12px 20px; font-size:var(--fs-lg); font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; min-height:44px; transition:transform .1s, opacity .15s}
   .btn-p{background:var(--tinta); color:#fff} .btn-g{background:#eee; color:var(--tinta)}
-  .btn-del{background:none; color:var(--rojo); border:1px solid var(--rojo-suave); padding:4px 9px; border-radius:7px; cursor:pointer; font-size:.78rem}
+  .btn-del{background:none; color:var(--rojo); border:1px solid var(--rojo-suave); padding:4px 9px; border-radius:7px; cursor:pointer; font-size:var(--fs-md)}
   .barra-guardar{display:none; position:sticky; bottom:0; background:#fff; border:1px solid var(--linea); border-radius:12px; padding:12px 14px; margin-top:12px; align-items:center; justify-content:space-between; gap:10px; box-shadow:var(--sombra)}
   .barra-guardar.ver{display:flex}
   .drop{border:2px dashed var(--linea); border-radius:14px; padding:30px; text-align:center; color:var(--gris); cursor:pointer; background:#fff}
   #previewImg{max-width:100%; max-height:280px; border-radius:10px; margin:12px 0}
   .campo{display:flex; flex-direction:column; gap:4px; margin-bottom:10px}
-  .campo label{font-size:.76rem; color:var(--gris); text-transform:uppercase; letter-spacing:.05em; font-weight:600}
-  .campo input{padding:9px 11px; border:1px solid var(--linea); border-radius:9px; font-size:.9rem; font-family:inherit}
+  .campo label{font-size:var(--fs-sm); color:var(--gris); text-transform:uppercase; letter-spacing:.05em; font-weight:600}
+  .campo input{padding:9px 11px; border:1px solid var(--linea); border-radius:9px; font-size:var(--fs-lg); font-family:inherit}
   .costos-list .fila-costo{display:flex; gap:8px; margin-bottom:6px}
   .costos-list input{flex:1}
   .hidden{display:none!important}
@@ -293,20 +310,20 @@
     top: 16px;
   }
   .tab-ico {
-    font-size: 1.15rem;
+    font-size:var(--fs-xl);
   }
   .menu-grupo-btn {
-    font-size: 0.58rem;
+    font-size:var(--fs-xs);
     padding: 8px 8px 4px;
   }
   .menu-grupo {
     margin-bottom: 8px;
   }
   .submenu button {
-    font-size: 0.72rem;
+    font-size:var(--fs-sm);
   }
   .submenu-n2 a.submenu-link {
-    font-size: 0.66rem;
+    font-size:var(--fs-sm);
   }
 
   /* Ajustes de tarjetas y gráficos para tablet 3:4 */
@@ -329,13 +346,13 @@
     padding: 8px 10px;
   }
   .kpi .val {
-    font-size: 1rem;
+    font-size:var(--fs-lg);
   }
   .kpi .lbl {
-    font-size: 0.55rem;
+    font-size:var(--fs-xs);
   }
   .kpi .sub {
-    font-size: 0.55rem;
+    font-size:var(--fs-xs);
   }
 
   .graf-mini {
@@ -352,20 +369,20 @@
   }
 
   header.top h1 {
-    font-size: 1.1rem;
+    font-size:var(--fs-xl);
   }
   .selector button {
-    font-size: 0.65rem;
+    font-size:var(--fs-xs);
     padding: 4px 8px;
   }
   table {
-    font-size: 0.65rem;
+    font-size:var(--fs-xs);
   }
   th, td {
     padding: 3px 4px;
   }
   .tabla-edit input, .tabla-edit select {
-    font-size: 0.65rem;
+    font-size:var(--fs-xs);
     padding: 2px 4px;
   }
 }
@@ -377,22 +394,22 @@
     .layout-desktop{gap:28px}
     .tabs{top:16px; padding:8px 6px}
     .menu-grupo{margin-bottom:12px}
-    .tabs .menu-nivel1 button{padding:11px 11px; min-height:44px; font-size:.85rem}
-    .menu-grupo-btn{padding:12px 10px 6px; font-size:.66rem; min-height:0}
-    .tab-ico{font-size:1.15rem}
+    .tabs .menu-nivel1 button{padding:11px 11px; min-height:44px; font-size:var(--fs-md)}
+    .menu-grupo-btn{padding:12px 10px 6px; font-size:var(--fs-xs); min-height:0}
+    .tab-ico{font-size:var(--fs-xl)}
     .submenu{padding:0}
     .submenu button{padding:11px 11px; min-height:44px}
     .submenu-n2{padding-left:23px}
-    .submenu-n2 a.submenu-link{padding:7px 8px 7px 13px; font-size:.76rem}
+    .submenu-n2 a.submenu-link{padding:7px 8px 7px 13px; font-size:var(--fs-sm)}
     .wrap.sidebar-oculto .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
     .wrap.sidebar-oculto .hero{grid-template-columns:repeat(4,minmax(0,1fr))}
     .tabs-header{padding:4px 8px 12px; margin-bottom:6px}
-    .tabs-header-txt{font-size:.72rem; letter-spacing:.08em}
+    .tabs-header-txt{font-size:var(--fs-sm); letter-spacing:.08em}
     .wrap.sidebar-oculto .tabs .menu-nivel1 button{padding:10px 4px}
-    .card h2{font-size:1.15rem}
-    .card .cap{font-size:.9rem}
-    .selector button{font-size:1rem; padding:10px 20px}
-    table{font-size:1rem}
+    .card h2{font-size:var(--fs-xl)}
+    .card .cap{font-size:var(--fs-lg)}
+    .selector button{font-size:var(--fs-lg); padding:10px 20px}
+    table{font-size:var(--fs-lg)}
     .graf-mini{height:190px!important}
     .graf-dia{height:320px!important}
     .graf-dona{height:380px!important}
@@ -505,14 +522,14 @@
     }
     .bi-item .bi-ico{position:relative; display:inline-flex; line-height:0}
     .bi-item .bi-ico svg{width:22px; height:22px}
-    .bi-item .bi-txt{font-size:.63rem; font-weight:600; letter-spacing:.01em;
+    .bi-item .bi-txt{font-size:var(--fs-xs); font-weight:600; letter-spacing:.01em;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%}
     .bi-item.on{color:var(--acento); background:var(--acento-suave)}
     .bi-item.on .bi-txt{font-weight:800}
     .bi-badge{
       position:absolute; top:-5px; right:-8px; min-width:16px; height:16px;
       padding:0 4px; border-radius:999px; background:var(--rojo); color:#fff;
-      font-size:.6rem; font-weight:800; display:flex; align-items:center;
+      font-size:var(--fs-xs); font-weight:800; display:flex; align-items:center;
       justify-content:center; line-height:1;
     }
 
@@ -528,13 +545,13 @@
       max-height:76vh; overflow-y:auto; box-shadow:0 -6px 26px rgba(16,24,40,.2);
     }
     .bi-sheet-tirador{width:38px; height:4px; border-radius:999px; background:#d7dced; margin:2px auto 12px}
-    .bi-sheet h3{font-family:'Manrope',sans-serif; font-size:.7rem; font-weight:700;
+    .bi-sheet h3{font-family:'Manrope',sans-serif; font-size:var(--fs-sm); font-weight:700;
       text-transform:uppercase; letter-spacing:.1em; color:#98a1b3; margin:0 0 6px 4px}
     .bi-sheet-item{
       display:flex; align-items:center; gap:12px; width:100%;
       background:none; border:none; cursor:pointer; text-align:left;
       padding:13px 10px; border-radius:11px; font-family:'Inter',sans-serif;
-      font-size:.92rem; font-weight:500; color:#5b6577; min-height:48px;
+      font-size:var(--fs-lg); font-weight:500; color:#5b6577; min-height:48px;
       -webkit-tap-highlight-color:transparent;
     }
     .bi-sheet-item .bi-ico{display:inline-flex; line-height:0; color:#8b94a7; flex:0 0 auto}
@@ -572,7 +589,7 @@
       border:none; padding:4px 0; text-align:left;
     }
     #tablaEdit td::before{
-      content:attr(data-lbl); flex:0 0 74px; font-size:.65rem; font-weight:700;
+      content:attr(data-lbl); flex:0 0 74px; font-size:var(--fs-xs); font-weight:700;
       text-transform:uppercase; letter-spacing:.05em; color:var(--gris);
     }
     #tablaEdit td:last-child::before{content:''; flex:0 0 0}
@@ -580,7 +597,7 @@
     #tablaEdit td input, #tablaEdit td select{
       flex:1 1 auto; width:100% !important; min-width:0;
       padding:7px 9px; border:1px solid var(--linea); border-radius:8px;
-      font-size:.86rem; background:#fff;
+      font-size:var(--fs-md); background:#fff;
     }
     #tablaEdit td.num input{text-align:right}
     .barra-guardar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
@@ -598,6 +615,12 @@
      landscape y desktop no se tocan.
      ================================================================== */
   @media (max-width:600px) and (orientation:portrait){
+    /* En celular la distancia de lectura es ~30cm, no 50: se baja un punto
+       la escala para no perder densidad de información en pantalla chica. */
+    :root{
+      --fs-xs:13.5px; --fs-sm:14.5px; --fs-md:15.5px; --fs-lg:17px; --fs-xl:19px;
+      --fs-chart-nom:13px; --fs-chart-val:12px; --fs-chart-pct:11.5px;
+    }
     /* Se listan también con .wrap.sidebar-oculto porque esa regla (0,3,0)
        tiene más especificidad que .graf-dona (0,1,0) y si no, ganaría ella. */
     .graf-dona, .wrap.sidebar-oculto .graf-dona{
@@ -653,8 +676,46 @@
      donut recupera tamaño de verdad. Solo afecta a las dos cards de donut
      de la pestaña Costos; el resto de la grilla sigue en 2 columnas.
      chUtilidad ya era .card full, así que no necesita regla. */
-  @media screen and (min-width:600px) and (max-width:1279px){
+  /* CAUSA RAÍZ del donut chico con el riel contraído: al colapsar, en ≥900px
+     .wrap.sidebar-oculto .grid pasa de 2 a 3 columnas, así que la card se
+     ANGOSTA (671→504px medido en 1920) aunque .main-content gane 186px. Como
+     el ancho es el limitante del anillo, contraer lo hacía más chico. Dándole
+     la fila completa en todo ancho ≥600px, la card ahora sí crece al contraer
+     y el radio deja de depender del estado del riel. */
+  @media screen and (min-width:600px){
     #graf-compras-cat, #graf-gasto-cat{grid-column:1 / -1}
+  }
+
+  /* SEGUNDA CAUSA: el alto del contenedor era un valor FIJO en px por
+     breakpoint (440px), fijado por @media de viewport y no por el tamaño real
+     del contenedor. Con el ancho saturado sobraban entre 92 y 238px de alto
+     sin usar — ese era el "espacio vacío alrededor del canvas".
+     Se pasa a alto derivado del ANCHO REAL de la card vía aspect-ratio (CSS,
+     no JS): el contenedor se redimensiona solo cuando cambia --sidebar-w, sin
+     depender de ningún media query. Los min-height por breakpoint se
+     conservan como piso, así que lo ya afinado en tablet/3-4 no cambia, y
+     @supports deja el comportamiento previo intacto en navegadores sin
+     aspect-ratio (WebView antiguo de Bliss OS). */
+  @supports (aspect-ratio: 1 / 1){
+    @media screen and (min-width:600px){
+      .graf-dona, .wrap.sidebar-oculto .graf-dona{
+        height:auto !important;
+        aspect-ratio:2.4 / 1;
+        max-height:min(620px, 72vh) !important;
+      }
+    }
+    @media screen and (min-width:600px) and (max-width:899px) and (orientation:landscape){
+      .graf-dona, .wrap.sidebar-oculto .graf-dona{min-height:clamp(235px,54vh,340px)}
+    }
+    @media screen and (min-width:600px) and (max-width:899px) and (orientation:portrait){
+      .graf-dona, .wrap.sidebar-oculto .graf-dona{min-height:420px}
+    }
+    @media screen and (min-width:900px) and (max-width:1279px){
+      .graf-dona, .wrap.sidebar-oculto .graf-dona{min-height:430px}
+    }
+    @media screen and (min-width:1280px){
+      .graf-dona, .wrap.sidebar-oculto .graf-dona{min-height:440px}
+    }
   }
 
   /* ===== Transición suave solo en los ítems de navegación ===== */
@@ -762,7 +823,7 @@
           <h2>Flujo diario: ingresos vs. egresos operativos</h2><div class="cap" id="capDia"></div>
           <div class="graf-dia" style="height:220px;position:relative"><canvas id="chDia"></canvas></div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
-            <span style="font-size:.72rem;color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
+            <span style="font-size:var(--fs-sm);color:var(--gris);white-space:nowrap">Días <b id="rangoDiasTxt"></b></span>
             <div style="position:relative;flex:1;height:26px">
               <div class="rango-pista"></div>
               <div class="rango-fill" id="rangoFill"></div>
@@ -812,12 +873,12 @@
       <input type="search" id="fBuscar" placeholder="Buscar nombre, categoría, N° operación…">
       <select id="fMes"><option value="">Todos los meses</option></select>
       <select id="fTipo"><option value="">Todos los tipos</option></select>
-      <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Buscar categoría…" style="padding:8px 10px;border:1px solid var(--linea);border-radius:9px;font-size:.85rem;background:#fff;min-width:150px">
+      <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Buscar categoría…" style="padding:8px 10px;border:1px solid var(--linea);border-radius:9px;font-size:var(--fs-md);background:#fff;min-width:150px">
       <datalist id="listaCategoriasReg"></datalist>
       <select id="fCuenta"><option value="">Banco y efectivo</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
       <button class="btn btn-g" id="btnAgregar">+ Fila</button>
     </div>
-    <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:.8rem" id="contFilas"></div>
+    <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
         <thead><tr>
@@ -854,7 +915,7 @@
       <div id="cierreForm" class="hidden">
         <div class="campo"><label>Fecha del cierre</label><input type="text" id="cFecha" placeholder="DD/MM/AAAA"></div>
         <div class="campo"><label>Venta en efectivo del día</label><input type="number" id="cVenta" placeholder="0"></div>
-        <label style="font-size:.76rem;color:var(--gris);text-transform:uppercase;letter-spacing:.05em">Costos pagados en efectivo <span style="text-transform:none;font-weight:400">(categoría y tipo sugeridos por IA — revisa y corrige)</span></label>
+        <label style="font-size:var(--fs-sm);color:var(--gris);text-transform:uppercase;letter-spacing:.05em">Costos pagados en efectivo <span style="text-transform:none;font-weight:400">(categoría y tipo sugeridos por IA — revisa y corrige)</span></label>
         <datalist id="listaCategorias"></datalist>
         <div id="tablaCierre" style="display:flex;flex-direction:column;gap:10px;margin:10px 0 14px"></div>
         <button class="btn btn-g" id="btnMasCosto" style="margin:0 0 14px">+ Agregar costo</button>
@@ -866,8 +927,8 @@
     </div>
     <div id="confirmarCancelarCierre" class="hidden modal-overlay">
       <div style="background:#fff;border-radius:16px;padding:20px;max-width:360px;width:100%;box-shadow:var(--sombra)">
-        <h3 style="font-family:'Manrope',sans-serif;font-size:1.05rem;margin-bottom:8px">¿Cancelar este cierre?</h3>
-        <p style="font-size:.88rem;color:var(--gris);margin-bottom:16px">Se perderá lo leído de la foto y lo que hayas corregido. No se guardará nada en Registros.</p>
+        <h3 style="font-family:'Manrope',sans-serif;font-size:var(--fs-xl);margin-bottom:8px">¿Cancelar este cierre?</h3>
+        <p style="font-size:var(--fs-lg);color:var(--gris);margin-bottom:16px">Se perderá lo leído de la foto y lo que hayas corregido. No se guardará nada en Registros.</p>
         <div style="display:flex;gap:10px">
           <button class="btn btn-g" id="btnVolverCierre" style="flex:1">Volver</button>
           <button class="btn" style="flex:1;background:var(--rojo);color:#fff" id="btnConfirmarCancelarCierre">Sí, cancelar</button>
@@ -1326,15 +1387,15 @@ function render(){
   const delta=(actual,anterior,mejorSubir=true)=>{
     if(anterior===null||anterior===undefined||!isFinite(anterior)||anterior===0) return '';
     const v=(actual-anterior)/Math.abs(anterior)*100;
-    if(Math.abs(v)<0.05) return `<span style="color:var(--gris);font-size:.72rem"> · = igual</span>`;
+    if(Math.abs(v)<0.05) return `<span style="color:var(--gris);font-size:var(--fs-sm)"> · = igual</span>`;
     const sube=v>0; const bueno = sube===mejorSubir;
     const col=bueno?'var(--verde)':'var(--rojo)';
     const flecha=sube?'▲':'▼';
-    return `<span style="color:${col};font-weight:700;font-size:.72rem"> · ${flecha} ${Math.abs(v).toFixed(1)}% vs ${MESES_ES[prev.ym.split('-')[1]].slice(0,3)}</span>`;
+    return `<span style="color:${col};font-weight:700;font-size:var(--fs-sm)"> · ${flecha} ${Math.abs(v).toFixed(1)}% vs ${MESES_ES[prev.ym.split('-')[1]].slice(0,3)}</span>`;
   };
   document.getElementById('hero').innerHTML=`
     <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div></div>
-    <div class="kpi"><div class="lbl">Ingresos <span style="font-weight:400;text-transform:none;font-size:.68rem">(venta bruta)</span></div><div class="val">${clp(m.ingreso)}</div><div class="sub">tarjeta+transf. ${clp((m.ingresoPOS||0)+(m.ingresoTransferencia||0))} · efectivo ${clp(m.efectivo)}${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
+    <div class="kpi"><div class="lbl">Ingresos <span style="font-weight:400;text-transform:none;font-size:var(--fs-xs)">(venta bruta)</span></div><div class="val">${clp(m.ingreso)}</div><div class="sub">tarjeta+transf. ${clp((m.ingresoPOS||0)+(m.ingresoTransferencia||0))} · efectivo ${clp(m.efectivo)}${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
     <div class="kpi"><div class="lbl">Margen bruto ${m.incompleto?'<span class="badge">prov.</span>':''}</div><div class="val">${m.margenBruto.toFixed(1)}%</div><div class="sub">costos ${clp(m.costos)}${prev?delta(m.margenBruto,prev.margenBruto):''}</div></div>
     <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">plásticos ${m.pctPlasticos.toFixed(2)}% s/ingreso${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div></div>`;
   document.getElementById('mini').innerHTML=`
@@ -1698,6 +1759,17 @@ function colorPorNombre(nom){
 // Canvas oculto reutilizado solo para medir texto (ctx.measureText) sin
 // depender de que el chart ya esté dibujado. Se crea una vez.
 const _ctxMedida = document.createElement('canvas').getContext('2d');
+// Los tamaños de las etiquetas dentro del <canvas> se leen de las MISMAS
+// variables CSS del sistema tipográfico (Chart.js no aplica CSS al texto que
+// dibuja), así que la escala vive en un solo lugar y móvil/desktop la heredan.
+function fsChart(nombreVar, porDefecto){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(nombreVar).trim();
+  const n = parseFloat(v);
+  return isFinite(n) && n>0 ? n : porDefecto;
+}
+function fuenteChart(nombreVar, porDefecto, peso){
+  return (peso||'600')+' '+fsChart(nombreVar,porDefecto)+'px Inter, system-ui';
+}
 function medirTexto(txt, fuente){ _ctxMedida.font = fuente; return _ctxMedida.measureText(txt).width; }
 function dona(id,obj,lecturaId,tipoTexto){
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
@@ -1774,7 +1846,11 @@ function dona(id,obj,lecturaId,tipoTexto){
   // ("COCA COLA" vs "COCA COLA 14.8% · $547K"), así que el padding lateral
   // calculado en beforeLayout baja bastante y el anillo gana radio dentro
   // de la misma card, sin tocar el tamaño del contenedor.
-  const LH_ET = 9.6;                    // interlineado entre las 3 líneas
+  // Interlineado proporcional al tamaño real de fuente: al subir la escala
+  // tipográfica, el bloque de 3 líneas crece y el anti-colisión se adapta
+  // solo, sin números mágicos que queden desfasados.
+  const FS_NOM=fsChart('--fs-chart-nom',15), FS_VAL=fsChart('--fs-chart-val',14), FS_PCT=fsChart('--fs-chart-pct',13.5);
+  const LH_ET = Math.round((FS_NOM+FS_VAL+FS_PCT)/3 * 1.18 * 10)/10;
   const etiquetasExt={id:'etExt',
     beforeLayout(ch){
       const cont=ch.canvas.parentElement;
@@ -1784,16 +1860,21 @@ function dona(id,obj,lecturaId,tipoTexto){
       let maxW=0;
       labels.forEach((l,i)=>{
         const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
-        maxW=Math.max(maxW, medirTexto(l,'700 9px Inter, system-ui'));
-        maxW=Math.max(maxW, medirTexto(clpK(vals[i]),'600 8.5px Inter, system-ui'));
-        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'%','600 8px Inter, system-ui'));
+        maxW=Math.max(maxW, medirTexto(l,fuenteChart('--fs-chart-nom',15,'700')));
+        maxW=Math.max(maxW, medirTexto(clpK(vals[i]),fuenteChart('--fs-chart-val',14)));
+        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'%',fuenteChart('--fs-chart-pct',13.5)));
       });
       // 16 = alcance horizontal de la guía (9 radial + 7 codo); 6 = aire al borde.
       let pad = maxW>0 ? Math.ceil(maxW)+16+6 : 46;
       pad = Math.max(38, pad);
       // Tope proporcional al contenedor real para que el anillo no se achique
       // de más en cards angostas.
-      if(contW>0) pad = Math.min(pad, Math.max(36, contW*0.26));
+      // Tope adaptativo: en cards anchas se puede ser generoso con las
+      // etiquetas, pero en cards angostas ese mismo tope ahogaba el anillo al
+      // subir la escala tipográfica (radio 128→107 medido en tablet). Se
+      // reparte según el ancho real, no según un breakpoint de viewport.
+      const tope = contW < 700 ? 0.25 : (contW < 1100 ? 0.29 : 0.33);
+      if(contW>0) pad = Math.min(pad, Math.max(36, contW*tope));
       ch.options.layout.padding = {left:pad, right:pad, top:14, bottom:14};
     },
     afterDraw(ch){
@@ -1848,7 +1929,7 @@ function dona(id,obj,lecturaId,tipoTexto){
         const disp=Math.max(0, c.der ? (ch.width-tx-3) : (tx-3));
 
         // 1) NOMBRE (bold) — único que se trunca con elipsis si no cabe.
-        ctx.font='700 9px Inter, system-ui'; ctx.fillStyle='#28313f';
+        ctx.font=fuenteChart('--fs-chart-nom',15,'700'); ctx.fillStyle='#28313f';
         let nom=labels[c.i];
         if(ctx.measureText(nom).width>disp){
           while(nom.length>1 && ctx.measureText(nom+'…').width>disp) nom=nom.slice(0,-1);
@@ -1856,10 +1937,10 @@ function dona(id,obj,lecturaId,tipoTexto){
         }
         ctx.fillText(nom, tx, c.yc-LH_ET);
         // 2) VALOR en pesos
-        ctx.font='600 8.5px Inter, system-ui'; ctx.fillStyle='#5b6577';
+        ctx.font=fuenteChart('--fs-chart-val',14); ctx.fillStyle='#5b6577';
         ctx.fillText(clpK(vals[c.i]), tx, c.yc);
         // 3) PORCENTAJE — nunca se recorta; si el ancho aprieta, se redondea.
-        ctx.font='600 8px Inter, system-ui'; ctx.fillStyle='#8b94a7';
+        ctx.font=fuenteChart('--fs-chart-pct',13.5); ctx.fillStyle='#8b94a7';
         let pl=c.pctv.toFixed(1)+'%';
         if(ctx.measureText(pl).width>disp) pl=Math.round(c.pctv)+'%';
         ctx.fillText(pl, tx, c.yc+LH_ET);
@@ -1890,7 +1971,7 @@ function dona(id,obj,lecturaId,tipoTexto){
     });
     cands.sort((a,b)=>b.pct-a.pct); cands=cands.slice(0,10);
     // Anti-colisión: por lado, se ordenan y se separan un mínimo de 21px.
-    const GAP=21;
+    const GAP=Math.max(21, Math.round(fsChart('--fs-chart-nom',13)*1.85));
     [true,false].forEach(lado=>{
       const arr=cands.filter(c=>c.der===lado).sort((a,b)=>a.ya-b.ya);
       for(let k=1;k<arr.length;k++)
@@ -1911,9 +1992,9 @@ function dona(id,obj,lecturaId,tipoTexto){
       ctx.textAlign=c.der?'left':'right';
       const tx=c.der?fin+3:fin-3;
       const nom=labels[c.i].length>10?labels[c.i].slice(0,9)+'…':labels[c.i];
-      ctx.fillStyle='#2a3446'; ctx.font='700 8.6px Inter, system-ui';
+      ctx.fillStyle='#2a3446'; ctx.font=fuenteChart('--fs-chart-nom',13,'700');
       ctx.fillText(nom, tx, c.ya-3.5);
-      ctx.fillStyle='#7b8496'; ctx.font='600 7.8px Inter, system-ui';
+      ctx.fillStyle='#7b8496'; ctx.font=fuenteChart('--fs-chart-pct',11.5);
       ctx.fillText(c.pct.toFixed(1)+'% · '+clpK(vals[c.i]), tx, c.ya+5.5);
     });
     ctx.restore();
@@ -2138,19 +2219,19 @@ function leerFoto(file){
   };
   rd.readAsDataURL(file);
 }
-const selTipoCierre=v=>`<select data-k="tipo" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:.88rem;background:#fff">${TIPOS_OPC.filter(t=>t!=='INGRESO').map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
+const selTipoCierre=v=>`<select data-k="tipo" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg);background:#fff">${TIPOS_OPC.filter(t=>t!=='INGRESO').map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
 function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
   const cont=document.getElementById('tablaCierre');
   const card=document.createElement('div');
   card.className='fila-gasto';
   card.style.cssText='border:1px solid var(--linea);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:#fbfbf9';
-  const campo=(lbl,html)=>`<div><label style="display:block;font-size:.72rem;color:var(--gris);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${lbl}</label>${html}</div>`;
+  const campo=(lbl,html)=>`<div><label style="display:block;font-size:var(--fs-sm);color:var(--gris);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${lbl}</label>${html}</div>`;
   card.innerHTML=`
     <div style="display:flex;justify-content:flex-end"><button class="btn-del" title="Eliminar este gasto">✕ Quitar</button></div>
-    ${campo('Detalle', `<input value="${detalle}" data-k="detalle" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:.9rem">`)}
-    ${campo('Categoría', `<input value="${(categoria||'').toUpperCase()}" data-k="categoria" list="listaCategorias" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:.9rem;text-transform:uppercase" placeholder="ej. BOLSAS">`)}
+    ${campo('Detalle', `<input value="${detalle}" data-k="detalle" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg)">`)}
+    ${campo('Categoría', `<input value="${(categoria||'').toUpperCase()}" data-k="categoria" list="listaCategorias" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg);text-transform:uppercase" placeholder="ej. BOLSAS">`)}
     ${campo('Tipo', selTipoCierre(tipo))}
-    ${campo('Monto', `<input type="number" value="${monto}" data-k="monto" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:.9rem">`)}`;
+    ${campo('Monto', `<input type="number" value="${monto}" data-k="monto" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg)">`)}`;
   card.querySelector('.btn-del').onclick=()=>card.remove();
   card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
   cont.appendChild(card);
@@ -2208,10 +2289,10 @@ function initRevisar(){
     const card=document.createElement('div'); card.className='card'; card.style.marginBottom='10px';
     card.innerHTML=`
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div><b>${r.descripcion||'(sin descripción)'}</b><div style="font-size:.8rem;color:var(--gris)">${r.fecha||''} · op ${r.nop||'—'} · ${r.archivo||''}</div></div>
-        <div style="font-size:1.1rem;font-weight:700">${clp(r.monto)}</div>
+        <div><b>${r.descripcion||'(sin descripción)'}</b><div style="font-size:var(--fs-md);color:var(--gris)">${r.fecha||''} · op ${r.nop||'—'} · ${r.archivo||''}</div></div>
+        <div style="font-size:var(--fs-xl);font-weight:700">${clp(r.monto)}</div>
       </div>
-      <div style="font-size:.8rem;color:var(--ambar);background:var(--ambar-suave);padding:6px 10px;border-radius:8px;margin-bottom:10px">${r.motivo||''}</div>
+      <div style="font-size:var(--fs-md);color:var(--ambar);background:var(--ambar-suave);padding:6px 10px;border-radius:8px;margin-bottom:10px">${r.motivo||''}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <input placeholder="Nombre / proveedor" data-k="nombre" style="flex:1;min-width:130px;padding:8px;border:1px solid var(--linea);border-radius:8px" value="${(r.descripcion||'').slice(0,40)}">
         <input placeholder="Categoría" data-k="categoria" list="listaCategorias" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px;text-transform:uppercase">
@@ -2309,7 +2390,7 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
         No se encontraron filas. Diagnóstico —
         Hojas del archivo: <b>${wb.SheetNames.join(', ')}</b><br>
         Filas crudas en la hoja usada: <b>${filasRaw.length}</b><br>
-        Primeras 3 filas: <pre style="white-space:pre-wrap;font-size:.75rem">${JSON.stringify(filasRaw.slice(0,3))}</pre>
+        Primeras 3 filas: <pre style="white-space:pre-wrap;font-size:var(--fs-sm)">${JSON.stringify(filasRaw.slice(0,3))}</pre>
       </div></div>`;
       return;
     }
