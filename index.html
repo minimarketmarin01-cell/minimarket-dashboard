@@ -1653,11 +1653,40 @@ function dibujarDia(m){
   dHasta.oninput=()=>{ if(Number(dHasta.value)<Number(dDesde.value)) dDesde.value=dHasta.value; redibujar(); };
   redibujar();
 }
+const PALETA_CAT=['#12203a','#2f6df0','#1f7a54','#b9791f','#b23b3b','#6b8cae','#8aa899','#c9a24b','#9c6b6b','#4a5a72','#b0b0a6','#7a9b6e','#d0894a','#5a6b8c','#a6708c','#3a7d5c','#c26b3e','#7b6ba0','#3f6f8c','#8c5a3f','#5a8c3f','#8c3f6f','#3f5a8c','#6f8c3f'];
+function colorPorNombre(nom){
+  let h=0; for(let i=0;i<nom.length;i++) h=(h*31+nom.charCodeAt(i))>>>0;
+  return PALETA_CAT[h%PALETA_CAT.length];
+}
 function dona(id,obj,lecturaId,tipoTexto){
-  const ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  const totOriginal=ents.reduce((s,e)=>s+e[1],0);
+
+  // ---- Agrupar cola larga en "Otros" — SOLO chProv en celular vertical ----
+  // chProv (Compras por categoría) puede traer 25+ proveedores. Con esa
+  // cantidad, aun con etiquetas externas, la mayoría cae bajo el umbral de
+  // legibilidad y se ve como relleno de colores sin nombre (el problema de
+  // Image 1). Se agrupan bajo "Otros" los proveedores que exceden el top 9
+  // O que individualmente pesan menos de 2% — deja como máximo 10 segmentos,
+  // todos etiquetables. No toca chGasto ni chUtilidad (llamadas aparte, con
+  // pocas categorías) ni el modo desktop/tablet/landscape (etiquetasExt).
+  if(id==='chProv' && ESFONO_V() && ents.length>9){
+    const MAXIND=9, UMBRAL=2;
+    const principales=[]; let sumaOtros=0;
+    ents.forEach((e,i)=>{
+      const pctv=totOriginal?(e[1]/totOriginal*100):0;
+      if(i<MAXIND && pctv>=UMBRAL) principales.push(e); else sumaOtros+=e[1];
+    });
+    ents = sumaOtros>0 ? [...principales,['Otros',sumaOtros]] : principales;
+  }
+
   const labels=ents.map(e=>e[0]), vals=ents.map(e=>e[1]), tot=vals.reduce((s,v)=>s+v,0);
-  const base=['#12203a','#2f6df0','#1f7a54','#b9791f','#b23b3b','#6b8cae','#8aa899','#c9a24b','#9c6b6b','#4a5a72','#b0b0a6','#7a9b6e','#d0894a','#5a6b8c','#a6708c','#3a7d5c','#c26b3e','#7b6ba0'];
-  const cols=labels.map((_,i)=>base[i%base.length]);
+  // Paleta ESTABLE por nombre de categoría (no por índice/orden): antes el
+  // color dependía de la posición tras ordenar por monto, así que si el
+  // ranking cambiaba de mes a mes el color de cada categoría cambiaba con
+  // él — eso se veía como "colores inconsistentes" entre gráficos/meses.
+  // Ahora el mismo nombre siempre cae en el mismo color.
+  const cols=labels.map(l=> l==='Otros' ? '#9aa3b5' : colorPorNombre(l));
   const clpK=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
   // Plugin: etiquetas externas (nombre · % · monto) con línea guía, como en el POS.
   // Solo etiqueta los segmentos con ≥3% para no saturar; el resto se ve en tooltip.
