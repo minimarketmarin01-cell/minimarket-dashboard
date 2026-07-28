@@ -1658,6 +1658,10 @@ function colorPorNombre(nom){
   let h=0; for(let i=0;i<nom.length;i++) h=(h*31+nom.charCodeAt(i))>>>0;
   return PALETA_CAT[h%PALETA_CAT.length];
 }
+// Canvas oculto reutilizado solo para medir texto (ctx.measureText) sin
+// depender de que el chart ya esté dibujado. Se crea una vez.
+const _ctxMedida = document.createElement('canvas').getContext('2d');
+function medirTexto(txt, fuente){ _ctxMedida.font = fuente; return _ctxMedida.measureText(txt).width; }
 function dona(id,obj,lecturaId,tipoTexto){
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
   const totOriginal=ents.reduce((s,e)=>s+e[1],0);
@@ -1688,29 +1692,83 @@ function dona(id,obj,lecturaId,tipoTexto){
   // Ahora el mismo nombre siempre cae en el mismo color.
   const cols=labels.map(l=> l==='Otros' ? '#9aa3b5' : colorPorNombre(l));
   const clpK=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
-  // Plugin: etiquetas externas (nombre · % · monto) con línea guía, como en el POS.
-  // Solo etiqueta los segmentos con ≥3% para no saturar; el resto se ve en tooltip.
-  const etiquetasExt={id:'etExt',afterDraw(ch){
-    // Guard: si el canvas aún no tiene layout, chartArea viene undefined y
-    // leer .left lanzaba una excepción que abortaba el dibujo del gráfico.
-    if(!ch.chartArea) return;
-    const {ctx}=ch; const meta=ch.getDatasetMeta(0); const cx=ch.chartArea.left+(ch.chartArea.right-ch.chartArea.left)/2; const cy=ch.chartArea.top+(ch.chartArea.bottom-ch.chartArea.top)/2;
-    ctx.save(); ctx.font='600 8.5px Inter, system-ui';
-    meta.data.forEach((arc,i)=>{
-      const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
-      const ang=(arc.startAngle+arc.endAngle)/2; const r=arc.outerRadius;
-      const x1=cx+Math.cos(ang)*r, y1=cy+Math.sin(ang)*r;
-      const x2=cx+Math.cos(ang)*(r+8), y2=cy+Math.sin(ang)*(r+8);
-      const der=Math.cos(ang)>=0; const x3=der?x2+8:x2-8;
-      ctx.strokeStyle=cols[i]; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y2); ctx.stroke();
-      ctx.fillStyle='#334'; ctx.textAlign=der?'left':'right'; const tx=der?x3+2:x3-2;
-      const nom=labels[i].length>11?labels[i].slice(0,10)+'…':labels[i];
-      ctx.font='700 8.5px Inter, system-ui'; ctx.fillText(nom, tx, y2-4);
-      ctx.font='600 8px Inter, system-ui'; ctx.fillStyle='#777';
-      ctx.fillText(pctv.toFixed(1)+'% · '+clpK(vals[i]), tx, y2+5);
-    });
-    ctx.restore();
-  }};
+  // ---------------------------------------------------------------------
+  // Plugin: etiquetas externas (nombre · % · monto) con línea guía.
+  // Usado en TODOS los anchos ≥600px (landscape 600-899, tablet, desktop
+  // con sidebar expandido o colapsado) — celular vertical usa etiquetasFono.
+  //
+  // FIX (padding fijo insuficiente → texto cortado a lo bruto por el borde
+  // del <canvas>, ej. "COMISION P..." con el % cortado, "ANADAS" perdiendo
+  // "EMP" del inicio, "$1" perdiendo ".5M"): antes se reservaba un padding
+  // lateral CONSTANTE (52px) sin importar el ancho real de la card ni el
+  // largo de las etiquetas. Con 2 columnas en pantallas grandes, o con
+  // nombres largos, el punto de anclaje del texto quedaba más cerca del
+  // borde físico del canvas que el ancho del propio texto — y el canvas
+  // recorta en seco cualquier píxel fuera de sus límites, sin elipsis.
+  //
+  // Dos capas de defensa:
+  //  1) PREVENCIÓN — beforeLayout calcula cuánto necesita el texto más
+  //     ancho (nombre y línea %·monto de los segmentos que se van a
+  //     etiquetar) y reserva ese padding, acotado a un máximo proporcional
+  //     al ancho real del contenedor (canvas.parentElement) para no dejar
+  //     la dona reducida a un punto en pantallas angostas.
+  //  2) GARANTÍA — afterDraw mide el espacio real disponible hasta el
+  //     borde físico del canvas en cada etiqueta y trunca con "…" solo si
+  //     de verdad no cabe, soltando primero el monto y priorizando SIEMPRE
+  //     el % completo antes que el nombre completo (nunca al revés).
+  const etiquetasExt={id:'etExt',
+    beforeLayout(ch){
+      const cont=ch.canvas.parentElement;
+      const contW=cont?cont.offsetWidth:0;
+      let maxW=0;
+      labels.forEach((l,i)=>{
+        const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
+        maxW=Math.max(maxW, medirTexto(l,'700 8.5px Inter, system-ui'));
+        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'% · '+clpK(vals[i]),'600 8px Inter, system-ui'));
+      });
+      // 16 = alcance horizontal de la línea guía (8 radial + 8 del codo); 8 = margen al borde.
+      let pad = maxW>0 ? Math.ceil(maxW)+16+8 : 52;
+      pad = Math.max(44, pad);
+      if(contW>0) pad = Math.min(pad, Math.max(40, contW*0.4));
+      ch.options.layout.padding = {left:pad, right:pad, top:16, bottom:16};
+    },
+    afterDraw(ch){
+      // Guard: si el canvas aún no tiene layout, chartArea viene undefined y
+      // leer .left lanzaba una excepción que abortaba el dibujo del gráfico.
+      if(!ch.chartArea) return;
+      const {ctx}=ch; const meta=ch.getDatasetMeta(0); const cx=ch.chartArea.left+(ch.chartArea.right-ch.chartArea.left)/2; const cy=ch.chartArea.top+(ch.chartArea.bottom-ch.chartArea.top)/2;
+      ctx.save();
+      meta.data.forEach((arc,i)=>{
+        const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
+        const ang=(arc.startAngle+arc.endAngle)/2; const r=arc.outerRadius;
+        const x1=cx+Math.cos(ang)*r, y1=cy+Math.sin(ang)*r;
+        const x2=cx+Math.cos(ang)*(r+8), y2=cy+Math.sin(ang)*(r+8);
+        const der=Math.cos(ang)>=0; const x3=der?x2+8:x2-8;
+        ctx.strokeStyle=cols[i]; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y2); ctx.stroke();
+        ctx.textAlign=der?'left':'right'; const tx=der?x3+2:x3-2;
+        // Espacio real hasta el borde físico del canvas (nunca asumido: medido).
+        const disponible=Math.max(0, der ? (ch.width-tx-4) : (tx-4));
+
+        ctx.font='700 8.5px Inter, system-ui';
+        let nom=labels[i];
+        if(ctx.measureText(nom).width>disponible){
+          while(nom.length>1 && ctx.measureText(nom+'…').width>disponible) nom=nom.slice(0,-1);
+          if(nom.length<labels[i].length) nom+='…';
+        }
+        ctx.fillStyle='#334'; ctx.fillText(nom, tx, y2-4);
+
+        // Línea 2: el % NUNCA se recorta a medias — si no cabe con el monto,
+        // se suelta el monto primero; solo en el extremo se redondea el %.
+        ctx.font='600 8px Inter, system-ui';
+        let linea=pctv.toFixed(1)+'% · '+clpK(vals[i]);
+        if(ctx.measureText(linea).width>disponible){
+          linea=pctv.toFixed(1)+'%';
+          if(ctx.measureText(linea).width>disponible) linea=Math.round(pctv)+'%';
+        }
+        ctx.fillStyle='#777'; ctx.fillText(linea, tx, y2+5);
+      });
+      ctx.restore();
+    }};
   // ---- Etiquetas externas para CELULAR VERTICAL ----------------------
   // Reemplaza la leyenda de 25 filas (que estiraba el canvas y no se leía)
   // por etiquetas alrededor de la dona con línea guía, tipo POS: nombre,
