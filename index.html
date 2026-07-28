@@ -405,6 +405,69 @@
     .graf-dona{height:440px!important}
     .graf-control{height:220px!important}
   }
+  /* ==================================================================
+     FIX TABLET / 3:4 — el ancho liberado al contraer el riel ahora SÍ
+     se aprovecha.
+
+     DIAGNÓSTICO (por qué fallaba solo en tablet y no en desktop):
+     1) @media (max-width:820px) [tablet 3:4 en vertical, ej. 768×1024] y
+        el bloque landscape 600–899px NO tenían NINGUNA regla
+        .wrap.sidebar-oculto. Esas reglas existían únicamente dentro de
+        @media (min-width:900px), por eso en desktop el grid sí pasaba a
+        3 columnas y en tablet se quedaba con las mismas de siempre.
+     2) .graf-dona / .graf-dia / .graf-mini / .graf-control tenían height
+        FIJO en px con !important dentro de esos media queries. Chart.js
+        dibuja una dona como min(ancho, alto): con el alto clavado en
+        160px la dona NO crecía aunque su .card sí ganara ancho — el
+        espacio liberado solo aparecía como blanco a los lados.
+
+     CRITERIO: se corrige exclusivamente el estado .sidebar-oculto (mayor
+     especificidad), así el estado expandido queda pixel a pixel igual que
+     antes y no se arriesga ninguna regresión.
+     ================================================================== */
+
+  /* --- Alturas fluidas al contraer, en todo el rango tablet y móvil --- */
+  @media screen and (max-width:899px){
+    .wrap.sidebar-oculto .graf-mini{height:clamp(130px,17vw,210px)!important}
+    .wrap.sidebar-oculto .graf-dia{height:clamp(210px,30vw,360px)!important}
+    .wrap.sidebar-oculto .graf-dona{height:clamp(260px,38vw,430px)!important}
+    .wrap.sidebar-oculto .graf-control{height:clamp(150px,21vw,250px)!important}
+  }
+
+  /* --- Tablet HORIZONTAL 600–899px con el riel contraído --- */
+  @media screen and (min-width:600px) and (max-width:899px) and (orientation:landscape){
+    .wrap.sidebar-oculto .hero{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .wrap.sidebar-oculto .mini{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .wrap.sidebar-oculto .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .wrap.sidebar-oculto .kpi.hero-util{grid-column:auto}
+  }
+
+  /* --- Tablet VERTICAL 3:4 600–899px (ej. 768×1024) con riel contraído.
+     Este era el caso totalmente descubierto: caía en @media(max-width:820px),
+     que dejaba .grid en 1 sola columna pasara lo que pasara. --- */
+  @media screen and (min-width:600px) and (max-width:899px) and (orientation:portrait){
+    .wrap.sidebar-oculto .hero{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .wrap.sidebar-oculto .kpi.hero-util{grid-column:1 / -1}
+    .wrap.sidebar-oculto .mini{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .wrap.sidebar-oculto .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    /* En vertical sobra alto (ej. 1024px): la dona se dibuja como
+       min(ancho,alto), así que subir el alto es lo que realmente la
+       agranda. Con clamp(260px,38vw,…) solo ganaba +33px. */
+    .wrap.sidebar-oculto .graf-dona{height:clamp(300px,46vw,430px)!important}
+    .wrap.sidebar-oculto .graf-dia{height:clamp(240px,34vw,380px)!important}
+    .wrap.sidebar-oculto .graf-control{height:clamp(170px,24vw,260px)!important}
+  }
+
+  /* --- Tablet 3:4 en horizontal (1024×768) cae en ≥900px: ahí el grid ya
+     pasaba a 3 columnas, pero las alturas de gráfico seguían fijas y la
+     dona tampoco crecía. Se suben también en estado contraído. --- */
+  @media screen and (min-width:900px){
+    .wrap.sidebar-oculto .graf-mini{height:220px!important}
+    .wrap.sidebar-oculto .graf-dia{height:370px!important}
+    .wrap.sidebar-oculto .graf-dona{height:440px!important}
+    .wrap.sidebar-oculto .graf-control{height:220px!important}
+  }
+
   /* ===== Transición suave solo en los ítems de navegación ===== */
   .tabs .menu-nivel1 button{ transition: background .15s, color .15s; }
 </style>
@@ -819,11 +882,17 @@ if (typeof ResizeObserver !== 'undefined') {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
     let lastW = mainContent.clientWidth;
+    let lastH = mainContent.clientHeight;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;
-        if (Math.abs(w - lastW) > 1) {
+        const h = entry.contentRect.height;
+        // Se vigila ancho Y alto: al contraer el riel en tablet/3:4 ahora
+        // también cambian las alturas de .graf-dona/.graf-dia, y un cambio
+        // solo de alto no disparaba el redibujo de Chart.js.
+        if (Math.abs(w - lastW) > 1 || Math.abs(h - lastH) > 1) {
           lastW = w;
+          lastH = h;
           resizeChartsDebounced(80);
         }
       }
