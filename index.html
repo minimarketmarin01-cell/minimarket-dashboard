@@ -726,6 +726,40 @@
     }
   }
 
+  /* ==================================================================
+     Anchos de columna de Registros en ch (ancho del carácter "0"), no en px:
+     al subir la escala tipográfica, un width:92px fijo ya no alcanzaba para
+     "2026-07-01" y la fecha salía cortada ("2026-07-("). En ch, la columna
+     crece junto con la fuente y nunca trunca.
+     ================================================================== */
+  .tabla-edit input.col-fecha{width:11.5ch; min-width:11.5ch}
+  .tabla-edit input.col-monto{width:10ch; text-align:right}
+  .tabla-edit input.col-nop{width:13ch}
+  .tabla-edit th, .tabla-edit td{white-space:nowrap}
+  .tabla-edit td input, .tabla-edit td select{font-size:var(--fs-md)}
+  /* En celular las filas son tarjetas apiladas: ahí el ancho lo manda el flex */
+  @media (max-width:600px) and (orientation:portrait){
+    .tabla-edit input.col-fecha, .tabla-edit input.col-monto, .tabla-edit input.col-nop{
+      width:100% !important; min-width:0}
+  }
+
+  /* Filtro de rango de monto, en línea con los demás filtros. */
+  .filtro-monto{display:inline-flex; align-items:center; gap:5px}
+  .filtro-monto input{
+    width:11ch; padding:8px 10px; border:1px solid var(--linea); border-radius:9px;
+    font-size:var(--fs-md); background:#fff; font-variant-numeric:tabular-nums}
+  .filtro-monto input:focus{outline:none; border-color:var(--acento)}
+  .filtro-monto-sep{color:var(--gris); font-size:var(--fs-md)}
+  .filtro-monto button{
+    border:1px solid var(--linea); background:#fff; border-radius:9px; cursor:pointer;
+    color:var(--gris); font-size:var(--fs-sm); line-height:1; padding:9px 10px}
+  .filtro-monto button:hover{background:var(--acento-suave); color:var(--acento)}
+  .filtro-monto.activo input{border-color:var(--acento); background:var(--acento-suave)}
+  @media (max-width:600px) and (orientation:portrait){
+    .filtro-monto{width:100%}
+    .filtro-monto input{flex:1 1 0; width:auto; min-width:0}
+  }
+
   /* ===== Transición suave solo en los ítems de navegación ===== */
   .tabs .menu-nivel1 button{ transition: background .15s, color .15s; }
 </style>
@@ -884,6 +918,12 @@
       <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Buscar categoría…" style="padding:8px 10px;border:1px solid var(--linea);border-radius:9px;font-size:var(--fs-md);background:#fff;min-width:150px">
       <datalist id="listaCategoriasReg"></datalist>
       <select id="fCuenta"><option value="">Banco y efectivo</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
+      <span class="filtro-monto">
+        <input type="number" id="fMontoMin" placeholder="Monto mín." inputmode="numeric">
+        <span class="filtro-monto-sep">–</span>
+        <input type="number" id="fMontoMax" placeholder="Monto máx." inputmode="numeric">
+        <button type="button" id="fMontoLimpiar" title="Limpiar rango de monto">✕</button>
+      </span>
       <button class="btn btn-g" id="btnAgregar">+ Fila</button>
     </div>
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
@@ -2122,7 +2162,12 @@ function initTabla(){
   const fMes=document.getElementById('fMes'); mesesSet.forEach(ym=>{const o=document.createElement('option');o.value=ym;o.textContent=MESES_ES[ym.split('-')[1]]+' '+ym.split('-')[0];fMes.appendChild(o);});
   const fTipo=document.getElementById('fTipo'); TIPOS_OPC.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fTipo.appendChild(o);});
   const fCat=document.getElementById('listaCategoriasReg'); [...new Set(DATA.filas.map(f=>f.categoria).filter(Boolean))].sort().forEach(cat=>{const o=document.createElement('option');o.value=cat;fCat.appendChild(o);});
-  ['fBuscar','fMes','fTipo','fCategoria','fCuenta'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{filasMostradas=FILAS_POR_PAGINA;pintarTabla();}));
+  ['fBuscar','fMes','fTipo','fCategoria','fCuenta','fMontoMin','fMontoMax'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{filasMostradas=FILAS_POR_PAGINA;pintarTabla();}));
+  document.getElementById('fMontoLimpiar').addEventListener('click',()=>{
+    document.getElementById('fMontoMin').value='';
+    document.getElementById('fMontoMax').value='';
+    filasMostradas=FILAS_POR_PAGINA; pintarTabla();
+  });
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
@@ -2174,10 +2219,25 @@ function initOrdenTabla(){
 function filtrarFilas(){
   const q=document.getElementById('fBuscar').value.toLowerCase();
   const mes=document.getElementById('fMes').value, tipo=document.getElementById('fTipo').value, cta=document.getElementById('fCuenta').value, categoria=document.getElementById('fCategoria').value.trim().toLowerCase();
+  // Rango de monto: cualquiera de los dos extremos puede ir vacío.
+  const vMin=document.getElementById('fMontoMin').value.trim();
+  const vMax=document.getElementById('fMontoMax').value.trim();
+  const min=vMin===''?null:Number(vMin), max=vMax===''?null:Number(vMax);
+  const hayRango=(min!==null&&isFinite(min))||(max!==null&&isFinite(max));
+  document.querySelector('.filtro-monto').classList.toggle('activo',hayRango);
   return DATA.filas.filter(f=>{
     if(mes&&f.ym!==mes)return false; if(tipo&&f.tipo!==tipo)return false; if(cta&&f.cuenta!==cta)return false;
     if(categoria&&!String(f.categoria||'').toLowerCase().includes(categoria))return false;
-    if(q&&!(String(f.nombre)+f.categoria+f.nop+f.tipo).toLowerCase().includes(q))return false; return true;
+    if(q&&!(String(f.nombre)+f.categoria+f.nop+f.tipo).toLowerCase().includes(q))return false;
+    if(hayRango){
+      // Se compara contra el monto EDITADO si la fila tiene cambios sin
+      // guardar, igual que hace la suma del contador.
+      const dv=dirty[f.rowIndex];
+      const monto=Number(dv&&dv.monto!==undefined?dv.monto:f.monto)||0;
+      if(min!==null&&isFinite(min)&&monto<min)return false;
+      if(max!==null&&isFinite(max)&&monto>max)return false;
+    }
+    return true;
   });
 }
 const FILAS_POR_PAGINA=100;
@@ -2193,12 +2253,12 @@ function pintarTabla(){
     const d=dirty[f.rowIndex]||{};
     tr.innerHTML=`
       <td data-lbl="Nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
-      <td data-lbl="Fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" style="width:92px"></td>
+      <td data-lbl="Fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
       <td data-lbl="Categoría"><input value="${d.categoria??f.categoria}" data-c="categoria"></td>
       <td data-lbl="Tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
-      <td class="num" data-lbl="Monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" style="width:96px;text-align:right"></td>
-      <td data-lbl="N° op."><input value="${d.nop??f.nop}" data-c="nop" style="width:90px" readonly></td>
+      <td class="num" data-lbl="Monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" class="col-monto"></td>
+      <td data-lbl="N° op."><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
     tr.querySelectorAll('input,select').forEach(inp=>inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value)));
     tr.querySelector('.btn-del').onclick=()=>eliminarFila(f);
@@ -2535,12 +2595,30 @@ document.getElementById('fileAbonoSCQ').addEventListener('change', async (e)=>{
     const data = await resp.json();
     if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
     const r = data.resultado;
-    estado.innerHTML = `<div class="cap">
-      Filas leídas: <b>${r.total_filas}</b><br>
-      Transacciones escritas: <b>${r.transacciones_escritas}</b><br>
-      Duplicadas omitidas: <b>${r.duplicadas_omitidas}</b><br>
-      Ignoradas: <b>${r.ignoradas}</b>
-    </div>`;
+    // Resumen claro por grupo, con rango de fechas: así se ve de inmediato
+    // qué entró y qué ya estaba, en vez de un D1_ERROR crudo.
+    const MES_CORTO = ym => { const [a,m]=ym.split('-'); return (MESES_ES[m]||ym).slice(0,3)+' '+a; };
+    const linea = (g, etiqueta) => {
+      if(!g || !g.n) return '';
+      const det = (g.meses||[]).map(x=>`${MES_CORTO(x.ym)}: ${x.n}`).join(' · ');
+      return `<div style="margin:3px 0">${etiqueta} <b>${g.n}</b>`
+           + `<span class="cap" style="display:block;margin-left:20px">${g.desde} → ${g.hasta}${det?' &nbsp;(' + det + ')':''}</span></div>`;
+    };
+    const hayError = (r.errores_escritura||[]).length;
+    estado.innerHTML = `
+      <div class="alerta ${r.nuevas && r.nuevas.n ? 'ok' : 'ver'}">
+        <span>${r.nuevas && r.nuevas.n ? '✓' : 'ℹ️'}</span>
+        <div>
+          <b>${r.nuevas && r.nuevas.n ? r.nuevas.n + ' filas nuevas guardadas' : 'No había filas nuevas'}</b>
+          ${r.duplicadas && r.duplicadas.n ? ' · ' + r.duplicadas.n + ' ya existían' : ''}
+        </div>
+      </div>
+      <div class="cap" style="margin-top:8px">
+        ${linea(r.nuevas,'🟢 Insertadas:')}
+        ${linea(r.duplicadas,'⚪ Omitidas por ya existir:')}
+        <div style="margin:3px 0">Filas leídas del archivo: <b>${r.total_filas}</b>${r.ignoradas?` · descartadas: <b>${r.ignoradas}</b>`:''}</div>
+        ${hayError?`<div style="margin-top:6px;color:var(--rojo)">⚠️ ${hayError} fila(s) no se pudieron escribir: ${r.errores_escritura[0]}</div>`:''}
+      </div>`;
   }catch(err){
     estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>Error: ${err.message}</div></div>`;
   }
