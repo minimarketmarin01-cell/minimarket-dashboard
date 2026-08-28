@@ -1470,12 +1470,17 @@ function dibujarControl(m){
   const p=v=>ing? v/ing*100 : 0;
   const adm=(m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0;
   const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
-  // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar)
+  const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
+  const luz=(m.gastoCats&&m.gastoCats['ENEL'])||0;
+  // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar) — Arriendo y Luz usan
+  // la referencia de "Supermercado Lucrativo" (Amorín): arriendo ≤1,5%, luz ≤2% de la venta.
   const items=[
     {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
     {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
+    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
+    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto'},
     {n:'Merma',      v:m.merma,    pc:p(m.merma), meta:2,  tipo:'gasto'},
     {n:'Plásticos',  v:m.plasticos,pc:p(m.plasticos),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
@@ -1597,6 +1602,18 @@ function dibujarMargenGlobal(m){
     </tbody></table>
     <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio.</div>`;
 }
+// Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
+// clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
+// variar (ej. "FRUTAS Y VERDURAS" vs "VERDULERIA"); ajustar los patrones si no calzan.
+const TECHOS_MERMA_SECTOR=[
+  {match:/FRUT|VERDURA|HORTALIZA/i, techoPct:5,   etiqueta:'Frutería/Verdulería'},
+  {match:/CARN|VACUNO|POLLO|CERDO/i, techoPct:3,   etiqueta:'Carnicería'},
+  {match:/\bPAN\b|PANADER/i,        techoPct:3.5, etiqueta:'Panadería'}
+];
+function techoMermaPorCategoria(cat){
+  const c=String(cat||'').toUpperCase();
+  return TECHOS_MERMA_SECTOR.find(b=>b.match.test(c))||null;
+}
 function dibujarMermas(m){
   const cont=document.getElementById('mermasCard');
   const d=m.mermaDetalle;
@@ -1607,6 +1624,16 @@ function dibujarMermas(m){
   const META_PERDIDA=3; // referencia de Amorín (carnicería ≤3%, panadería ≤3,5%) — se usa como meta general
   const sobreMeta=d.tasaPerdida>META_PERDIDA;
   const catsOrdenadas=Object.entries(d.porCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Merma como % de la VENTA de ese mismo sector (no del ingreso total) — solo para los rubros
+  // con techo conocido (frutería/carnicería/panadería); cruza contra rotacionCategoria, que ya
+  // trae la venta real por categoría.
+  const alertasSector=Object.entries(d.porCategoria||{}).map(([cat,montoMerma])=>{
+    const b=techoMermaPorCategoria(cat);
+    if(!b)return null;
+    const ventaCat=(m.rotacionCategoria&&m.rotacionCategoria[cat]&&m.rotacionCategoria[cat].venta)||0;
+    const pct=ventaCat?montoMerma/ventaCat*100:null;
+    return {cat, etiqueta:b.etiqueta, montoMerma, ventaCat, pct, techoPct:b.techoPct, sobreTecho:pct!=null&&pct>b.techoPct};
+  }).filter(Boolean);
   cont.innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
       <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso · meta Amorín ≤3%</div></div>
@@ -1616,6 +1643,9 @@ function dibujarMermas(m){
     </div>
     ${catsOrdenadas.length?`<div class="cap" style="margin-bottom:6px">Categorías con más merma real este mes:</div><table><thead><tr><th style="text-align:left">Categoría</th><th>Merma</th></tr></thead><tbody>
       ${catsOrdenadas.map(([cat,v])=>`<tr><td style="text-align:left">${cat}</td><td>${clp(v)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    ${alertasSector.length?`<div class="cap" style="margin:10px 0 6px">Merma vs. techo por rubro (referencia Amorín) — % sobre la venta de ese mismo rubro:</div><table><thead><tr><th style="text-align:left">Rubro</th><th>Merma</th><th>% s/venta rubro</th><th>Techo</th></tr></thead><tbody>
+      ${alertasSector.map(a=>`<tr><td style="text-align:left">${a.etiqueta}</td><td>${clp(a.montoMerma)}</td><td style="color:${a.sobreTecho?'var(--rojo)':'var(--verde)'};font-weight:700">${a.pct!=null?a.pct.toFixed(1)+'%':'sin venta registrada'}</td><td>≤${a.techoPct}%</td></tr>`).join('')}
     </tbody></table>`:''}
     <div class="cap" style="margin-top:8px">💡 ${sobreMeta
       ? 'Sobre la meta — revisa PVPS (Primero que Vence, Primero que Sale) en las categorías de la tabla de arriba, y considera rebaja de precio o exhibición en punto de cobro antes de que venza.'
