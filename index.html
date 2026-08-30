@@ -1470,12 +1470,30 @@ function dibujarControl(m){
   const p=v=>ing? v/ing*100 : 0;
   const adm=(m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0;
   const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
-  // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar)
+  const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
+  const luz=(m.gastoCats&&m.gastoCats['ENEL'])||0;
+  // Acumulado/promedio de los últimos 3 meses de "Costos merc." — suaviza el ruido de una
+  // compra grande pagada de una vez en un mes, cuya venta se reparte en los 1-3 meses
+  // siguientes. El problema real es que este promedio se mantenga sobre la meta, no que un
+  // mes puntual la sobrepase por timing de compra.
+  const idxM=DATA.meses.findIndex(x=>x.ym===m.ym);
+  const ventanaN=3;
+  const inicioVentana=idxM>=0?Math.max(0,idxM-(ventanaN-1)):0;
+  const mesesVentana=idxM>=0?DATA.meses.slice(inicioVentana,idxM+1):[m];
+  const sumCostosVent=mesesVentana.reduce((s,x)=>s+(x.costos||0),0);
+  const sumIngresoVent=mesesVentana.reduce((s,x)=>s+(x.ingreso||0),0);
+  const pctCostosVent=sumIngresoVent?sumCostosVent/sumIngresoVent*100:0;
+  const nMesesVent=mesesVentana.length;
+  // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar) — Arriendo y Luz usan
+  // la referencia de "Supermercado Lucrativo" (Amorín): arriendo ≤1,5%, luz ≤2% de la venta.
   const items=[
     {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
     {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
+    ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
+    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
+    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto'},
     {n:'Merma',      v:m.merma,    pc:p(m.merma), meta:2,  tipo:'gasto'},
     {n:'Plásticos',  v:m.plasticos,pc:p(m.plasticos),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
@@ -1528,7 +1546,11 @@ function dibujarControl(m){
     ? `⚠️ Sobre la meta: ${sobrepasados.map(it=>it.n+' ('+it.pc.toFixed(1)+'% vs meta '+it.meta+'%)').join(', ')}. Revisa esas categorías antes de la próxima compra.`
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
-    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.<br>💡 '+txtControl;
+    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.'
+    + (nMesesVent>1
+        ? '<br><small style="color:var(--gris)">"Costos merc. ('+nMesesVent+'m)" = compras acumuladas de los últimos '+nMesesVent+' meses ÷ ingreso de esos mismos meses. Suaviza compras grandes pagadas en un solo mes pero vendidas en varios — preocúpate si este promedio se mantiene sobre 70%, no por un mes puntual.</small>'
+        : '')
+    + '<br>💡 '+txtControl;
 }
 function dibujarUtilidad(m){
   const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
@@ -1566,8 +1588,18 @@ function dibujarRotacion(m){
   const cont=document.getElementById('rotacionTabla');
   const filas=Object.entries(m.rotacionProveedor||{}).map(([prov,v])=>({prov,...v})).sort((a,b)=>b.margen-a.margen);
   if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
-  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
-    ${filas.map(f=>`<tr><td style="text-align:left">${f.prov}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
+  // Participación (venta de ese proveedor sobre el total de venta con proveedor cruzado) y
+  // Margen% (margen/venta) — mismo estilo que la tabla de sectores (Amorín): % grande arriba,
+  // monto en pesos chico abajo. OJO: a diferencia del margen por sector, "Compra" acá sale de
+  // la cartola bancaria (lo pagado ese mes), no del costo real de lo vendido — sensible a
+  // compras grandes puntuales, igual que "Costos merc." del semáforo de gasto.
+  const totalVenta=filas.reduce((s,f)=>s+(f.venta||0),0);
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Compra</th><th>Margen</th></tr></thead><tbody>
+    ${filas.map(f=>{
+      const participacionPct=totalVenta?(f.venta||0)/totalVenta*100:0;
+      const margenPct=f.venta?(f.margen||0)/f.venta*100:0;
+      return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${clp(f.compra)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margen)}</div></td></tr>`;
+    }).join('')}
   </tbody></table>`;
 }
 function dibujarVentaSector(m){
@@ -1586,16 +1618,37 @@ function dibujarMargenGlobal(m){
   const mg=m.margenGlobal;
   if(!mg || !mg.ventaTotal){ cont.innerHTML='<div class="cap">Sin ventas con sector asignado todavía — necesita el campo Sector en los productos de Pedidos Marín.</div>'; return; }
   const filas=Object.entries(mg.porSector||{}).sort((a,b)=>b[1].participacionPct-a[1].participacionPct);
+  // Utilidad neta estilo Amorín: al margen global ponderado (costo real de lo vendido, vía
+  // utilidad de Loyverse) se le resta el gasto operacional del mes como % de la venta — a
+  // diferencia de "rentabilidad" (más abajo en Resumen), que usa COSTOS de la cartola bancaria
+  // (lo pagado ese mes, no lo efectivamente vendido).
+  const gastoOpePct=m.ingreso?(m.gastoOpe||0)/m.ingreso*100:0;
+  const utilidadNetaAmorin=mg.pct-gastoOpePct;
   cont.innerHTML=`
-    <div class="kpi" style="margin-bottom:14px;max-width:280px">
-      <div class="lbl">Margen global ponderado</div>
-      <div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div>
-      <div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div>
+    <div class="mini" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px">
+      <div class="kpi"><div class="lbl">Margen global ponderado</div><div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div><div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div></div>
+      <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${gastoOpePct.toFixed(1)}%</div><div class="sub">${clp(m.gastoOpe||0)} sobre la venta del mes</div></div>
+      <div class="kpi"><div class="lbl">Utilidad neta (Amorín)</div><div class="val" style="color:${utilidadNetaAmorin>=0?'var(--verde)':'var(--rojo)'}">${utilidadNetaAmorin.toFixed(1)}%</div><div class="sub">margen global − gasto operacional</div></div>
     </div>
-    <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Margen</th></tr></thead><tbody>
-      ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%</td></tr>`).join('')}
+    <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
+      ${filas.map(([sec,v])=>{
+        const costoSector=v.venta-v.utilidad;
+        return `<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoSector)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
+      }).join('')}
     </tbody></table>
-    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio.</div>`;
+    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>`;
+}
+// Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
+// clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
+// variar (ej. "FRUTAS Y VERDURAS" vs "VERDULERIA"); ajustar los patrones si no calzan.
+const TECHOS_MERMA_SECTOR=[
+  {match:/FRUT|VERDURA|HORTALIZA/i, techoPct:5,   etiqueta:'Frutería/Verdulería'},
+  {match:/CARN|VACUNO|POLLO|CERDO/i, techoPct:3,   etiqueta:'Carnicería'},
+  {match:/\bPAN\b|PANADER/i,        techoPct:3.5, etiqueta:'Panadería'}
+];
+function techoMermaPorCategoria(cat){
+  const c=String(cat||'').toUpperCase();
+  return TECHOS_MERMA_SECTOR.find(b=>b.match.test(c))||null;
 }
 function dibujarMermas(m){
   const cont=document.getElementById('mermasCard');
@@ -1607,6 +1660,16 @@ function dibujarMermas(m){
   const META_PERDIDA=3; // referencia de Amorín (carnicería ≤3%, panadería ≤3,5%) — se usa como meta general
   const sobreMeta=d.tasaPerdida>META_PERDIDA;
   const catsOrdenadas=Object.entries(d.porCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Merma como % de la VENTA de ese mismo sector (no del ingreso total) — solo para los rubros
+  // con techo conocido (frutería/carnicería/panadería); cruza contra rotacionCategoria, que ya
+  // trae la venta real por categoría.
+  const alertasSector=Object.entries(d.porCategoria||{}).map(([cat,montoMerma])=>{
+    const b=techoMermaPorCategoria(cat);
+    if(!b)return null;
+    const ventaCat=(m.rotacionCategoria&&m.rotacionCategoria[cat]&&m.rotacionCategoria[cat].venta)||0;
+    const pct=ventaCat?montoMerma/ventaCat*100:null;
+    return {cat, etiqueta:b.etiqueta, montoMerma, ventaCat, pct, techoPct:b.techoPct, sobreTecho:pct!=null&&pct>b.techoPct};
+  }).filter(Boolean);
   cont.innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
       <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso · meta Amorín ≤3%</div></div>
@@ -1616,6 +1679,9 @@ function dibujarMermas(m){
     </div>
     ${catsOrdenadas.length?`<div class="cap" style="margin-bottom:6px">Categorías con más merma real este mes:</div><table><thead><tr><th style="text-align:left">Categoría</th><th>Merma</th></tr></thead><tbody>
       ${catsOrdenadas.map(([cat,v])=>`<tr><td style="text-align:left">${cat}</td><td>${clp(v)}</td></tr>`).join('')}
+    </tbody></table>`:''}
+    ${alertasSector.length?`<div class="cap" style="margin:10px 0 6px">Merma vs. techo por rubro (referencia Amorín) — % sobre la venta de ese mismo rubro:</div><table><thead><tr><th style="text-align:left">Rubro</th><th>Merma</th><th>% s/venta rubro</th><th>Techo</th></tr></thead><tbody>
+      ${alertasSector.map(a=>`<tr><td style="text-align:left">${a.etiqueta}</td><td>${clp(a.montoMerma)}</td><td style="color:${a.sobreTecho?'var(--rojo)':'var(--verde)'};font-weight:700">${a.pct!=null?a.pct.toFixed(1)+'%':'sin venta registrada'}</td><td>≤${a.techoPct}%</td></tr>`).join('')}
     </tbody></table>`:''}
     <div class="cap" style="margin-top:8px">💡 ${sobreMeta
       ? 'Sobre la meta — revisa PVPS (Primero que Vence, Primero que Sale) en las categorías de la tabla de arriba, y considera rebaja de precio o exhibición en punto de cobro antes de que venza.'
