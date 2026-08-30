@@ -1472,11 +1472,24 @@ function dibujarControl(m){
   const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
   const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
   const luz=(m.gastoCats&&m.gastoCats['ENEL'])||0;
+  // Acumulado/promedio de los últimos 3 meses de "Costos merc." — suaviza el ruido de una
+  // compra grande pagada de una vez en un mes, cuya venta se reparte en los 1-3 meses
+  // siguientes. El problema real es que este promedio se mantenga sobre la meta, no que un
+  // mes puntual la sobrepase por timing de compra.
+  const idxM=DATA.meses.findIndex(x=>x.ym===m.ym);
+  const ventanaN=3;
+  const inicioVentana=idxM>=0?Math.max(0,idxM-(ventanaN-1)):0;
+  const mesesVentana=idxM>=0?DATA.meses.slice(inicioVentana,idxM+1):[m];
+  const sumCostosVent=mesesVentana.reduce((s,x)=>s+(x.costos||0),0);
+  const sumIngresoVent=mesesVentana.reduce((s,x)=>s+(x.ingreso||0),0);
+  const pctCostosVent=sumIngresoVent?sumCostosVent/sumIngresoVent*100:0;
+  const nMesesVent=mesesVentana.length;
   // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar) — Arriendo y Luz usan
   // la referencia de "Supermercado Lucrativo" (Amorín): arriendo ≤1,5%, luz ≤2% de la venta.
   const items=[
     {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
     {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
+    ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
@@ -1533,7 +1546,11 @@ function dibujarControl(m){
     ? `⚠️ Sobre la meta: ${sobrepasados.map(it=>it.n+' ('+it.pc.toFixed(1)+'% vs meta '+it.meta+'%)').join(', ')}. Revisa esas categorías antes de la próxima compra.`
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
-    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.<br>💡 '+txtControl;
+    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.'
+    + (nMesesVent>1
+        ? '<br><small style="color:var(--gris)">"Costos merc. ('+nMesesVent+'m)" = compras acumuladas de los últimos '+nMesesVent+' meses ÷ ingreso de esos mismos meses. Suaviza compras grandes pagadas en un solo mes pero vendidas en varios — preocúpate si este promedio se mantiene sobre 70%, no por un mes puntual.</small>'
+        : '')
+    + '<br>💡 '+txtControl;
 }
 function dibujarUtilidad(m){
   const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
