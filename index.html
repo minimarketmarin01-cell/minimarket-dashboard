@@ -1588,8 +1588,18 @@ function dibujarRotacion(m){
   const cont=document.getElementById('rotacionTabla');
   const filas=Object.entries(m.rotacionProveedor||{}).map(([prov,v])=>({prov,...v})).sort((a,b)=>b.margen-a.margen);
   if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
-  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Compra</th><th>Venta</th><th>Margen</th></tr></thead><tbody>
-    ${filas.map(f=>`<tr><td style="text-align:left">${f.prov}</td><td>${clp(f.compra)}</td><td>${clp(f.venta)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${clp(f.margen)}</td></tr>`).join('')}
+  // Participación (venta de ese proveedor sobre el total de venta con proveedor cruzado) y
+  // Margen% (margen/venta) — mismo estilo que la tabla de sectores (Amorín): % grande arriba,
+  // monto en pesos chico abajo. OJO: a diferencia del margen por sector, "Compra" acá sale de
+  // la cartola bancaria (lo pagado ese mes), no del costo real de lo vendido — sensible a
+  // compras grandes puntuales, igual que "Costos merc." del semáforo de gasto.
+  const totalVenta=filas.reduce((s,f)=>s+(f.venta||0),0);
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Compra</th><th>Margen</th></tr></thead><tbody>
+    ${filas.map(f=>{
+      const participacionPct=totalVenta?(f.venta||0)/totalVenta*100:0;
+      const margenPct=f.venta?(f.margen||0)/f.venta*100:0;
+      return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${clp(f.compra)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margen)}</div></td></tr>`;
+    }).join('')}
   </tbody></table>`;
 }
 function dibujarVentaSector(m){
