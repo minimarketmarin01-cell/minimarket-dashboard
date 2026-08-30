@@ -1620,8 +1620,11 @@ function dibujarMargenGlobal(m){
       <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${gastoOpePct.toFixed(1)}%</div><div class="sub">${clp(m.gastoOpe||0)} sobre la venta del mes</div></div>
       <div class="kpi"><div class="lbl">Utilidad neta (Amorín)</div><div class="val" style="color:${utilidadNetaAmorin>=0?'var(--verde)':'var(--rojo)'}">${utilidadNetaAmorin.toFixed(1)}%</div><div class="sub">margen global − gasto operacional</div></div>
     </div>
-    <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Margen</th></tr></thead><tbody>
-      ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%</td></tr>`).join('')}
+    <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
+      ${filas.map(([sec,v])=>{
+        const costoSector=v.venta-v.utilidad;
+        return `<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoSector)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
+      }).join('')}
     </tbody></table>
     <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>`;
 }
