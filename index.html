@@ -1636,7 +1636,31 @@ function dibujarMargenGlobal(m){
         return `<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoSector)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
       }).join('')}
     </tbody></table>
-    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>`;
+    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>
+    ${dibujarMargenProveedorHTML(m)}`;
+}
+// Misma metodología Amorín que dibujarMargenGlobal, pero cortada por proveedor en vez de por
+// sector — a diferencia de "Rotación por proveedor" (Surtido, que usa Compra de la cartola
+// bancaria y por eso puede mostrar 100% de margen si no hay cartola cargada ese mes), esto usa
+// el costo real de lo vendido (utilidad de Loyverse), inmune a compras grandes puntuales.
+function dibujarMargenProveedorHTML(m){
+  const mgp=m.margenGlobalProveedor;
+  if(!mgp || !mgp.ventaTotal) return '<div class="cap" style="margin-top:14px">Sin ventas con proveedor asignado todavía — necesita el Proveedor en los productos de Pedidos Marín.</div>';
+  const filasProv=Object.entries(mgp.porProveedor||{}).sort((a,b)=>b[1].participacionPct-a[1].participacionPct);
+  return `
+    <div class="cap" style="margin:16px 0 8px;font-weight:700;color:var(--ink,inherit)">Por proveedor</div>
+    <div class="kpi" style="margin-bottom:10px;max-width:280px">
+      <div class="lbl">Margen global ponderado (proveedor)</div>
+      <div class="val" style="color:${mgp.pct>=0?'var(--verde)':'var(--rojo)'}">${mgp.pct.toFixed(1)}%</div>
+      <div class="sub">${clp(mgp.utilidadTotal)} sobre ${clp(mgp.ventaTotal)} vendidos</div>
+    </div>
+    <table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
+      ${filasProv.map(([prov,v])=>{
+        const costoProv=v.venta-v.utilidad;
+        return `<tr><td style="text-align:left">${prov}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoProv)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
+      }).join('')}
+    </tbody></table>
+    <div class="cap" style="margin-top:8px">💡 Mismo cálculo que por sector, pero por proveedor — a diferencia de "Rotación por proveedor" (Surtido), esto usa el costo real de lo vendido, no lo pagado en la cartola ese mes: es confiable aunque no hayas cargado la cartola, o hayas comprado en bulto un mes puntual.</div>`;
 }
 // Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
 // clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
