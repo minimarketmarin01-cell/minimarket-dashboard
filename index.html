@@ -1591,16 +1591,22 @@ function dibujarMargenGlobal(m){
   const mg=m.margenGlobal;
   if(!mg || !mg.ventaTotal){ cont.innerHTML='<div class="cap">Sin ventas con sector asignado todavía — necesita el campo Sector en los productos de Pedidos Marín.</div>'; return; }
   const filas=Object.entries(mg.porSector||{}).sort((a,b)=>b[1].participacionPct-a[1].participacionPct);
+  // Utilidad neta estilo Amorín: al margen global ponderado (costo real de lo vendido, vía
+  // utilidad de Loyverse) se le resta el gasto operacional del mes como % de la venta — a
+  // diferencia de "rentabilidad" (más abajo en Resumen), que usa COSTOS de la cartola bancaria
+  // (lo pagado ese mes, no lo efectivamente vendido).
+  const gastoOpePct=m.ingreso?(m.gastoOpe||0)/m.ingreso*100:0;
+  const utilidadNetaAmorin=mg.pct-gastoOpePct;
   cont.innerHTML=`
-    <div class="kpi" style="margin-bottom:14px;max-width:280px">
-      <div class="lbl">Margen global ponderado</div>
-      <div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div>
-      <div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div>
+    <div class="mini" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px">
+      <div class="kpi"><div class="lbl">Margen global ponderado</div><div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div><div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div></div>
+      <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${gastoOpePct.toFixed(1)}%</div><div class="sub">${clp(m.gastoOpe||0)} sobre la venta del mes</div></div>
+      <div class="kpi"><div class="lbl">Utilidad neta (Amorín)</div><div class="val" style="color:${utilidadNetaAmorin>=0?'var(--verde)':'var(--rojo)'}">${utilidadNetaAmorin.toFixed(1)}%</div><div class="sub">margen global − gasto operacional</div></div>
     </div>
     <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Margen</th></tr></thead><tbody>
       ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%</td></tr>`).join('')}
     </tbody></table>
-    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio.</div>`;
+    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>`;
 }
 // Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
 // clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
