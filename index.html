@@ -2454,10 +2454,22 @@ function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
   card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
   cont.appendChild(card);
 }
+// Convierte DD/MM/AAAA (o con guiones) a ISO AAAA-MM-DD — el resto del sistema (payloadFinanciero:
+// WHERE fecha >= ? y fecha.slice(0,7) por mes) asume ISO; una fecha en otro formato se guarda
+// pero queda invisible en Registros y en los gráficos, sin ningún error visible.
+function fechaCierreAISO(s){
+  const t=String(s||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(t))return t; // ya viene en ISO, se acepta tal cual
+  const m=t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(!m)return null;
+  return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
 async function guardarCierreUI(){
-  const fecha=document.getElementById('cFecha').value.trim();
+  const fechaTexto=document.getElementById('cFecha').value.trim();
   const venta=Number(document.getElementById('cVenta').value)||0;
-  if(!fecha){alert('Pon la fecha del cierre');return;}
+  if(!fechaTexto){alert('Pon la fecha del cierre');return;}
+  const fecha=fechaCierreAISO(fechaTexto);
+  if(!fecha){alert('Fecha inválida — usa el formato DD/MM/AAAA');return;}
   const costos=[...document.querySelectorAll('#tablaCierre .fila-gasto')].map(card=>({
     detalle:card.querySelector('[data-k=detalle]').value,
     categoria:card.querySelector('[data-k=categoria]').value.trim().toUpperCase(),
@@ -2469,7 +2481,7 @@ async function guardarCierreUI(){
   if(r.ok){
     // No recargamos la página: limpiamos el formulario y dejamos listo
     // para subir la foto del siguiente día, sin salir de esta pestaña.
-    document.getElementById('cierreEstado').innerHTML='<p style="color:var(--verde);margin:12px 0">✓ Cierre del '+fecha+' guardado ('+r.filas+' filas). Listo para el siguiente día.</p>';
+    document.getElementById('cierreEstado').innerHTML='<p style="color:var(--verde);margin:12px 0">✓ Cierre del '+fechaTexto+' guardado ('+r.filas+' filas). Listo para el siguiente día.</p>';
     document.getElementById('cierreForm').classList.add('hidden');
     document.getElementById('previewImg').classList.add('hidden');
     document.getElementById('previewImg').src='';
