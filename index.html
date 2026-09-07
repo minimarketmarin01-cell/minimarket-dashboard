@@ -214,6 +214,14 @@
   .card .cap{font-size:var(--fs-md); color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
   canvas{max-width:100%}
+  /* Leyenda debajo del donut (celular vertical, ver pintarLeyendaDona en JS):
+     texto plano en HTML, no canvas, así que nunca se corta ni se solapa y
+     hace wrap solo a cualquier ancho — swatch · nombre · monto · %. */
+  .dona-leyenda{display:flex; flex-direction:column; gap:1px; margin-top:10px; padding-top:10px; border-top:1px solid var(--linea)}
+  .dona-leyenda-fila{display:flex; align-items:center; gap:8px; padding:5px 2px; font-size:var(--fs-chart-nom,13px)}
+  .dona-leyenda-punto{flex:0 0 auto; width:10px; height:10px; border-radius:50%}
+  .dona-leyenda-nombre{flex:1 1 auto; min-width:0; font-weight:600; color:#28313f; overflow-wrap:break-word}
+  .dona-leyenda-cifra{flex:0 0 auto; color:#5b6577; white-space:nowrap; font-variant-numeric:tabular-nums}
   /* FIX sidebar-resize: se quita overflow:hidden (podía recortar filas/columnas
      si la tabla no cabía tras un cambio de ancho); el border-radius queda solo
      de forma decorativa en las esquinas visibles, sin recortar contenido. */
@@ -881,15 +889,15 @@
 
     <div id="tab-costos" class="hidden">
       <div class="grid">
-        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="dona-leyenda" id="leyenda-chProv" hidden></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="dona-leyenda" id="leyenda-chGasto" hidden></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
         <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="dona-leyenda" id="leyenda-chUtilidad" hidden></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       </div>
     </div>
 
@@ -1969,28 +1977,32 @@ function fuenteChart(nombreVar, porDefecto, peso){
   return (peso||'600')+' '+fsChart(nombreVar,porDefecto)+'px Inter, system-ui';
 }
 function medirTexto(txt, fuente){ _ctxMedida.font = fuente; return _ctxMedida.measureText(txt).width; }
+function clpK(n){n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;}
+// Leyenda HTML debajo del donut, usada solo en celular vertical (ver esFono
+// dentro de dona()): lista SIEMPRE todas las categorías —sin agrupar en
+// "Otros" ni omitir ninguna— como texto plano (punto de color · nombre ·
+// monto · %), así que nunca se corta ni se solapa a ningún ancho de pantalla.
+function pintarLeyendaDona(chartId, datos){
+  const el=document.getElementById('leyenda-'+chartId);
+  if(!el) return;
+  if(!datos || !datos.labels.length){ el.innerHTML=''; el.hidden=true; return; }
+  const {labels,vals,cols,tot}=datos;
+  el.hidden=false;
+  el.innerHTML = labels.map((l,i)=>{
+    const pct = tot ? vals[i]/tot*100 : 0;
+    return '<div class="dona-leyenda-fila"><span class="dona-leyenda-punto" style="background:'+cols[i]+'"></span>'
+      +'<span class="dona-leyenda-nombre">'+l+'</span>'
+      +'<span class="dona-leyenda-cifra">'+clpK(vals[i])+' · '+pct.toFixed(1)+'%</span></div>';
+  }).join('');
+}
 function dona(id,obj,lecturaId,tipoTexto){
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
   const totOriginal=ents.reduce((s,e)=>s+e[1],0);
 
-  // ---- Agrupar cola larga en "Otros" — SOLO chProv en celular vertical ----
-  // chProv (Compras por categoría) puede traer 25+ proveedores. Con esa
-  // cantidad, aun con etiquetas externas, la mayoría cae bajo el umbral de
-  // legibilidad y se ve como relleno de colores sin nombre (el problema de
-  // Image 1). Se agrupan bajo "Otros" los proveedores que exceden el top 9
-  // O que individualmente pesan menos de 2% — deja como máximo 10 segmentos,
-  // todos etiquetables. No toca chGasto ni chUtilidad (llamadas aparte, con
-  // pocas categorías) ni el modo desktop/tablet/landscape (etiquetasExt).
-  if(id==='chProv' && ESFONO_V() && ents.length>9){
-    const MAXIND=9, UMBRAL=2;
-    const principales=[]; let sumaOtros=0;
-    ents.forEach((e,i)=>{
-      const pctv=totOriginal?(e[1]/totOriginal*100):0;
-      if(i<MAXIND && pctv>=UMBRAL) principales.push(e); else sumaOtros+=e[1];
-    });
-    ents = sumaOtros>0 ? [...principales,['Otros',sumaOtros]] : principales;
-  }
-
+  // En celular vertical NO se agrupa cola larga en "Otros": se listan todas
+  // las categorías/proveedores (igual que en desktop) y se resuelve la
+  // legibilidad con una leyenda HTML debajo del gráfico (ver esFono más
+  // abajo), no ocultando datos.
   const labels=ents.map(e=>e[0]), vals=ents.map(e=>e[1]), tot=vals.reduce((s,v)=>s+v,0);
   // Paleta ESTABLE por nombre de categoría (no por índice/orden): antes el
   // color dependía de la posición tras ordenar por monto, así que si el
@@ -1998,11 +2010,11 @@ function dona(id,obj,lecturaId,tipoTexto){
   // él — eso se veía como "colores inconsistentes" entre gráficos/meses.
   // Ahora el mismo nombre siempre cae en el mismo color.
   const cols=labels.map(l=> l==='Otros' ? '#9aa3b5' : colorPorNombre(l));
-  const clpK=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
   // ---------------------------------------------------------------------
   // Plugin: etiquetas externas (nombre · % · monto) con línea guía.
   // Usado en TODOS los anchos ≥600px (landscape 600-899, tablet, desktop
-  // con sidebar expandido o colapsado) — celular vertical usa etiquetasFono.
+  // con sidebar expandido o colapsado) — celular vertical usa la leyenda
+  // HTML de pintarLeyendaDona en vez de dibujar texto sobre el canvas.
   //
   // FIX (padding fijo insuficiente → texto cortado a lo bruto por el borde
   // del <canvas>, ej. "COMISION P..." con el % cortado, "ANADAS" perdiendo
@@ -2029,7 +2041,7 @@ function dona(id,obj,lecturaId,tipoTexto){
   //   2) $VALOR
   //   3) PORCENTAJE
   // Aplica a los tres donuts con etiquetas externas (chProv, chGasto,
-  // chUtilidad) en todo ancho ≥600px. Celular vertical usa etiquetasFono.
+  // chUtilidad) en todo ancho ≥600px. Celular vertical usa la leyenda HTML.
   //
   // FIX 1 — SOLAPAMIENTO: este plugin NO tenía ningún algoritmo de
   // separación vertical (a diferencia de etiquetasFono). Cada etiqueta se
@@ -2145,68 +2157,26 @@ function dona(id,obj,lecturaId,tipoTexto){
       });
       ctx.restore();
     }};
-  // ---- Etiquetas externas para CELULAR VERTICAL ----------------------
-  // Reemplaza la leyenda de 25 filas (que estiraba el canvas y no se leía)
-  // por etiquetas alrededor de la dona con línea guía, tipo POS: nombre,
-  // % y monto. Solo se etiquetan los segmentos con peso real y se separan
-  // verticalmente para que no se pisen entre sí.
-  const etiquetasFono={id:'etFono',afterDraw(ch){
-    if(!ch.chartArea) return;
-    const {ctx}=ch, meta=ch.getDatasetMeta(0), ca=ch.chartArea;
-    if(!meta.data.length) return;
-    const cx=(ca.left+ca.right)/2, cy=(ca.top+ca.bottom)/2;
-    // Candidatos: ≥2,5% del total, máximo 10, para no saturar la pantalla.
-    let cands=[];
-    meta.data.forEach((arc,i)=>{
-      const pct=tot?vals[i]/tot*100:0;
-      if(pct<2.5) return;
-      const ang=(arc.startAngle+arc.endAngle)/2;
-      cands.push({i,pct,ang,r:arc.outerRadius,
-        der:Math.cos(ang)>=0,
-        ya:cy+Math.sin(ang)*(arc.outerRadius+9),
-        xa:cx+Math.cos(ang)*arc.outerRadius,
-        yb:cy+Math.sin(ang)*arc.outerRadius});
-    });
-    cands.sort((a,b)=>b.pct-a.pct); cands=cands.slice(0,10);
-    // Anti-colisión: por lado, se ordenan y se separan un mínimo de 21px.
-    const GAP=Math.max(21, Math.round(fsChart('--fs-chart-nom',13)*1.85));
-    [true,false].forEach(lado=>{
-      const arr=cands.filter(c=>c.der===lado).sort((a,b)=>a.ya-b.ya);
-      for(let k=1;k<arr.length;k++)
-        if(arr[k].ya-arr[k-1].ya<GAP) arr[k].ya=arr[k-1].ya+GAP;
-      if(arr.length){
-        const sobra=arr[arr.length-1].ya-(ca.bottom-2);
-        if(sobra>0) arr.forEach(c=>c.ya-=sobra);
-        const falta=(ca.top+9)-arr[0].ya;
-        if(falta>0) arr.forEach(c=>c.ya+=falta);
-      }
-    });
-    ctx.save();
-    cands.forEach(c=>{
-      const codo=c.der?cx+c.r+11:cx-c.r-11;
-      const fin=c.der?codo+7:codo-7;
-      ctx.strokeStyle=cols[c.i]; ctx.lineWidth=1.1;
-      ctx.beginPath(); ctx.moveTo(c.xa,c.yb); ctx.lineTo(codo,c.ya); ctx.lineTo(fin,c.ya); ctx.stroke();
-      ctx.textAlign=c.der?'left':'right';
-      const tx=c.der?fin+3:fin-3;
-      const nom=labels[c.i].length>10?labels[c.i].slice(0,9)+'…':labels[c.i];
-      ctx.fillStyle='#2a3446'; ctx.font=fuenteChart('--fs-chart-nom',13,'700');
-      ctx.fillText(nom, tx, c.ya-3.5);
-      ctx.fillStyle='#7b8496'; ctx.font=fuenteChart('--fs-chart-pct',11.5);
-      ctx.fillText(c.pct.toFixed(1)+'% · '+clpK(vals[c.i]), tx, c.ya+5.5);
-    });
-    ctx.restore();
-  }};
+  // ---- CELULAR VERTICAL: sin etiquetas dibujadas sobre el canvas -------
+  // Las etiquetas con línea guía dibujadas a mano (formato anterior) se
+  // recortaban contra el borde físico del <canvas> apenas el ancho
+  // disponible (320-430px) no alcanzaba para el texto (nombre + "% · $monto"),
+  // porque el padding lateral era fijo y no se medía nada. En vez de seguir
+  // afinando ese cálculo, en este modo se deja la dona limpia (sin texto
+  // externo) y el detalle de CADA categoría —completo, sin agrupar en
+  // "Otros" ni omitir ninguna— se lista en una leyenda HTML debajo del
+  // gráfico (pintarLeyendaDona): al ser HTML normal, nunca se corta, no se
+  // solapa y hace wrap solo a cualquier ancho. Desktop/tablet/landscape
+  // sigue igual que siempre con etiquetasExt.
   const esFono = ESFONO_V();
   nuevoChart(id,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:1.5,borderColor:'#fff'}]},
-    options:{cutout:esFono?'56%':'58%',
-      // En celular se reserva espacio lateral para las etiquetas, igual que
-      // en escritorio pero algo más ajustado.
-      layout:{padding: esFono ? {left:62,right:62,top:12,bottom:12} : {left:52,right:52,top:16,bottom:16}},
+    options:{cutout:esFono?'62%':'58%',
+      layout:{padding: esFono ? {left:8,right:8,top:8,bottom:8} : {left:52,right:52,top:16,bottom:16}},
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
-    plugins:[ esFono ? etiquetasFono : etiquetasExt ]});
+    plugins: esFono ? [] : [etiquetasExt]});
+  pintarLeyendaDona(id, esFono ? {labels,vals,cols,tot} : null);
   if(!lecturaId || !ents.length) return;
   const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
   const esProv = tipoTexto==='proveedor';
