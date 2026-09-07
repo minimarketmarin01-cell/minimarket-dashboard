@@ -214,14 +214,6 @@
   .card .cap{font-size:var(--fs-md); color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
   canvas{max-width:100%}
-  /* Leyenda debajo del donut (celular vertical, ver pintarLeyendaDona en JS):
-     texto plano en HTML, no canvas, así que nunca se corta ni se solapa y
-     hace wrap solo a cualquier ancho — swatch · nombre · monto · %. */
-  .dona-leyenda{display:flex; flex-direction:column; gap:1px; margin-top:10px; padding-top:10px; border-top:1px solid var(--linea)}
-  .dona-leyenda-fila{display:flex; align-items:center; gap:8px; padding:5px 2px; font-size:var(--fs-chart-nom,13px)}
-  .dona-leyenda-punto{flex:0 0 auto; width:10px; height:10px; border-radius:50%}
-  .dona-leyenda-nombre{flex:1 1 auto; min-width:0; font-weight:600; color:#28313f; overflow-wrap:break-word}
-  .dona-leyenda-cifra{flex:0 0 auto; color:#5b6577; white-space:nowrap; font-variant-numeric:tabular-nums}
   /* FIX sidebar-resize: se quita overflow:hidden (podía recortar filas/columnas
      si la tabla no cabía tras un cambio de ancho); el border-radius queda solo
      de forma decorativa en las esquinas visibles, sin recortar contenido. */
@@ -889,15 +881,15 @@
 
     <div id="tab-costos" class="hidden">
       <div class="grid">
-        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="dona-leyenda" id="leyenda-chProv" hidden></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="dona-leyenda" id="leyenda-chGasto" hidden></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
         <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="dona-leyenda" id="leyenda-chUtilidad" hidden></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       </div>
     </div>
 
@@ -1978,22 +1970,21 @@ function fuenteChart(nombreVar, porDefecto, peso){
 }
 function medirTexto(txt, fuente){ _ctxMedida.font = fuente; return _ctxMedida.measureText(txt).width; }
 function clpK(n){n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;}
-// Leyenda HTML debajo del donut, usada solo en celular vertical (ver esFono
-// dentro de dona()): lista SIEMPRE todas las categorías —sin agrupar en
-// "Otros" ni omitir ninguna— como texto plano (punto de color · nombre ·
-// monto · %), así que nunca se corta ni se solapa a ningún ancho de pantalla.
-function pintarLeyendaDona(chartId, datos){
-  const el=document.getElementById('leyenda-'+chartId);
-  if(!el) return;
-  if(!datos || !datos.labels.length){ el.innerHTML=''; el.hidden=true; return; }
-  const {labels,vals,cols,tot}=datos;
-  el.hidden=false;
-  el.innerHTML = labels.map((l,i)=>{
-    const pct = tot ? vals[i]/tot*100 : 0;
-    return '<div class="dona-leyenda-fila"><span class="dona-leyenda-punto" style="background:'+cols[i]+'"></span>'
-      +'<span class="dona-leyenda-nombre">'+l+'</span>'
-      +'<span class="dona-leyenda-cifra">'+clpK(vals[i])+' · '+pct.toFixed(1)+'%</span></div>';
-  }).join('');
+// Reproduce el reparto lado a lado (izquierda/derecha) que hace un doughnut
+// de Chart.js con estos datos: arranca arriba (-90°) y avanza en sentido
+// horario según el peso de cada segmento — igual orden en que ya vienen
+// (mayor a menor). Sirve para calcular, ANTES de crear el chart, cuántas
+// etiquetas van a caer a cada lado y así reservarle a la card el alto real
+// que necesita (ver ajustarAltoMovil), sin esperar a que Chart.js dibuje.
+function ladosPorAngulo(vals, tot){
+  let acumDeg=-90, der=0, izq=0;
+  vals.forEach(v=>{
+    const sliceDeg = tot ? v/tot*360 : 0;
+    const midRad = (acumDeg+sliceDeg/2) * Math.PI/180;
+    if(Math.cos(midRad)>=0) der++; else izq++;
+    acumDeg += sliceDeg;
+  });
+  return {der,izq};
 }
 function dona(id,obj,lecturaId,tipoTexto){
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
@@ -2012,9 +2003,8 @@ function dona(id,obj,lecturaId,tipoTexto){
   const cols=labels.map(l=> l==='Otros' ? '#9aa3b5' : colorPorNombre(l));
   // ---------------------------------------------------------------------
   // Plugin: etiquetas externas (nombre · % · monto) con línea guía.
-  // Usado en TODOS los anchos ≥600px (landscape 600-899, tablet, desktop
-  // con sidebar expandido o colapsado) — celular vertical usa la leyenda
-  // HTML de pintarLeyendaDona en vez de dibujar texto sobre el canvas.
+  // Usado en anchos ≥600px (landscape 600-899, tablet, desktop con sidebar
+  // expandido o colapsado) — celular vertical usa etiquetasMovil, más abajo.
   //
   // FIX (padding fijo insuficiente → texto cortado a lo bruto por el borde
   // del <canvas>, ej. "COMISION P..." con el % cortado, "ANADAS" perdiendo
@@ -2041,7 +2031,7 @@ function dona(id,obj,lecturaId,tipoTexto){
   //   2) $VALOR
   //   3) PORCENTAJE
   // Aplica a los tres donuts con etiquetas externas (chProv, chGasto,
-  // chUtilidad) en todo ancho ≥600px. Celular vertical usa la leyenda HTML.
+  // chUtilidad) en ancho ≥600px. Celular vertical usa etiquetasMovil.
   //
   // FIX 1 — SOLAPAMIENTO: este plugin NO tenía ningún algoritmo de
   // separación vertical (a diferencia de etiquetasFono). Cada etiqueta se
@@ -2157,26 +2147,125 @@ function dona(id,obj,lecturaId,tipoTexto){
       });
       ctx.restore();
     }};
-  // ---- CELULAR VERTICAL: sin etiquetas dibujadas sobre el canvas -------
-  // Las etiquetas con línea guía dibujadas a mano (formato anterior) se
-  // recortaban contra el borde físico del <canvas> apenas el ancho
-  // disponible (320-430px) no alcanzaba para el texto (nombre + "% · $monto"),
-  // porque el padding lateral era fijo y no se medía nada. En vez de seguir
-  // afinando ese cálculo, en este modo se deja la dona limpia (sin texto
-  // externo) y el detalle de CADA categoría —completo, sin agrupar en
-  // "Otros" ni omitir ninguna— se lista en una leyenda HTML debajo del
-  // gráfico (pintarLeyendaDona): al ser HTML normal, nunca se corta, no se
-  // solapa y hace wrap solo a cualquier ancho. Desktop/tablet/landscape
-  // sigue igual que siempre con etiquetasExt.
+  // ---- Etiquetas externas para CELULAR VERTICAL, estilo AppSheet --------
+  // Mismo problema que etiquetasExt (padding fijo, sin medir texto real) más
+  // dos cosas propias del modo móvil: 1) el padding fijo de 62px se quedaba
+  // corto casi siempre, así que ctx.fillText dibujaba fuera del bitmap del
+  // <canvas> y el navegador recortaba en seco (letras perdidas al inicio o
+  // al final); 2) cuando no cabían todas verticalmente, se descartaban las
+  // de menor % en vez de mostrarlas todas. etiquetasMovil corrige ambas:
+  // usa el mismo cálculo de padding por ancho REAL de texto que etiquetasExt
+  // (nunca corta), y en vez de descartar candidatas cuando no caben, la
+  // card se agranda de antemano (ver ladosPorAngulo + ajuste de alto más
+  // abajo) para que TODAS entren con su espaciado normal — igual que en la
+  // referencia de AppSheet, donde la tarjeta simplemente es más alta.
+  const LH_MOVIL = Math.round((FS_NOM+FS_VAL+FS_PCT)/3 * 1.15 * 10)/10;
+  const GAP_MOVIL = 3*LH_MOVIL + 6;
+  const etiquetasMovil={id:'etMovil',
+    beforeLayout(ch){
+      const cont=ch.canvas.parentElement;
+      const contW=cont?cont.offsetWidth:0;
+      let maxW=0;
+      labels.forEach((l,i)=>{
+        const pctv=tot?vals[i]/tot*100:0;
+        maxW=Math.max(maxW, medirTexto(l,fuenteChart('--fs-chart-nom',13,'700')));
+        maxW=Math.max(maxW, medirTexto(clpK(vals[i]),fuenteChart('--fs-chart-val',12)));
+        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'%',fuenteChart('--fs-chart-pct',11.5)));
+      });
+      let pad = maxW>0 ? Math.ceil(maxW)+14+6 : 40;
+      pad = Math.max(34, Math.min(pad, Math.max(30, contW*0.36)));
+      ch.options.layout.padding = {left:pad, right:pad, top:10, bottom:10};
+    },
+    afterDraw(ch){
+      if(!ch.chartArea) return;
+      const {ctx}=ch, meta=ch.getDatasetMeta(0), ca=ch.chartArea;
+      if(!meta.data.length) return;
+      const cx=(ca.left+ca.right)/2, cy=(ca.top+ca.bottom)/2;
+      const GAP=GAP_MOVIL;
+
+      let cands=[];
+      meta.data.forEach((arc,i)=>{
+        const pctv=tot?vals[i]/tot*100:0;
+        const ang=(arc.startAngle+arc.endAngle)/2, r=arc.outerRadius;
+        cands.push({i,pctv,r,
+          der:Math.cos(ang)>=0,
+          xa:cx+Math.cos(ang)*r, yb:cy+Math.sin(ang)*r,
+          yc:cy+Math.sin(ang)*(r+8)});
+      });
+
+      // Anti-colisión por lado, SIN descartar ninguna: la card ya se
+      // agrandó antes de crear el chart (ver más abajo) para que todas
+      // quepan con este mismo GAP.
+      const arriba=10, abajo=ch.height-10;
+      [true,false].forEach(lado=>{
+        const arr=cands.filter(c=>c.der===lado);
+        arr.sort((a,b)=>a.yc-b.yc);
+        for(let k=1;k<arr.length;k++)
+          if(arr[k].yc-arr[k-1].yc<GAP) arr[k].yc=arr[k-1].yc+GAP;
+        if(arr.length){
+          const sobra=arr[arr.length-1].yc+GAP/2-abajo;
+          if(sobra>0) arr.forEach(c=>c.yc-=sobra);
+          const falta=arriba+GAP/2-arr[0].yc;
+          if(falta>0) arr.forEach(c=>c.yc+=falta);
+        }
+      });
+
+      ctx.save();
+      cands.forEach(c=>{
+        const codo=c.der?cx+c.r+8:cx-c.r-8;
+        const fin=c.der?codo+6:codo-6;
+        ctx.strokeStyle=cols[c.i]; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(c.xa,c.yb); ctx.lineTo(codo,c.yc); ctx.lineTo(fin,c.yc); ctx.stroke();
+        ctx.textAlign=c.der?'left':'right';
+        const tx=c.der?fin+3:fin-3;
+        const disp=Math.max(0, c.der ? (ch.width-tx-3) : (tx-3));
+
+        // 1) NOMBRE (bold) — único que se trunca con elipsis si no cabe.
+        ctx.font=fuenteChart('--fs-chart-nom',13,'700'); ctx.fillStyle='#28313f';
+        let nom=labels[c.i];
+        if(ctx.measureText(nom).width>disp){
+          while(nom.length>1 && ctx.measureText(nom+'…').width>disp) nom=nom.slice(0,-1);
+          if(nom.length<labels[c.i].length) nom+='…';
+        }
+        ctx.fillText(nom, tx, c.yc-LH_MOVIL);
+        // 2) PORCENTAJE — nunca se recorta; si el ancho aprieta, se redondea.
+        ctx.font=fuenteChart('--fs-chart-pct',11.5); ctx.fillStyle='#5b6577';
+        let pl=c.pctv.toFixed(1)+'%';
+        if(ctx.measureText(pl).width>disp) pl=Math.round(c.pctv)+'%';
+        ctx.fillText(pl, tx, c.yc);
+        // 3) VALOR en pesos
+        ctx.font=fuenteChart('--fs-chart-val',12); ctx.fillStyle='#8b94a7';
+        ctx.fillText(clpK(vals[c.i]), tx, c.yc+LH_MOVIL);
+      });
+      ctx.restore();
+    }};
   const esFono = ESFONO_V();
+  if(esFono){
+    // Se reserva de antemano el alto real que necesita la card para que
+    // TODAS las categorías entren sin solaparse ni descartar ninguna — el
+    // mismo criterio que usa AppSheet (la tarjeta crece en vez de esconder
+    // datos). El CSS de celular (@media max-width:600px) fija tanto height
+    // como max-height en 340px con !important — hay que sobreescribir AMBOS
+    // (si solo se pisa height, max-height:340px!important lo vuelve a topar)
+    // con la misma prioridad, y solo hacia arriba (nunca se achica por
+    // debajo del alto que ya trae el CSS).
+    const {der,izq}=ladosPorAngulo(vals,tot);
+    const necesaria = Math.max(der,izq,1)*GAP_MOVIL + 28;
+    const cont = document.getElementById(id).parentElement;
+    const actual = cont.getBoundingClientRect().height || 0;
+    if(necesaria>actual){
+      const px = Math.ceil(necesaria)+'px';
+      cont.style.setProperty('height', px, 'important');
+      cont.style.setProperty('max-height', px, 'important');
+    }
+  }
   nuevoChart(id,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:1.5,borderColor:'#fff'}]},
-    options:{cutout:esFono?'62%':'58%',
-      layout:{padding: esFono ? {left:8,right:8,top:8,bottom:8} : {left:52,right:52,top:16,bottom:16}},
+    options:{cutout:'58%',
+      layout:{padding: esFono ? {left:40,right:40,top:10,bottom:10} : {left:52,right:52,top:16,bottom:16}},
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
-    plugins: esFono ? [] : [etiquetasExt]});
-  pintarLeyendaDona(id, esFono ? {labels,vals,cols,tot} : null);
+    plugins:[ esFono ? etiquetasMovil : etiquetasExt ]});
   if(!lecturaId || !ents.length) return;
   const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
   const esProv = tipoTexto==='proveedor';
