@@ -214,6 +214,22 @@
   .card .cap{font-size:var(--fs-md); color:var(--gris); margin-bottom:12px; line-height:1.5}
   .card.full{grid-column:1 / -1}
   canvas{max-width:100%}
+  /* Barras horizontales — reemplazan los donuts de Chart.js (Compras por
+     categoría, Gasto operacional, Distribución de utilidad). HTML/CSS
+     plano en vez de texto dibujado sobre un <canvas>: el nombre nunca se
+     corta (hace wrap si hace falta) y el ancho se reparte solo a cualquier
+     tamaño de pantalla, sin necesidad de medir texto ni reservar padding. */
+  .lista-barras{display:flex; flex-direction:column; gap:14px; min-width:0}
+  .barra-h-fila{min-width:0}
+  .barra-h-nombre-row{display:flex; align-items:center; gap:7px; margin-bottom:5px; min-width:0}
+  .barra-h-punto{flex:0 0 auto; width:9px; height:9px; border-radius:50%}
+  .barra-h-nombre{flex:1 1 auto; min-width:0; font-weight:700; color:#28313f; font-size:var(--fs-chart-nom,15px); overflow-wrap:break-word}
+  .barra-h-pista-row{display:flex; align-items:center; gap:10px; min-width:0}
+  .barra-h-pista{flex:1 1 auto; min-width:0; height:14px; background:var(--papel); border:1px solid var(--linea); border-radius:7px; overflow:hidden}
+  .barra-h-relleno{display:block; height:100%; border-radius:7px; min-width:2px}
+  .barra-h-cifra{flex:0 0 auto; font-size:var(--fs-chart-val,13px); color:#5b6577; white-space:nowrap; font-variant-numeric:tabular-nums}
+  .barra-h-vermas{display:block; margin:6px auto 0; padding:8px 14px; background:none; border:1px solid var(--linea); border-radius:10px; color:var(--acento); font-weight:700; font-size:var(--fs-chart-val,13px); cursor:pointer; font-family:inherit}
+  .barra-h-vermas:hover{background:var(--papel)}
   /* FIX sidebar-resize: se quita overflow:hidden (podía recortar filas/columnas
      si la tabla no cabía tras un cambio de ancho); el border-radius queda solo
      de forma decorativa en las esquinas visibles, sin recortar contenido. */
@@ -881,15 +897,15 @@
 
     <div id="tab-costos" class="hidden">
       <div class="grid">
-        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chProv"></canvas></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="graf-dona" style="height:300px;position:relative"><canvas id="chGasto"></canvas></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="lista-barras" id="chProv"></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="lista-barras" id="chGasto"></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
         <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="graf-dona" style="height:260px;position:relative"><canvas id="chUtilidad"></canvas></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="lista-barras" id="chUtilidad"></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       </div>
     </div>
 
@@ -1970,302 +1986,61 @@ function fuenteChart(nombreVar, porDefecto, peso){
 }
 function medirTexto(txt, fuente){ _ctxMedida.font = fuente; return _ctxMedida.measureText(txt).width; }
 function clpK(n){n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;}
-// Reproduce el reparto lado a lado (izquierda/derecha) que hace un doughnut
-// de Chart.js con estos datos: arranca arriba (-90°) y avanza en sentido
-// horario según el peso de cada segmento — igual orden en que ya vienen
-// (mayor a menor). Sirve para calcular, ANTES de crear el chart, cuántas
-// etiquetas van a caer a cada lado y así reservarle a la card el alto real
-// que necesita (ver ajustarAltoMovil), sin esperar a que Chart.js dibuje.
-function ladosPorAngulo(vals, tot){
-  let acumDeg=-90, der=0, izq=0;
-  vals.forEach(v=>{
-    const sliceDeg = tot ? v/tot*360 : 0;
-    const midRad = (acumDeg+sliceDeg/2) * Math.PI/180;
-    if(Math.cos(midRad)>=0) der++; else izq++;
-    acumDeg += sliceDeg;
-  });
-  return {der,izq};
-}
+// Estado del botón "Ver todas / Ver menos" de cada lista de barras
+// horizontales, y los últimos datos con que se pintó cada una (para poder
+// volver a pintarla al hacer toggle sin tener que recalcular nada).
+const _barrasExpandidas = {};
+const _barrasUltimoRender = {};
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('[data-barra-toggle]');
+  if(!btn) return;
+  const id = btn.dataset.barraToggle;
+  _barrasExpandidas[id] = !_barrasExpandidas[id];
+  const r = _barrasUltimoRender[id];
+  if(r) dona(id, r.obj, r.lecturaId, r.tipoTexto);
+});
+// Nombre histórico ("dona"): esta función dibujaba un donut de Chart.js;
+// ahora renderiza barras horizontales en HTML/CSS plano (más legibles en
+// celular, sin el recorte/solapamiento de dibujar texto sobre un
+// <canvas>). Se mantiene el nombre para no tocar los llamados existentes
+// (dona('chProv', ...), dona('chGasto', ...), dona('chUtilidad', ...)) ni
+// las fuentes de datos que les llegan — mismos números, otra vista.
 function dona(id,obj,lecturaId,tipoTexto){
+  _barrasUltimoRender[id] = {obj,lecturaId,tipoTexto};
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
-  const totOriginal=ents.reduce((s,e)=>s+e[1],0);
+  const tot=ents.reduce((s,e)=>s+e[1],0);
+  const colorDe = nombre => nombre==='Otros' ? '#9aa3b5' : colorPorNombre(nombre);
 
-  // En celular vertical NO se agrupa cola larga en "Otros": se listan todas
-  // las categorías/proveedores (igual que en desktop) y se resuelve la
-  // legibilidad con una leyenda HTML debajo del gráfico (ver esFono más
-  // abajo), no ocultando datos.
-  const labels=ents.map(e=>e[0]), vals=ents.map(e=>e[1]), tot=vals.reduce((s,v)=>s+v,0);
-  // Paleta ESTABLE por nombre de categoría (no por índice/orden): antes el
-  // color dependía de la posición tras ordenar por monto, así que si el
-  // ranking cambiaba de mes a mes el color de cada categoría cambiaba con
-  // él — eso se veía como "colores inconsistentes" entre gráficos/meses.
-  // Ahora el mismo nombre siempre cae en el mismo color.
-  const cols=labels.map(l=> l==='Otros' ? '#9aa3b5' : colorPorNombre(l));
-  // ---------------------------------------------------------------------
-  // Plugin: etiquetas externas (nombre · % · monto) con línea guía.
-  // Usado en anchos ≥600px (landscape 600-899, tablet, desktop con sidebar
-  // expandido o colapsado) — celular vertical usa etiquetasMovil, más abajo.
-  //
-  // FIX (padding fijo insuficiente → texto cortado a lo bruto por el borde
-  // del <canvas>, ej. "COMISION P..." con el % cortado, "ANADAS" perdiendo
-  // "EMP" del inicio, "$1" perdiendo ".5M"): antes se reservaba un padding
-  // lateral CONSTANTE (52px) sin importar el ancho real de la card ni el
-  // largo de las etiquetas. Con 2 columnas en pantallas grandes, o con
-  // nombres largos, el punto de anclaje del texto quedaba más cerca del
-  // borde físico del canvas que el ancho del propio texto — y el canvas
-  // recorta en seco cualquier píxel fuera de sus límites, sin elipsis.
-  //
-  // Dos capas de defensa:
-  //  1) PREVENCIÓN — beforeLayout calcula cuánto necesita el texto más
-  //     ancho (nombre y línea %·monto de los segmentos que se van a
-  //     etiquetar) y reserva ese padding, acotado a un máximo proporcional
-  //     al ancho real del contenedor (canvas.parentElement) para no dejar
-  //     la dona reducida a un punto en pantallas angostas.
-  //  2) GARANTÍA — afterDraw mide el espacio real disponible hasta el
-  //     borde físico del canvas en cada etiqueta y trunca con "…" solo si
-  //     de verdad no cabe, soltando primero el monto y priorizando SIEMPRE
-  //     el % completo antes que el nombre completo (nunca al revés).
-  // ---------------------------------------------------------------------
-  // Plugin: etiquetas externas del donut, en 3 LÍNEAS APILADAS con línea guía.
-  //   1) NOMBRE   (bold)
-  //   2) $VALOR
-  //   3) PORCENTAJE
-  // Aplica a los tres donuts con etiquetas externas (chProv, chGasto,
-  // chUtilidad) en ancho ≥600px. Celular vertical usa etiquetasMovil.
-  //
-  // FIX 1 — SOLAPAMIENTO: este plugin NO tenía ningún algoritmo de
-  // separación vertical (a diferencia de etiquetasFono). Cada etiqueta se
-  // dibujaba en el ángulo exacto de su segmento, así que los segmentos
-  // contiguos y pequeños (ENEL/SUELDO/COMISION) caían casi en la misma "y"
-  // y se pisaban entre sí junto con sus líneas guía. Ahora se reparten por
-  // lado, se ordenan por "y" y se separan un mínimo igual al alto del
-  // bloque de 3 líneas; si a un lado no caben todas, se descartan las de
-  // menor % en vez de amontonarlas.
-  //
-  // FIX 2 — el formato de 3 líneas es MÁS ANGOSTO que la línea única
-  // ("COCA COLA" vs "COCA COLA 14.8% · $547K"), así que el padding lateral
-  // calculado en beforeLayout baja bastante y el anillo gana radio dentro
-  // de la misma card, sin tocar el tamaño del contenedor.
-  // Interlineado proporcional al tamaño real de fuente: al subir la escala
-  // tipográfica, el bloque de 3 líneas crece y el anti-colisión se adapta
-  // solo, sin números mágicos que queden desfasados.
-  const FS_NOM=fsChart('--fs-chart-nom',15), FS_VAL=fsChart('--fs-chart-val',14), FS_PCT=fsChart('--fs-chart-pct',13.5);
-  const LH_ET = Math.round((FS_NOM+FS_VAL+FS_PCT)/3 * 1.18 * 10)/10;
-  const etiquetasExt={id:'etExt',
-    beforeLayout(ch){
-      const cont=ch.canvas.parentElement;
-      const contW=cont?cont.offsetWidth:0;
-      // Se mide cada línea por separado (no la concatenación): el ancho que
-      // manda es el del texto más largo de las tres, no la suma.
-      let maxW=0;
-      labels.forEach((l,i)=>{
-        const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
-        maxW=Math.max(maxW, medirTexto(l,fuenteChart('--fs-chart-nom',15,'700')));
-        maxW=Math.max(maxW, medirTexto(clpK(vals[i]),fuenteChart('--fs-chart-val',14)));
-        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'%',fuenteChart('--fs-chart-pct',13.5)));
-      });
-      // 16 = alcance horizontal de la guía (9 radial + 7 codo); 6 = aire al borde.
-      let pad = maxW>0 ? Math.ceil(maxW)+16+6 : 46;
-      pad = Math.max(38, pad);
-      // Tope proporcional al contenedor real para que el anillo no se achique
-      // de más en cards angostas.
-      // Tope adaptativo: en cards anchas se puede ser generoso con las
-      // etiquetas, pero en cards angostas ese mismo tope ahogaba el anillo al
-      // subir la escala tipográfica (radio 128→107 medido en tablet). Se
-      // reparte según el ancho real, no según un breakpoint de viewport.
-      const tope = contW < 700 ? 0.25 : (contW < 1100 ? 0.29 : 0.33);
-      if(contW>0) pad = Math.min(pad, Math.max(36, contW*tope));
-      ch.options.layout.padding = {left:pad, right:pad, top:14, bottom:14};
-    },
-    afterDraw(ch){
-      // Guard: sin layout aún, chartArea viene undefined y leer .left reventaba.
-      if(!ch.chartArea) return;
-      const {ctx}=ch, meta=ch.getDatasetMeta(0), ca=ch.chartArea;
-      if(!meta.data.length) return;
-      const cx=(ca.left+ca.right)/2, cy=(ca.top+ca.bottom)/2;
-      const BLOQUE=3*LH_ET, GAP=BLOQUE+4;   // alto del bloque + aire entre bloques
-
-      let cands=[];
-      meta.data.forEach((arc,i)=>{
-        const pctv=tot?vals[i]/tot*100:0; if(pctv<3) return;
-        const ang=(arc.startAngle+arc.endAngle)/2, r=arc.outerRadius;
-        cands.push({i,pctv,r,
-          der:Math.cos(ang)>=0,
-          xa:cx+Math.cos(ang)*r, yb:cy+Math.sin(ang)*r,
-          yc:cy+Math.sin(ang)*(r+10)});   // "y" ideal = centro del bloque
-      });
-
-      // Anti-colisión por lado. La guía se ancla al CENTRO del bloque (yc),
-      // de modo que las 3 líneas quedan centradas respecto a su segmento.
-      const arriba=14, abajo=ch.height-14;
-      [true,false].forEach(lado=>{
-        let arr=cands.filter(c=>c.der===lado);
-        const caben=Math.max(1, Math.floor((abajo-arriba)/GAP));
-        if(arr.length>caben){                 // no caben: se sueltan las menores
-          arr.sort((a,b)=>b.pctv-a.pctv);
-          arr.slice(caben).forEach(c=>c.omitir=true);
-          arr=arr.slice(0,caben);
-        }
-        arr.sort((a,b)=>a.yc-b.yc);
-        for(let k=1;k<arr.length;k++)
-          if(arr[k].yc-arr[k-1].yc<GAP) arr[k].yc=arr[k-1].yc+GAP;
-        if(arr.length){                        // reencuadre dentro del canvas
-          const sobra=arr[arr.length-1].yc+BLOQUE/2-abajo;
-          if(sobra>0) arr.forEach(c=>c.yc-=sobra);
-          const falta=arriba+BLOQUE/2-arr[0].yc;
-          if(falta>0) arr.forEach(c=>c.yc+=falta);
-        }
-      });
-
-      ctx.save();
-      cands.filter(c=>!c.omitir).forEach(c=>{
-        const codo=c.der?cx+c.r+9:cx-c.r-9;
-        const fin=c.der?codo+7:codo-7;
-        ctx.strokeStyle=cols[c.i]; ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(c.xa,c.yb); ctx.lineTo(codo,c.yc); ctx.lineTo(fin,c.yc); ctx.stroke();
-        ctx.textAlign=c.der?'left':'right';
-        const tx=c.der?fin+3:fin-3;
-        // Espacio real hasta el borde físico del canvas (medido, no asumido).
-        const disp=Math.max(0, c.der ? (ch.width-tx-3) : (tx-3));
-
-        // 1) NOMBRE (bold) — único que se trunca con elipsis si no cabe.
-        ctx.font=fuenteChart('--fs-chart-nom',15,'700'); ctx.fillStyle='#28313f';
-        let nom=labels[c.i];
-        if(ctx.measureText(nom).width>disp){
-          while(nom.length>1 && ctx.measureText(nom+'…').width>disp) nom=nom.slice(0,-1);
-          if(nom.length<labels[c.i].length) nom+='…';
-        }
-        ctx.fillText(nom, tx, c.yc-LH_ET);
-        // 2) VALOR en pesos
-        ctx.font=fuenteChart('--fs-chart-val',14); ctx.fillStyle='#5b6577';
-        ctx.fillText(clpK(vals[c.i]), tx, c.yc);
-        // 3) PORCENTAJE — nunca se recorta; si el ancho aprieta, se redondea.
-        ctx.font=fuenteChart('--fs-chart-pct',13.5); ctx.fillStyle='#8b94a7';
-        let pl=c.pctv.toFixed(1)+'%';
-        if(ctx.measureText(pl).width>disp) pl=Math.round(c.pctv)+'%';
-        ctx.fillText(pl, tx, c.yc+LH_ET);
-      });
-      ctx.restore();
-    }};
-  // ---- Etiquetas externas para CELULAR VERTICAL, estilo AppSheet --------
-  // Mismo problema que etiquetasExt (padding fijo, sin medir texto real) más
-  // dos cosas propias del modo móvil: 1) el padding fijo de 62px se quedaba
-  // corto casi siempre, así que ctx.fillText dibujaba fuera del bitmap del
-  // <canvas> y el navegador recortaba en seco (letras perdidas al inicio o
-  // al final); 2) cuando no cabían todas verticalmente, se descartaban las
-  // de menor % en vez de mostrarlas todas. etiquetasMovil corrige ambas:
-  // usa el mismo cálculo de padding por ancho REAL de texto que etiquetasExt
-  // (nunca corta), y en vez de descartar candidatas cuando no caben, la
-  // card se agranda de antemano (ver ladosPorAngulo + ajuste de alto más
-  // abajo) para que TODAS entren con su espaciado normal — igual que en la
-  // referencia de AppSheet, donde la tarjeta simplemente es más alta.
-  const LH_MOVIL = Math.round((FS_NOM+FS_VAL+FS_PCT)/3 * 1.15 * 10)/10;
-  const GAP_MOVIL = 3*LH_MOVIL + 6;
-  const etiquetasMovil={id:'etMovil',
-    beforeLayout(ch){
-      const cont=ch.canvas.parentElement;
-      const contW=cont?cont.offsetWidth:0;
-      let maxW=0;
-      labels.forEach((l,i)=>{
-        const pctv=tot?vals[i]/tot*100:0;
-        maxW=Math.max(maxW, medirTexto(l,fuenteChart('--fs-chart-nom',13,'700')));
-        maxW=Math.max(maxW, medirTexto(clpK(vals[i]),fuenteChart('--fs-chart-val',12)));
-        maxW=Math.max(maxW, medirTexto(pctv.toFixed(1)+'%',fuenteChart('--fs-chart-pct',11.5)));
-      });
-      let pad = maxW>0 ? Math.ceil(maxW)+14+6 : 40;
-      pad = Math.max(34, Math.min(pad, Math.max(30, contW*0.36)));
-      ch.options.layout.padding = {left:pad, right:pad, top:10, bottom:10};
-    },
-    afterDraw(ch){
-      if(!ch.chartArea) return;
-      const {ctx}=ch, meta=ch.getDatasetMeta(0), ca=ch.chartArea;
-      if(!meta.data.length) return;
-      const cx=(ca.left+ca.right)/2, cy=(ca.top+ca.bottom)/2;
-      const GAP=GAP_MOVIL;
-
-      let cands=[];
-      meta.data.forEach((arc,i)=>{
-        const pctv=tot?vals[i]/tot*100:0;
-        const ang=(arc.startAngle+arc.endAngle)/2, r=arc.outerRadius;
-        cands.push({i,pctv,r,
-          der:Math.cos(ang)>=0,
-          xa:cx+Math.cos(ang)*r, yb:cy+Math.sin(ang)*r,
-          yc:cy+Math.sin(ang)*(r+8)});
-      });
-
-      // Anti-colisión por lado, SIN descartar ninguna: la card ya se
-      // agrandó antes de crear el chart (ver más abajo) para que todas
-      // quepan con este mismo GAP.
-      const arriba=10, abajo=ch.height-10;
-      [true,false].forEach(lado=>{
-        const arr=cands.filter(c=>c.der===lado);
-        arr.sort((a,b)=>a.yc-b.yc);
-        for(let k=1;k<arr.length;k++)
-          if(arr[k].yc-arr[k-1].yc<GAP) arr[k].yc=arr[k-1].yc+GAP;
-        if(arr.length){
-          const sobra=arr[arr.length-1].yc+GAP/2-abajo;
-          if(sobra>0) arr.forEach(c=>c.yc-=sobra);
-          const falta=arriba+GAP/2-arr[0].yc;
-          if(falta>0) arr.forEach(c=>c.yc+=falta);
-        }
-      });
-
-      ctx.save();
-      cands.forEach(c=>{
-        const codo=c.der?cx+c.r+8:cx-c.r-8;
-        const fin=c.der?codo+6:codo-6;
-        ctx.strokeStyle=cols[c.i]; ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(c.xa,c.yb); ctx.lineTo(codo,c.yc); ctx.lineTo(fin,c.yc); ctx.stroke();
-        ctx.textAlign=c.der?'left':'right';
-        const tx=c.der?fin+3:fin-3;
-        const disp=Math.max(0, c.der ? (ch.width-tx-3) : (tx-3));
-
-        // 1) NOMBRE (bold) — único que se trunca con elipsis si no cabe.
-        ctx.font=fuenteChart('--fs-chart-nom',13,'700'); ctx.fillStyle='#28313f';
-        let nom=labels[c.i];
-        if(ctx.measureText(nom).width>disp){
-          while(nom.length>1 && ctx.measureText(nom+'…').width>disp) nom=nom.slice(0,-1);
-          if(nom.length<labels[c.i].length) nom+='…';
-        }
-        ctx.fillText(nom, tx, c.yc-LH_MOVIL);
-        // 2) PORCENTAJE — nunca se recorta; si el ancho aprieta, se redondea.
-        ctx.font=fuenteChart('--fs-chart-pct',11.5); ctx.fillStyle='#5b6577';
-        let pl=c.pctv.toFixed(1)+'%';
-        if(ctx.measureText(pl).width>disp) pl=Math.round(c.pctv)+'%';
-        ctx.fillText(pl, tx, c.yc);
-        // 3) VALOR en pesos
-        ctx.font=fuenteChart('--fs-chart-val',12); ctx.fillStyle='#8b94a7';
-        ctx.fillText(clpK(vals[c.i]), tx, c.yc+LH_MOVIL);
-      });
-      ctx.restore();
-    }};
-  const esFono = ESFONO_V();
-  if(esFono){
-    // Se reserva de antemano el alto real que necesita la card para que
-    // TODAS las categorías entren sin solaparse ni descartar ninguna — el
-    // mismo criterio que usa AppSheet (la tarjeta crece en vez de esconder
-    // datos). El CSS de celular (@media max-width:600px) fija tanto height
-    // como max-height en 340px con !important — hay que sobreescribir AMBOS
-    // (si solo se pisa height, max-height:340px!important lo vuelve a topar)
-    // con la misma prioridad, y solo hacia arriba (nunca se achica por
-    // debajo del alto que ya trae el CSS).
-    const {der,izq}=ladosPorAngulo(vals,tot);
-    const necesaria = Math.max(der,izq,1)*GAP_MOVIL + 28;
-    const cont = document.getElementById(id).parentElement;
-    const actual = cont.getBoundingClientRect().height || 0;
-    if(necesaria>actual){
-      const px = Math.ceil(necesaria)+'px';
-      cont.style.setProperty('height', px, 'important');
-      cont.style.setProperty('max-height', px, 'important');
-    }
+  // Pocas categorías: se muestran todas, sin agrupar (regla: no crear
+  // "Otros" innecesariamente). Muchas categorías: TOP 8 + "Otros" hasta
+  // que el usuario pida ver el detalle completo con el botón de abajo —
+  // el dato completo sigue disponible, nunca se pierde.
+  const TOPN=8;
+  const expandido = !!_barrasExpandidas[id];
+  const hayCola = ents.length>TOPN+1;
+  let vista=ents;
+  if(!expandido && hayCola){
+    const sumaOtros = ents.slice(TOPN).reduce((s,e)=>s+e[1],0);
+    vista = [...ents.slice(0,TOPN), ['Otros',sumaOtros]];
   }
-  nuevoChart(id,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:1.5,borderColor:'#fff'}]},
-    options:{cutout:'58%',
-      layout:{padding: esFono ? {left:40,right:40,top:10,bottom:10} : {left:52,right:52,top:16,bottom:16}},
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}},
-    plugins:[ esFono ? etiquetasMovil : etiquetasExt ]});
+
+  const maxVal = vista.length ? vista[0][1] : 0;
+  const filas = vista.map(([nombre,val])=>{
+    const pct = tot ? val/tot*100 : 0;
+    const anchoPct = maxVal ? Math.max(2, Math.round(val/maxVal*100)) : 2;
+    const color = colorDe(nombre);
+    return `<div class="barra-h-fila">`
+      +`<div class="barra-h-nombre-row"><span class="barra-h-punto" style="background:${color}"></span><span class="barra-h-nombre">${nombre}</span></div>`
+      +`<div class="barra-h-pista-row"><span class="barra-h-pista"><span class="barra-h-relleno" style="width:${anchoPct}%;background:${color}"></span></span><span class="barra-h-cifra">${clpK(val)} · ${pct.toFixed(1)}%</span></div>`
+      +`</div>`;
+  }).join('');
+  const verMas = hayCola
+    ? (expandido
+        ? `<button type="button" class="barra-h-vermas" data-barra-toggle="${id}">Ver menos ▲</button>`
+        : `<button type="button" class="barra-h-vermas" data-barra-toggle="${id}">Ver las ${ents.length} categorías ▼</button>`)
+    : '';
+  document.getElementById(id).innerHTML = filas + verMas;
+
   if(!lecturaId || !ents.length) return;
   const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
   const esProv = tipoTexto==='proveedor';
