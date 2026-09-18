@@ -2178,7 +2178,7 @@ function pintarTabla(){
     tr.innerHTML=`
       <td data-lbl="Nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
       <td data-lbl="Fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
-      <td data-lbl="Categoría"><input value="${d.categoria??f.categoria}" data-c="categoria"></td>
+      <td data-lbl="Categoría">${selCategoria(d.categoria??f.categoria)}</td>
       <td data-lbl="Tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
       <td class="num" data-lbl="Monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" class="col-monto"></td>
@@ -2202,6 +2202,16 @@ function pintarTabla(){
 }
 const selTipo=v=>`<select data-c="tipo">${TIPOS_OPC.map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
 const selCuenta=v=>`<select data-c="cuenta"><option ${v==='BANCO'?'selected':''}>BANCO</option><option ${v==='EFECTIVO'?'selected':''}>EFECTIVO</option></select>`;
+// Igual que selTipo/selCuenta pero para Categoría: junta las categorías
+// "oficiales" (proveedores reales + gasto operacional ya usado, DATA.categorias)
+// con TODAS las que aparecen en los registros cargados (por si algún registro
+// quedó con una categoría vieja que ya no está en DATA.categorias) — así el
+// valor actual de la fila SIEMPRE aparece como opción, nunca se pierde al
+// abrir el desplegable.
+const selCategoria=v=>{
+  const opciones=Array.from(new Set([...(DATA.categorias||[]), ...DATA.filas.map(f=>f.categoria).filter(Boolean), v].filter(Boolean))).sort();
+  return `<select data-c="categoria">${opciones.map(c=>`<option ${c===v?'selected':''}>${c}</option>`).join('')}</select>`;
+};
 function marcarDirty(row,campo,val){ if(!dirty[row])dirty[row]={}; dirty[row][campo]=val; document.querySelector(`tr[data-row="${row}"]`)?.classList.add('dirty'); actualizarBarra(); actualizarSuma(); }
 function actualizarSuma(){
   const filas=filtrarFilas();
