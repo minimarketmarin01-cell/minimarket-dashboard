@@ -862,6 +862,7 @@
       <section class="hero" id="hero"><div class="cargando">Conectando…</div></section>
       <section class="mini" id="mini"></section>
       <section class="mini" id="miniPago"></section>
+      <section class="mini" id="miniPrestamos"></section>
       <div class="grid">
         <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><div class="tabla-scroll-x"><table id="tabla"><tbody></tbody></table></div></div>
         <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
@@ -1479,7 +1480,40 @@ function render(){
     kpiOtro.onclick=abrirDetalleOtroIngreso;
     kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
   }
-  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m); dibujarPrestamos();
+}
+// Préstamos a terceros (ej. "Prestamo AZH"): a diferencia de los KPI de arriba,
+// esto NO se calcula por mes — es un saldo histórico (tipo PRESTAMO no entra
+// en la utilidad, ver payloadFinanciero) que se arma recorriendo TODAS las
+// filas cargadas, sin importar el mes seleccionado en el selector de arriba.
+// Lo "devuelto" se detecta como un INGRESO clasificado con la MISMA categoría
+// del deudor (ej. categoría "MINIMARKET AZH") — apenas se apruebe así una
+// transferencia de vuelta, se descuenta sola del saldo pendiente.
+function dibujarPrestamos(){
+  const el=document.getElementById('miniPrestamos');
+  if(!el) return;
+  const deudores={};
+  (DATA.filas||[]).forEach(f=>{
+    if(f.tipo==='PRESTAMO'){
+      if(!deudores[f.categoria]) deudores[f.categoria]={prestado:0,devuelto:0};
+      deudores[f.categoria].prestado+=f.monto;
+    }
+  });
+  const nombres=Object.keys(deudores);
+  if(!nombres.length){ el.innerHTML=''; return; }
+  (DATA.filas||[]).forEach(f=>{
+    if(f.tipo==='INGRESO' && deudores[f.categoria]) deudores[f.categoria].devuelto+=f.monto;
+  });
+  const totalPrestado=nombres.reduce((s,n)=>s+deudores[n].prestado,0);
+  const totalDevuelto=nombres.reduce((s,n)=>s+deudores[n].devuelto,0);
+  const saldo=totalPrestado-totalDevuelto;
+  const detalle=nombres.length>1
+    ? nombres.map(n=>`${n}: ${clp(deudores[n].prestado-deudores[n].devuelto)}`).join(' · ')
+    : 'Suma histórica de todos los meses cargados';
+  el.innerHTML=`
+    <div class="kpi"><div class="lbl">Prestado a terceros</div><div class="val">${clp(totalPrestado)}</div><div class="sub">${detalle}</div></div>
+    <div class="kpi"><div class="lbl">Devuelto</div><div class="val">${clp(totalDevuelto)}</div><div class="sub">ingresos clasificados con la misma categoría del deudor</div></div>
+    <div class="kpi ${saldo>0?'':'acc-verde'}"><div class="lbl">Saldo pendiente</div><div class="val" style="color:${saldo>0?'inherit':'var(--verde)'}">${clp(saldo)}</div><div class="sub">${saldo>0?'aún no devuelto':'saldado'}</div></div>`;
 }
 function dibujarControl(m){
   const ing=m.ingreso||0;
