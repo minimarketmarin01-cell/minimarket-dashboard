@@ -209,6 +209,56 @@
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
   .mini .kpi .val{font-size:var(--fs-xl); font-weight:700}
   .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,16px); margin-top:clamp(8px,1.6vw,16px)}
+  /* ==== Resumen (Control Financiero) — pantalla RESUMEN → CATEGORÍA → DETALLE ====
+     Celular: una columna, todo apilado. Tablet/desktop: algunas tarjetas pasan a
+     dos columnas (ver media query más abajo), sin estirar los componentes de
+     celular — solo cambia el grid contenedor. */
+  #resumenPrincipal{display:grid; grid-template-columns:1fr; gap:clamp(10px,1.8vw,16px)}
+  .resumen-kpi3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(7px,1.4vw,14px)}
+  .resumen-kpi3 .kpi .lbl{display:flex; align-items:center; gap:6px}
+  .resumen-total{font-family:'Manrope',sans-serif; font-size:clamp(1.3rem,1rem + 1.6vw,1.9rem); font-weight:800; letter-spacing:-.02em; margin:4px 0 2px}
+  .resumen-total .sub{display:block; font-family:'Inter',sans-serif; font-size:var(--fs-sm); font-weight:600; color:var(--gris); margin-top:2px}
+  .donut-mini-wrap{display:flex; align-items:center; gap:16px; margin:10px 0 6px; flex-wrap:wrap}
+  .graf-donut-mini{flex:0 0 auto; width:120px; height:120px; position:relative}
+  .btn-ver-detalle{display:block; width:100%; margin-top:12px; padding:10px 14px; background:none; border:1px solid var(--linea); border-radius:12px; color:var(--acento); font-weight:700; font-size:var(--fs-md); font-family:inherit; cursor:pointer; text-align:center}
+  .btn-ver-detalle:hover{background:var(--papel)}
+  .progreso-pista{height:10px; background:var(--papel); border:1px solid var(--linea); border-radius:6px; overflow:hidden; margin:10px 0}
+  .progreso-fill{display:block; height:100%; background:var(--acento); border-radius:6px}
+  .prestamo-filas{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:8px}
+  .prestamo-filas .item{flex:1 1 120px}
+  .prestamo-filas .item .lbl{font-size:var(--fs-sm); color:var(--gris); text-transform:uppercase; letter-spacing:.05em; font-weight:600}
+  .prestamo-filas .item .val{font-family:'Manrope',sans-serif; font-size:var(--fs-lg); font-weight:800}
+  table.tabla-compacta{font-size:var(--fs-md)}
+  table.tabla-compacta th{display:none}
+  table.tabla-compacta td{border-bottom:1px solid var(--linea); padding:9px 4px}
+  table.tabla-compacta tr.foco td{border-top:2px solid var(--tinta); border-bottom:none; padding-top:12px}
+  .vista-detalle{margin-top:10px}
+  .vista-detalle-header{display:flex; align-items:center; gap:12px; margin-bottom:14px}
+  .btn-volver{background:none; border:1px solid var(--linea); border-radius:10px; padding:8px 14px; font-family:inherit; font-size:var(--fs-md); font-weight:700; color:var(--tinta); cursor:pointer}
+  .btn-volver:hover{background:var(--papel)}
+  .vista-detalle-header h2{font-family:'Manrope',sans-serif; font-size:var(--fs-lg); font-weight:800}
+  .expandible{border:1px solid var(--linea); border-radius:14px; margin-bottom:10px; overflow:hidden; background:#fff}
+  .expandible-header{display:flex; align-items:center; gap:10px; padding:14px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  .expandible-header .punto{flex:0 0 auto; width:10px; height:10px; border-radius:50%}
+  .expandible-header .nom{flex:1 1 auto; min-width:0; font-weight:700; overflow-wrap:break-word}
+  .expandible-header .cifra{flex:0 0 auto; text-align:right; font-size:var(--fs-sm); color:var(--gris); white-space:nowrap}
+  .expandible-header .cifra b{display:block; color:#28313f; font-size:var(--fs-md)}
+  .expandible-header .chev{flex:0 0 auto; transition:transform .15s; color:var(--gris)}
+  .expandible.abierto .expandible-header .chev{transform:rotate(90deg)}
+  .expandible-body{padding:0 16px 14px 36px}
+  .expandible-body .fila{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--linea); font-size:var(--fs-md)}
+  .expandible-body .fila:first-child{border-top:none}
+  .expandible-body .fila .f-nom{min-width:0; overflow-wrap:break-word; color:#28313f}
+  .expandible-body .fila .f-cifra{flex:0 0 auto; color:var(--gris); font-variant-numeric:tabular-nums}
+  .lista-plana .fila{display:flex; justify-content:space-between; gap:10px; padding:10px 2px; border-top:1px solid var(--linea); font-size:var(--fs-md)}
+  .lista-plana .fila:first-child{border-top:none}
+  .lista-plana .fila .f-nom{min-width:0; overflow-wrap:break-word; color:#28313f}
+  .lista-plana .fila .f-sub{display:block; color:var(--gris); font-size:var(--fs-sm)}
+  .lista-plana .fila .f-cifra{flex:0 0 auto; color:var(--gris); font-variant-numeric:tabular-nums; text-align:right}
+  @media (min-width:600px){
+    #resumenPrincipal{grid-template-columns:1fr 1fr; grid-auto-flow:dense}
+    #resumenKpis, #seccionAutoAnalisis, #seccionResumenDia, #resumenPrincipal .card.full{grid-column:1 / -1}
+  }
   .card{background:#fff; border:1px solid var(--linea); border-radius:var(--radius); padding:clamp(12px,2.2vw,24px); box-shadow:var(--sombra); min-width:0}
   .card h2{font-family:'Manrope',sans-serif; font-size:var(--fs-lg); font-weight:800; margin-bottom:2px; letter-spacing:-.01em}
   .card .cap{font-size:var(--fs-md); color:var(--gris); margin-bottom:12px; line-height:1.5}
@@ -859,15 +909,57 @@
 
     <div id="tab-resumen">
       <div class="alerta" id="alerta"><span>⚠️</span><div><b>Mes incompleto.</b> Faltan ventas y costos en <b>efectivo</b>. El margen y la utilidad son <b>provisionales</b> hasta que registres el efectivo (pestaña «Cierre de caja»).</div></div>
-      <section class="hero" id="hero"><div class="cargando">Conectando…</div></section>
-      <section class="mini" id="mini"></section>
-      <section class="mini" id="miniPago"></section>
-      <section class="mini" id="miniPrestamos"></section>
-      <div class="grid">
-        <div class="card full"><h2>Tabla del mes</h2><div class="cap" id="capTabla"></div><div class="tabla-scroll-x"><table id="tabla"><tbody></tbody></table></div></div>
-        <div class="card"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
+
+      <div id="resumenPrincipal">
+        <section class="resumen-kpi3" id="resumenKpis"><div class="cargando">Conectando…</div></section>
+        <div class="card" id="seccionAutoAnalisis"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
+
+        <div class="card" id="seccionResumenDia"><h2>Ingresos vs Gastos</h2><div class="cap" id="capResumenDia">Comparación diaria del mes.</div><div class="graf-mini" style="height:190px;position:relative"><canvas id="chResumenDia"></canvas></div></div>
+
+        <div class="card" id="seccionGastoOpe">
+          <h2>Gastos operacionales</h2>
+          <div class="resumen-total" id="totGastoOpe"></div>
+          <div class="donut-mini-wrap"><div class="graf-donut-mini"><canvas id="chResumenGasto"></canvas></div><div class="lista-barras" id="rankGastoOpe" style="flex:1"></div></div>
+          <button type="button" class="btn-ver-detalle" data-abrir-vista="detalleGastos">Ver detalle →</button>
+        </div>
+
+        <div class="card" id="seccionIngresos">
+          <h2>Ingresos</h2>
+          <div class="resumen-total" id="totIngresos"></div>
+          <div class="lista-barras" id="rankIngresos"></div>
+          <button type="button" class="btn-ver-detalle" data-abrir-vista="detalleIngresos">Ver desglose →</button>
+        </div>
+
+        <div class="card" id="seccionPrestamos">
+          <h2>Dinero por cobrar</h2>
+          <div id="cuerpoPrestamos"></div>
+          <button type="button" class="btn-ver-detalle" id="btnVerDetallePrestamos" data-abrir-vista="detallePrestamos" style="display:none">Ver detalle →</button>
+        </div>
+
+        <div class="card full"><h2>Estado de resultados</h2><div class="cap" id="capTabla"></div><div class="tabla-scroll-x"><table id="tabla" class="tabla-compacta"><tbody></tbody></table></div></div>
+
+        <div class="card"><h2>Otros indicadores</h2><div class="cap">Detalle operativo del mes.</div><div class="mini" id="otrosIndicadores"></div></div>
+
         <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
       </div>
+
+      <section class="vista-detalle hidden" id="detalleGastos">
+        <div class="vista-detalle-header"><button type="button" class="btn-volver" data-cerrar-vista="detalleGastos">← Volver</button><h2>Gastos operacionales — detalle</h2></div>
+        <div class="cap" id="capDetalleGastos"></div>
+        <div id="cuerpoDetalleGastos"></div>
+      </section>
+
+      <section class="vista-detalle hidden" id="detalleIngresos">
+        <div class="vista-detalle-header"><button type="button" class="btn-volver" data-cerrar-vista="detalleIngresos">← Volver</button><h2>Ingresos — detalle</h2></div>
+        <div class="cap" id="capDetalleIngresos"></div>
+        <div id="cuerpoDetalleIngresos"></div>
+      </section>
+
+      <section class="vista-detalle hidden" id="detallePrestamos">
+        <div class="vista-detalle-header"><button type="button" class="btn-volver" data-cerrar-vista="detallePrestamos">← Volver</button><h2>Dinero por cobrar — detalle</h2></div>
+        <div class="cap">Todas las transacciones históricas de préstamos y devoluciones, por deudor.</div>
+        <div id="cuerpoDetallePrestamos"></div>
+      </section>
     </div>
 
     <div id="tab-rentabilidad" class="hidden">
@@ -1294,10 +1386,10 @@ document.addEventListener('click', (e) => {
 });
 
 fetch(FINANZAS_GET_URL).then(r=>r.json()).then(d=>{DATA=d; init();})
-  .catch(e=>{document.getElementById('hero').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
+  .catch(e=>{document.getElementById('resumenKpis').innerHTML='<div class="cargando">No se pudo conectar.<br><small>'+e+'</small></div>';});
 
 function init(){
-  if(!DATA.meses||!DATA.meses.length){document.getElementById('hero').innerHTML='<div class="cargando">Sin datos aún.</div>';return;}
+  if(!DATA.meses||!DATA.meses.length){document.getElementById('resumenKpis').innerHTML='<div class="cargando">Sin datos aún.</div>';return;}
   const sel=document.getElementById('selMes');sel.innerHTML='';
   DATA.meses.forEach(m=>{const b=document.createElement('button');b.textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];b.dataset.ym=m.ym;b.onclick=()=>{mesActual=m.ym;try{localStorage.setItem('mesActivo',m.ym);}catch(e){}render();};sel.appendChild(b);});
   mesActual=DATA.meses[DATA.meses.length-1].ym;
@@ -1458,40 +1550,134 @@ function render(){
     const flecha=sube?'▲':'▼';
     return `<span style="color:${col};font-weight:700;font-size:var(--fs-sm)"> · ${flecha} ${Math.abs(v).toFixed(1)}% vs ${MESES_ES[prev.ym.split('-')[1]].slice(0,3)}</span>`;
   };
-  document.getElementById('hero').innerHTML=`
-    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div></div>
-    <div class="kpi"><div class="lbl">Ingresos <span style="font-weight:400;text-transform:none;font-size:var(--fs-xs)">(venta bruta)</span></div><div class="val">${clp(m.ingreso)}</div><div class="sub">tarjeta+transf. ${clp((m.ingresoPOS||0)+(m.ingresoTransferencia||0))} · efectivo ${clp(m.efectivo)}${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
-    <div class="kpi"><div class="lbl">Margen bruto ${m.incompleto?'<span class="badge">prov.</span>':''}</div><div class="val">${m.margenBruto.toFixed(1)}%</div><div class="sub">costos ${clp(m.costos)}${prev?delta(m.margenBruto,prev.margenBruto):''}</div></div>
-    <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">plásticos ${m.pctPlasticos.toFixed(2)}% s/ingreso${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div></div>`;
-  document.getElementById('mini').innerHTML=`
+  dibujarResumenKpis(m,delta,prev);
+  dibujarOtrosIndicadores(m);
+  dibujarIngresosResumenCard(m);
+  dibujarResumenDia(m);
+  dibujarGastoResumenCard(m);
+  dibujarDineroPorCobrarCard();
+  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+}
+// ==== Resumen: pantalla RESUMEN → CATEGORÍA → DETALLE ====
+// Todas las funciones de acá abajo leen exclusivamente m=mesData(mesActual) y
+// DATA.filas (ya existentes) — ningún cálculo nuevo, solo presentación.
+function dibujarResumenKpis(m,delta,prev){
+  const uc=m.utilidad>=0?'pos':'neg';
+  document.getElementById('resumenKpis').innerHTML=`
+    <div class="kpi"><div class="lbl">Ingresos</div><div class="val">${clp(m.ingreso)}</div><div class="sub">100%${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
+    <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${((m.gastoOpe/m.ingreso*100)||0).toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div></div>
+    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div></div>`;
+}
+// Los KPI que no encajan en las 4 secciones del mockup (Punto de equilibrio,
+// Ticket promedio, Comisión POS, Depositado real en banco, Días con ventas) se
+// conservan tal cual — solo se movieron a "Otros indicadores", al final.
+function dibujarOtrosIndicadores(m){
+  document.getElementById('otrosIndicadores').innerHTML=`
     <div class="kpi"><div class="lbl">Punto de equilibrio</div><div class="val">${clp(m.puntoEquilibrio)}</div><div class="sub">ventas p/ cubrir gasto ope</div></div>
     <div class="kpi"><div class="lbl">Ticket promedio</div><div class="val">${clp(m.ticketPromedio)}</div><div class="sub">por transacción</div></div>
     <div class="kpi"><div class="lbl">Comisión POS del mes</div><div class="val">${clp(m.comisionPOSmensual||0)}</div><div class="sub">SuperCompraQuí 1,29% + IVA</div></div>
     <div class="kpi"><div class="lbl">Total abonado POS</div><div class="val">${clp(m.abonadoPOS||0)}</div><div class="sub">neto al banco (venta − comisión)</div></div>
     <div class="kpi acc-verde"><div class="lbl">Depositado real en banco</div><div class="val">${clp((m.abonadoPOS||0)+(m.ingresoTransferencia||0))}</div><div class="sub">POS neto + transferencias — lo que de verdad entra a BancoEstado</div></div>
     <div class="kpi"><div class="lbl">Días con ventas</div><div class="val">${Object.keys(m.dias).length}</div><div class="sub">este mes</div></div>`;
-  document.getElementById('miniPago').innerHTML=`
-    <div class="kpi"><div class="lbl">Ingreso POS</div><div class="val">${clp(m.ingresoPOS||0)}</div><div class="sub">tarjetas SuperCompraQuí</div></div>
-    <div class="kpi"><div class="lbl">Ingreso transferencia</div><div class="val">${clp(m.ingresoTransferencia||0)}</div><div class="sub">transferencias de clientes</div></div>
-    <div class="kpi"><div class="lbl">Ingreso efectivo</div><div class="val">${clp(m.ingresoEfectivo||0)}</div><div class="sub">cierre de caja</div></div>
-    <div class="kpi"><div class="lbl">Transacciones tarjeta</div><div class="val">${(m.nTransaccionesPOS||0).toLocaleString('es-CL')}</div><div class="sub">ventas POS del mes</div></div>${m.ingresoOtro?`<div class="kpi kpi-click" id="kpiOtroIngreso" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Ver detalle de otro ingreso"><div class="lbl">Otro ingreso</div><div class="val">${clp(m.ingresoOtro)}</div><div class="sub">ej. devolución PPM</div></div>`:''}`;
-  const kpiOtro=document.getElementById('kpiOtroIngreso');
-  if(kpiOtro){
-    kpiOtro.onclick=abrirDetalleOtroIngreso;
-    kpiOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
-  }
-  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m); dibujarPrestamos();
 }
-// Préstamos a terceros (ej. "Prestamo AZH"): a diferencia de los KPI de arriba,
-// esto NO se calcula por mes — es un saldo histórico (tipo PRESTAMO no entra
-// en la utilidad, ver payloadFinanciero) que se arma recorriendo TODAS las
-// filas cargadas, sin importar el mes seleccionado en el selector de arriba.
-// Lo "devuelto" se detecta como un INGRESO clasificado con la MISMA categoría
-// del deudor (ej. categoría "MINIMARKET AZH") — apenas se apruebe así una
-// transferencia de vuelta, se descuenta sola del saldo pendiente.
-function dibujarPrestamos(){
-  const el=document.getElementById('miniPrestamos');
-  if(!el) return;
+// Ingresos: mismos 3 campos que antes vivían en #miniPago, mostrados como
+// barras horizontales (mismo componente .barra-h-* ya usado por dona()) en vez
+// de tarjetas sueltas. El detalle se pre-arma acá mismo (no hay cálculo nuevo
+// al abrirlo, solo se muestra/oculta).
+function dibujarIngresosResumenCard(m){
+  const total=m.ingreso||0;
+  document.getElementById('totIngresos').innerHTML=`${clp(total)}<span class="sub">100% del mes</span>`;
+  const filas=[
+    {nombre:'POS',val:m.ingresoPOS||0},
+    {nombre:'Efectivo',val:m.ingresoEfectivo||0},
+    {nombre:'Transferencia',val:m.ingresoTransferencia||0}
+  ];
+  if(m.ingresoOtro) filas.push({nombre:'Otro ingreso',val:m.ingresoOtro,click:true});
+  const max=Math.max(1,...filas.map(f=>f.val));
+  document.getElementById('rankIngresos').innerHTML=filas.map(f=>{
+    const pctv=total?f.val/total*100:0, color=colorPorNombre(f.nombre);
+    return `<div class="barra-h-fila"${f.click?' id="filaOtroIngreso" style="cursor:pointer" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Ver detalle de otro ingreso"':''}>
+      <div class="barra-h-nombre-row"><span class="barra-h-punto" style="background:${color}"></span><span class="barra-h-nombre">${f.nombre}</span></div>
+      <div class="barra-h-pista-row"><span class="barra-h-pista"><span class="barra-h-relleno" style="width:${Math.max(2,Math.round(f.val/max*100))}%;background:${color}"></span></span><span class="barra-h-cifra">${clp(f.val)} · ${pctv.toFixed(1)}%</span></div>
+    </div>`;
+  }).join('');
+  const filaOtro=document.getElementById('filaOtroIngreso');
+  if(filaOtro){
+    filaOtro.onclick=abrirDetalleOtroIngreso;
+    filaOtro.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrirDetalleOtroIngreso(); } };
+  }
+  document.getElementById('capDetalleIngresos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · '+clp(total);
+  const filasIngreso=DATA.filas.filter(f=>f.tipo==='INGRESO'&&f.ym===m.ym).sort((a,b)=>b.monto-a.monto);
+  document.getElementById('cuerpoDetalleIngresos').innerHTML = filasIngreso.length ? `<div class="lista-plana">${filasIngreso.map(f=>
+    `<div class="fila"><span class="f-nom">${f.nombre||f.categoria}<span class="f-sub">${f.fecha} · ${f.categoria}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`
+  ).join('')}</div>` : '<p class="cap">Sin ingresos registrados este mes.</p>';
+}
+// Gráfico simple de ingresos vs gastos por día — misma fuente (m.dias) que ya
+// usa dibujarDia()/chDia en la pestaña Rentabilidad, pero sin el slider ni el
+// plugin de etiquetas: acá es solo una vista rápida del mes completo.
+function dibujarResumenDia(m){
+  document.getElementById('capResumenDia').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · barra azul=ingresos, barra roja=costos+gastos';
+  const dias=Object.keys(m.dias).sort();
+  nuevoChart('chResumenDia',{type:'bar',data:{labels:dias.map(d=>d.slice(-2)),datasets:[
+    {label:'Ingresos',data:dias.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:4,barPercentage:.85,categoryPercentage:.7},
+    {label:'Gastos',data:dias.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:4,barPercentage:.85,categoryPercentage:.7}
+  ]},options:{
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
+    scales:{
+      y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
+      x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f',maxRotation:0,autoSkip:true,maxTicksLimit:7}}}
+  }});
+}
+// Gastos operacionales: total/% ya existentes (m.gastoOpe, m.ingreso) + m.gastoCats
+// (misma fuente que ya usa dona('chGasto', m.gastoCats, ...) en tab-costos) para
+// la lista COMPLETA (nunca agrupada) y para un donut chico solo decorativo — sin
+// etiquetas dibujadas en el canvas (nada que medir/cortar), agrupando en
+// top-4+"Otros" nada más para ese dibujo. El detalle real (sin agrupar) se arma
+// al abrir "Ver detalle" con las transacciones reales de DATA.filas.
+function dibujarGastoResumenCard(m){
+  const total=m.gastoOpe||0, ing=m.ingreso||0;
+  document.getElementById('totGastoOpe').innerHTML=`${clp(total)}<span class="sub">${(ing?total/ing*100:0).toFixed(1)}% de los ingresos</span>`;
+  const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
+  const tot=ents.reduce((s,e)=>s+e[1],0);
+  const max=ents.length?ents[0][1]:1;
+  document.getElementById('rankGastoOpe').innerHTML = ents.length ? ents.map(([cat,val])=>{
+    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat);
+    return `<div class="barra-h-fila">
+      <div class="barra-h-nombre-row"><span class="barra-h-punto" style="background:${color}"></span><span class="barra-h-nombre">${cat}</span></div>
+      <div class="barra-h-pista-row"><span class="barra-h-pista"><span class="barra-h-relleno" style="width:${Math.max(2,Math.round(val/max*100))}%;background:${color}"></span></span><span class="barra-h-cifra">${clp(val)} · ${pctv.toFixed(1)}%</span></div>
+    </div>`;
+  }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
+  const TOPN=4;
+  const entsDonut = ents.length>TOPN+1 ? [...ents.slice(0,TOPN), ['Otros', ents.slice(TOPN).reduce((s,e)=>s+e[1],0)]] : ents;
+  if(entsDonut.length){
+    nuevoChart('chResumenGasto',{type:'doughnut',data:{labels:entsDonut.map(e=>e[0]),datasets:[{data:entsDonut.map(e=>e[1]),backgroundColor:entsDonut.map(e=>e[0]==='Otros'?'#9aa3b5':colorPorNombre(e[0])),borderWidth:2,borderColor:'#fff'}]},
+      options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(tot?(c.raw/tot*100).toFixed(1):0)+'%)'}}}}});
+  }
+}
+function abrirDetalleGastos(){
+  const m=mesData(mesActual);
+  const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
+  const tot=ents.reduce((s,e)=>s+e[1],0);
+  document.getElementById('capDetalleGastos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · '+clp(m.gastoOpe||0);
+  document.getElementById('cuerpoDetalleGastos').innerHTML = ents.length ? ents.map(([cat,val],i)=>{
+    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat), idExp='expGasto'+i;
+    const filasCat=DATA.filas.filter(f=>f.tipo==='GASTO OPE'&&f.categoria===cat&&f.ym===m.ym).sort((a,b)=>b.monto-a.monto);
+    return `<div class="expandible" id="${idExp}">
+      <div class="expandible-header" data-toggle="${idExp}">
+        <span class="punto" style="background:${color}"></span>
+        <span class="nom">${cat}</span>
+        <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}%</span>
+        <span class="chev">▸</span>
+      </div>
+      <div class="expandible-body hidden">${filasCat.length ? filasCat.map(f=>`<div class="fila"><span class="f-nom">${f.nombre||cat}</span><span class="f-cifra">${clp(f.monto)}</span></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
+    </div>`;
+  }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
+}
+// Dinero por cobrar (préstamos a terceros): calcularPrestamos() factoriza el
+// mismo cálculo histórico (no por mes, ver nota anterior) que ya se usaba —
+// solo se reparte en tarjeta-resumen + vista de detalle.
+function calcularPrestamos(){
   const deudores={};
   (DATA.filas||[]).forEach(f=>{
     if(f.tipo==='PRESTAMO'){
@@ -1500,21 +1686,67 @@ function dibujarPrestamos(){
     }
   });
   const nombres=Object.keys(deudores);
-  if(!nombres.length){ el.innerHTML=''; return; }
-  (DATA.filas||[]).forEach(f=>{
+  if(nombres.length) (DATA.filas||[]).forEach(f=>{
     if(f.tipo==='INGRESO' && deudores[f.categoria]) deudores[f.categoria].devuelto+=f.monto;
   });
   const totalPrestado=nombres.reduce((s,n)=>s+deudores[n].prestado,0);
   const totalDevuelto=nombres.reduce((s,n)=>s+deudores[n].devuelto,0);
-  const saldo=totalPrestado-totalDevuelto;
-  const detalle=nombres.length>1
-    ? nombres.map(n=>`${n}: ${clp(deudores[n].prestado-deudores[n].devuelto)}`).join(' · ')
-    : 'Suma histórica de todos los meses cargados';
-  el.innerHTML=`
-    <div class="kpi"><div class="lbl">Prestado a terceros</div><div class="val">${clp(totalPrestado)}</div><div class="sub">${detalle}</div></div>
-    <div class="kpi"><div class="lbl">Devuelto</div><div class="val">${clp(totalDevuelto)}</div><div class="sub">ingresos clasificados con la misma categoría del deudor</div></div>
-    <div class="kpi ${saldo>0?'':'acc-verde'}"><div class="lbl">Saldo pendiente</div><div class="val" style="color:${saldo>0?'inherit':'var(--verde)'}">${clp(saldo)}</div><div class="sub">${saldo>0?'aún no devuelto':'saldado'}</div></div>`;
+  return {deudores,nombres,totalPrestado,totalDevuelto,saldo:totalPrestado-totalDevuelto};
 }
+function dibujarDineroPorCobrarCard(){
+  const el=document.getElementById('cuerpoPrestamos');
+  const btn=document.getElementById('btnVerDetallePrestamos');
+  const {nombres,totalPrestado,totalDevuelto,saldo}=calcularPrestamos();
+  if(!nombres.length){ el.innerHTML='<p class="cap">Sin préstamos a terceros registrados.</p>'; btn.style.display='none'; return; }
+  btn.style.display='';
+  const avance=totalPrestado?Math.min(100,Math.round(totalDevuelto/totalPrestado*100)):0;
+  el.innerHTML=`
+    <div class="resumen-total">${clp(saldo)}<span class="sub">${saldo>0?'pendiente de cobro':'saldado'}${nombres.length===1?' · '+nombres[0]:''}</span></div>
+    <div class="progreso-pista"><span class="progreso-fill" style="width:${avance}%"></span></div>
+    <div class="prestamo-filas">
+      <div class="item"><div class="lbl">Prestado</div><div class="val">${clp(totalPrestado)}</div></div>
+      <div class="item"><div class="lbl">Devuelto</div><div class="val">${clp(totalDevuelto)}</div></div>
+    </div>`;
+}
+function abrirDetallePrestamos(){
+  const {deudores,nombres}=calcularPrestamos();
+  const el=document.getElementById('cuerpoDetallePrestamos');
+  if(!nombres.length){ el.innerHTML='<p class="cap">Sin préstamos registrados.</p>'; return; }
+  el.innerHTML=nombres.map(nombre=>{
+    const d=deudores[nombre];
+    const filas=DATA.filas.filter(f=>(f.tipo==='PRESTAMO'||f.tipo==='INGRESO')&&f.categoria===nombre).sort((a,b)=>a.fecha<b.fecha?-1:1);
+    return `<div class="expandible abierto" style="margin-bottom:16px">
+      <div class="expandible-header" style="cursor:default">
+        <span class="nom">${nombre}</span>
+        <span class="cifra"><b>${clp(d.prestado-d.devuelto)}</b>pendiente</span>
+      </div>
+      <div class="expandible-body">${filas.map(f=>`<div class="fila"><span class="f-nom">${f.fecha} · ${f.tipo==='PRESTAMO'?'Préstamo':'Devolución'}${f.nombre?' — '+f.nombre:''}</span><span class="f-cifra" style="color:${f.tipo==='PRESTAMO'?'var(--rojo)':'var(--verde)'}">${f.tipo==='PRESTAMO'?'-':'+'}${clp(f.monto)}</span></div>`).join('')}</div>
+    </div>`;
+  }).join('');
+}
+// Navegación RESUMEN → CATEGORÍA → DETALLE dentro de #tab-resumen: mismo patrón
+// .hidden que ya usa el resto de la app para pestañas y modales.
+function abrirVista(id){
+  document.getElementById('resumenPrincipal').classList.add('hidden');
+  if(id==='detalleGastos') abrirDetalleGastos();
+  if(id==='detallePrestamos') abrirDetallePrestamos();
+  document.getElementById(id).classList.remove('hidden');
+}
+function cerrarVista(){
+  document.querySelectorAll('#tab-resumen .vista-detalle').forEach(v=>v.classList.add('hidden'));
+  document.getElementById('resumenPrincipal').classList.remove('hidden');
+}
+document.addEventListener('click', e=>{
+  const abrir=e.target.closest('[data-abrir-vista]');
+  if(abrir){ abrirVista(abrir.dataset.abrirVista); return; }
+  const cerrar=e.target.closest('[data-cerrar-vista]');
+  if(cerrar){ cerrarVista(); return; }
+  const toggle=e.target.closest('[data-toggle]');
+  if(toggle){
+    const exp=document.getElementById(toggle.dataset.toggle);
+    if(exp){ exp.classList.toggle('abierto'); const body=exp.querySelector('.expandible-body'); if(body) body.classList.toggle('hidden'); }
+  }
+});
 function dibujarControl(m){
   const ing=m.ingreso||0;
   const p=v=>ing? v/ing*100 : 0;
