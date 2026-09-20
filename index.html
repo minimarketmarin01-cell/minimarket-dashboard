@@ -334,6 +334,9 @@
   .tabla-edit th[data-col]:hover{color:var(--tinta)}
   .sort-ico{display:inline-block; font-size:.62em; opacity:.35; margin-left:3px; letter-spacing:-.1em}
   .sort-ico.activo{opacity:1; color:var(--acento); letter-spacing:0}
+  /* Controles de fijar/contraer columna: solo aplican en celular (tabla con
+     scroll horizontal); en tablet/escritorio la tabla ya cabe sin ellos. */
+  .th-ctrls{display:none}
   .tabla-scroll{max-height:520px; overflow:auto; border:1px solid var(--linea); border-radius:12px}
   /* FIX sidebar-resize: red de seguridad para tablas sin contenedor propio de
      scroll (p.ej. "Tabla del mes"). Si tras un cambio de ancho la tabla no
@@ -658,32 +661,33 @@
     .selector button{flex:0 0 auto}
 
     /* --- Registros: la tabla de 8 columnas no cabe en 360px.
-       Se convierte en una tarjeta por movimiento, con la etiqueta de
-       cada campo tomada de data-lbl. --- */
-    .tabla-scroll{max-height:none; border:none; overflow:visible}
-    #tablaEdit thead{display:none}
-    #tablaEdit, #tablaEdit tbody, #tablaEdit tr, #tablaEdit td{display:block; width:100%}
-    #tablaEdit tr{
-      border:1px solid var(--linea); border-radius:13px; background:#fff;
-      padding:10px 12px; margin-bottom:10px; box-shadow:var(--sombra);
-    }
-    #tablaEdit tr.dirty{border-color:var(--ambar); background:var(--ambar-suave)}
-    #tablaEdit td{
-      display:flex; align-items:center; gap:10px;
-      border:none; padding:4px 0; text-align:left;
-    }
-    #tablaEdit td::before{
-      content:attr(data-lbl); flex:0 0 74px; font-size:var(--fs-xs); font-weight:700;
-      text-transform:uppercase; letter-spacing:.05em; color:var(--gris);
-    }
-    #tablaEdit td:last-child::before{content:''; flex:0 0 0}
-    #tablaEdit td:last-child{justify-content:flex-end; padding-top:8px}
+       En vez de apilarla como tarjetas, queda como tabla real con scroll
+       horizontal táctil, encabezado fijo (sticky) y una columna fijable
+       (por defecto Nombre) — ver initColumnasTabla()/aplicarEstadoColumnas(). */
+    .tabla-scroll{max-height:60vh; overflow:auto; border:1px solid var(--linea); border-radius:12px; -webkit-overflow-scrolling:touch}
+    #tablaEdit{width:max-content; min-width:100%; border-collapse:separate; border-spacing:0}
+    #tablaEdit th, #tablaEdit td{white-space:nowrap; min-width:112px}
+    #tablaEdit th:first-child, #tablaEdit td:first-child{min-width:150px}
+    #tablaEdit th{position:sticky; top:0; z-index:2}
+    #tablaEdit tr.dirty td{background:var(--ambar-suave)}
+    #tablaEdit td{padding:8px 10px}
     #tablaEdit td input, #tablaEdit td select{
-      flex:1 1 auto; width:100% !important; min-width:0;
+      width:100% !important; min-width:0;
       padding:7px 9px; border:1px solid var(--linea); border-radius:8px;
       font-size:var(--fs-md); background:#fff;
     }
     #tablaEdit td.num input{text-align:right}
+    /* Columna fijada: se mantiene visible al desplazar horizontalmente */
+    #tablaEdit th.col-fija, #tablaEdit td.col-fija{position:sticky; left:0; z-index:1; background:#fff}
+    #tablaEdit th.col-fija{z-index:3; background:#f6f8fc}
+    #tablaEdit tr.dirty td.col-fija{background:var(--ambar-suave)}
+    /* Columna contraída: oculta el detalle sin perder el dato (sigue editable al enfocar) */
+    #tablaEdit th.col-colapsada, #tablaEdit td.col-colapsada{min-width:0; width:44px; max-width:44px}
+    #tablaEdit td.col-colapsada input, #tablaEdit td.col-colapsada select{overflow:hidden; text-overflow:ellipsis}
+    /* Controles de fijar/contraer en el encabezado */
+    .th-ctrls{display:inline-flex; gap:2px; margin-left:4px; vertical-align:middle}
+    .th-btn{border:none; background:none; padding:2px 4px; font-size:11px; line-height:1; color:var(--gris); cursor:pointer; border-radius:5px; -webkit-tap-highlight-color:transparent}
+    .th-btn.activo{color:var(--acento)}
     .barra-guardar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
   }
 
@@ -1050,13 +1054,13 @@
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
         <thead><tr>
-          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span></th>
-          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span></th>
-          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span></th>
-          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span></th>
-          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span></th>
-          <th data-col="monto">Monto <span class="sort-ico">▲▼</span></th>
-          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span></th>
+          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nombre" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="nombre" title="Contraer columna">‹›</button></span></th>
+          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="fecha" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="fecha" title="Contraer columna">‹›</button></span></th>
+          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="categoria" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="categoria" title="Contraer columna">‹›</button></span></th>
+          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="tipo" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="tipo" title="Contraer columna">‹›</button></span></th>
+          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="cuenta" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="cuenta" title="Contraer columna">‹›</button></span></th>
+          <th data-col="monto">Monto <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="monto" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="monto" title="Contraer columna">‹›</button></span></th>
+          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nop" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="nop" title="Contraer columna">‹›</button></span></th>
           <th></th>
         </tr></thead>
         <tbody></tbody>
@@ -2420,7 +2424,42 @@ function initTabla(){
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
   initOrdenTabla();
+  initColumnasTabla();
   pintarTabla();
+}
+// --- Fijar/contraer columnas de la tabla Registros en celular (tabla con
+// scroll horizontal): columnaFija se pinta con position:sticky;left:0, las
+// de columnasColapsadas se angostan sin perder el dato (el input sigue ahí,
+// solo se ve truncado hasta que se vuelve a expandir). Sin efecto visual en
+// tablet/escritorio (ver .th-ctrls/.col-fija/.col-colapsada en el CSS). ---
+let columnaFija='nombre';
+const columnasColapsadas=new Set();
+function aplicarEstadoColumnas(){
+  document.querySelectorAll('#tablaEdit [data-col]').forEach(el=>{
+    const col=el.dataset.col;
+    el.classList.toggle('col-fija',col===columnaFija);
+    el.classList.toggle('col-colapsada',columnasColapsadas.has(col));
+  });
+  document.querySelectorAll('#tablaEdit .th-pin').forEach(b=>b.classList.toggle('activo',b.dataset.pin===columnaFija));
+  document.querySelectorAll('#tablaEdit .th-colapsar').forEach(b=>b.classList.toggle('activo',columnasColapsadas.has(b.dataset.colapsar)));
+}
+function initColumnasTabla(){
+  document.querySelectorAll('#tablaEdit .th-pin').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      columnaFija=(columnaFija===btn.dataset.pin)?null:btn.dataset.pin;
+      aplicarEstadoColumnas();
+    });
+  });
+  document.querySelectorAll('#tablaEdit .th-colapsar').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const col=btn.dataset.colapsar;
+      columnasColapsadas.has(col)?columnasColapsadas.delete(col):columnasColapsadas.add(col);
+      aplicarEstadoColumnas();
+    });
+  });
+  aplicarEstadoColumnas();
 }
 // --- Ordenamiento de columnas de la tabla Registros (▲▼ en cada encabezado,
 // alterna ascendente → descendente → orden original, sin recargar) ---
@@ -2500,18 +2539,19 @@ function pintarTabla(){
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
     const d=dirty[f.rowIndex]||{};
     tr.innerHTML=`
-      <td data-lbl="Nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
-      <td data-lbl="Fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
-      <td data-lbl="Categoría">${selCategoria(d.categoria??f.categoria)}</td>
-      <td data-lbl="Tipo">${selTipo(d.tipo??f.tipo)}</td>
-      <td data-lbl="Cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
-      <td class="num" data-lbl="Monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" class="col-monto"></td>
-      <td data-lbl="N° op."><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly></td>
+      <td data-lbl="Nombre" data-col="nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
+      <td data-lbl="Fecha" data-col="fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
+      <td data-lbl="Categoría" data-col="categoria">${selCategoria(d.categoria??f.categoria)}</td>
+      <td data-lbl="Tipo" data-col="tipo">${selTipo(d.tipo??f.tipo)}</td>
+      <td data-lbl="Cuenta" data-col="cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
+      <td class="num" data-lbl="Monto" data-col="monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" class="col-monto"></td>
+      <td data-lbl="N° op." data-col="nop"><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
     tr.querySelectorAll('input,select').forEach(inp=>inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value)));
     tr.querySelector('.btn-del').onclick=()=>eliminarFila(f);
     tb.appendChild(tr);
   });
+  aplicarEstadoColumnas();
   let masDiv=document.getElementById('cargarMasRegistros');
   if(!masDiv){
     masDiv=document.createElement('div'); masDiv.id='cargarMasRegistros'; masDiv.style.cssText='text-align:center;padding:14px';
