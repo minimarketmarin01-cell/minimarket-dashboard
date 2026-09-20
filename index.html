@@ -843,21 +843,22 @@
       width:100% !important; min-width:0}
   }
 
-  /* Filtro de rango de monto, en línea con los demás filtros. */
-  .filtro-monto{display:inline-flex; align-items:center; gap:5px}
-  .filtro-monto input{
+  /* Filtro de rango (monto o fecha), en línea con los demás filtros. */
+  .filtro-rango{display:inline-flex; align-items:center; gap:5px}
+  .filtro-rango input{
     width:11ch; padding:8px 10px; border:1px solid var(--linea); border-radius:9px;
     font-size:var(--fs-md); background:#fff; font-variant-numeric:tabular-nums}
-  .filtro-monto input:focus{outline:none; border-color:var(--acento)}
-  .filtro-monto-sep{color:var(--gris); font-size:var(--fs-md)}
-  .filtro-monto button{
+  .filtro-rango input[type="date"]{width:auto; min-width:118px}
+  .filtro-rango input:focus{outline:none; border-color:var(--acento)}
+  .filtro-rango-sep{color:var(--gris); font-size:var(--fs-md)}
+  .filtro-rango button{
     border:1px solid var(--linea); background:#fff; border-radius:9px; cursor:pointer;
     color:var(--gris); font-size:var(--fs-sm); line-height:1; padding:9px 10px}
-  .filtro-monto button:hover{background:var(--acento-suave); color:var(--acento)}
-  .filtro-monto.activo input{border-color:var(--acento); background:var(--acento-suave)}
+  .filtro-rango button:hover{background:var(--acento-suave); color:var(--acento)}
+  .filtro-rango.activo input{border-color:var(--acento); background:var(--acento-suave)}
   @media (max-width:600px) and (orientation:portrait){
-    .filtro-monto{width:100%}
-    .filtro-monto input{flex:1 1 0; width:auto; min-width:0}
+    .filtro-rango{width:100%}
+    .filtro-rango input{flex:1 1 0; width:auto; min-width:0}
   }
 
   /* ===== Transición suave solo en los ítems de navegación ===== */
@@ -1061,9 +1062,15 @@
       <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Buscar categoría…" style="padding:8px 10px;border:1px solid var(--linea);border-radius:9px;font-size:var(--fs-md);background:#fff;min-width:150px">
       <datalist id="listaCategoriasReg"></datalist>
       <select id="fCuenta"><option value="">Banco y efectivo</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
-      <span class="filtro-monto">
+      <span class="filtro-rango" id="filtroFecha">
+        <input type="date" id="fFechaMin" aria-label="Fecha desde" title="Fecha desde">
+        <span class="filtro-rango-sep">–</span>
+        <input type="date" id="fFechaMax" aria-label="Fecha hasta" title="Fecha hasta">
+        <button type="button" id="fFechaLimpiar" title="Limpiar rango de fechas">✕</button>
+      </span>
+      <span class="filtro-rango" id="filtroMonto">
         <input type="number" id="fMontoMin" placeholder="Monto mín." inputmode="numeric">
-        <span class="filtro-monto-sep">–</span>
+        <span class="filtro-rango-sep">–</span>
         <input type="number" id="fMontoMax" placeholder="Monto máx." inputmode="numeric">
         <button type="button" id="fMontoLimpiar" title="Limpiar rango de monto">✕</button>
       </span>
@@ -2443,7 +2450,12 @@ function initTabla(){
   const fMes=document.getElementById('fMes'); mesesSet.forEach(ym=>{const o=document.createElement('option');o.value=ym;o.textContent=MESES_ES[ym.split('-')[1]]+' '+ym.split('-')[0];fMes.appendChild(o);});
   const fTipo=document.getElementById('fTipo'); TIPOS_OPC.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;fTipo.appendChild(o);});
   const fCat=document.getElementById('listaCategoriasReg'); [...new Set(DATA.filas.map(f=>f.categoria).filter(Boolean))].sort().forEach(cat=>{const o=document.createElement('option');o.value=cat;fCat.appendChild(o);});
-  ['fBuscar','fMes','fTipo','fCategoria','fCuenta','fMontoMin','fMontoMax'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{filasMostradas=FILAS_POR_PAGINA;pintarTabla();}));
+  ['fBuscar','fMes','fTipo','fCategoria','fCuenta','fFechaMin','fFechaMax','fMontoMin','fMontoMax'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{filasMostradas=FILAS_POR_PAGINA;pintarTabla();}));
+  document.getElementById('fFechaLimpiar').addEventListener('click',()=>{
+    document.getElementById('fFechaMin').value='';
+    document.getElementById('fFechaMax').value='';
+    filasMostradas=FILAS_POR_PAGINA; pintarTabla();
+  });
   document.getElementById('fMontoLimpiar').addEventListener('click',()=>{
     document.getElementById('fMontoMin').value='';
     document.getElementById('fMontoMax').value='';
@@ -2566,16 +2578,31 @@ function initOrdenTabla(){
 function filtrarFilas(){
   const q=document.getElementById('fBuscar').value.toLowerCase();
   const mes=document.getElementById('fMes').value, tipo=document.getElementById('fTipo').value, cta=document.getElementById('fCuenta').value, categoria=document.getElementById('fCategoria').value.trim().toLowerCase();
+  // Rango de fechas: cualquiera de los dos extremos puede ir vacío. Se usa
+  // fechaAOrden() (ya existente para ordenar la columna Fecha) para poder
+  // comparar aunque haya filas con formatos de fecha mixtos (ISO o dd/mm/aaaa).
+  const vFechaMin=document.getElementById('fFechaMin').value;
+  const vFechaMax=document.getElementById('fFechaMax').value;
+  const hayRangoFecha=!!(vFechaMin||vFechaMax);
+  const fechaMinN=vFechaMin?fechaAOrden(vFechaMin):null;
+  const fechaMaxN=vFechaMax?fechaAOrden(vFechaMax):null;
+  document.getElementById('filtroFecha').classList.toggle('activo',hayRangoFecha);
   // Rango de monto: cualquiera de los dos extremos puede ir vacío.
   const vMin=document.getElementById('fMontoMin').value.trim();
   const vMax=document.getElementById('fMontoMax').value.trim();
   const min=vMin===''?null:Number(vMin), max=vMax===''?null:Number(vMax);
   const hayRango=(min!==null&&isFinite(min))||(max!==null&&isFinite(max));
-  document.querySelector('.filtro-monto').classList.toggle('activo',hayRango);
+  document.getElementById('filtroMonto').classList.toggle('activo',hayRango);
   return DATA.filas.filter(f=>{
     if(mes&&f.ym!==mes)return false; if(tipo&&f.tipo!==tipo)return false; if(cta&&f.cuenta!==cta)return false;
     if(categoria&&!String(f.categoria||'').toLowerCase().includes(categoria))return false;
     if(q&&!(String(f.nombre)+f.categoria+f.nop+f.tipo).toLowerCase().includes(q))return false;
+    if(hayRangoFecha){
+      const dv=dirty[f.rowIndex];
+      const fechaN=fechaAOrden(dv&&dv.fecha!==undefined?dv.fecha:f.fecha);
+      if(fechaMinN!==null&&fechaN<fechaMinN)return false;
+      if(fechaMaxN!==null&&fechaN>fechaMaxN)return false;
+    }
     if(hayRango){
       // Se compara contra el monto EDITADO si la fila tiene cambios sin
       // guardar, igual que hace la suma del contador.
