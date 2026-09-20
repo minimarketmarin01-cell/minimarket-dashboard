@@ -1239,6 +1239,9 @@ const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO'];
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
+// Vuelve un valor de un input de monto formateado (p.ej. "$11.850") al
+// número plano que espera el resto del código (dirty, guardarCambios, etc.).
+const limpiarMonto=v=>Number(String(v).replace(/[^\d]/g,''))||0;
 const pct=n=>(n>=0?'+':'')+(n||0).toFixed(1)+'%';
 // dd/mm/aaaa a partir de la fecha ISO (aaaa-mm-dd) que entrega el backend
 const fechaEs=iso=>{ const p=String(iso||'').split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : (iso||''); };
@@ -2631,10 +2634,22 @@ function pintarTabla(){
       <td data-lbl="Categoría" data-col="categoria">${selCategoria(d.categoria??f.categoria)}</td>
       <td data-lbl="Tipo" data-col="tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta" data-col="cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
-      <td class="num" data-lbl="Monto" data-col="monto"><input type="number" value="${d.monto??f.monto}" data-c="monto" class="col-monto"></td>
+      <td class="num" data-lbl="Monto" data-col="monto"><input type="text" inputmode="numeric" value="${clp(d.monto??f.monto)}" data-c="monto" class="col-monto"></td>
       <td data-lbl="N° op." data-col="nop"><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
-    tr.querySelectorAll('input,select').forEach(inp=>inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value)));
+    tr.querySelectorAll('input,select').forEach(inp=>{
+      if(inp.dataset.c==='monto'){
+        // Se formatea en pesos chilenos mientras se escribe; marcarDirty
+        // siempre recibe el número limpio, nunca el texto con "$" y puntos.
+        inp.addEventListener('input',()=>{
+          const limpio=limpiarMonto(inp.value);
+          inp.value=limpio?clp(limpio):'';
+          marcarDirty(f.rowIndex,'monto',limpio);
+        });
+      } else {
+        inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value));
+      }
+    });
     tr.querySelector('.btn-del').onclick=()=>eliminarFila(f);
     tb.appendChild(tr);
   });
