@@ -249,6 +249,7 @@
   .expandible-body .fila{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid var(--linea); font-size:var(--fs-md)}
   .expandible-body .fila:first-child{border-top:none}
   .expandible-body .fila .f-nom{min-width:0; overflow-wrap:break-word; color:#28313f}
+  .expandible-body .fila .f-sub{display:block; color:var(--gris); font-size:var(--fs-sm)}
   .expandible-body .fila .f-cifra{flex:0 0 auto; color:var(--gris); font-variant-numeric:tabular-nums}
   .lista-plana .fila{display:flex; justify-content:space-between; gap:10px; padding:10px 2px; border-top:1px solid var(--linea); font-size:var(--fs-md)}
   .lista-plana .fila:first-child{border-top:none}
@@ -1670,7 +1671,7 @@ function abrirDetalleGastos(){
         <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}%</span>
         <span class="chev">▸</span>
       </div>
-      <div class="expandible-body hidden">${filasCat.length ? filasCat.map(f=>`<div class="fila"><span class="f-nom">${f.nombre||cat}</span><span class="f-cifra">${clp(f.monto)}</span></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
+      <div class="expandible-body hidden">${filasCat.length ? filasCat.map(f=>`<div class="fila"><span class="f-nom">${f.nombre||cat}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
     </div>`;
   }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
 }
