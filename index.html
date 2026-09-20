@@ -251,6 +251,16 @@
   .expandible-body .fila .f-nom{min-width:0; overflow-wrap:break-word; color:#28313f}
   .expandible-body .fila .f-sub{display:block; color:var(--gris); font-size:var(--fs-sm)}
   .expandible-body .fila .f-cifra{flex:0 0 auto; color:var(--gris); font-variant-numeric:tabular-nums}
+  .btn-editar-fila{flex:0 0 auto; background:none; border:1px solid var(--linea); border-radius:8px; width:30px; height:30px; padding:0; font-size:var(--fs-md); color:var(--gris); cursor:pointer; line-height:1}
+  .btn-editar-fila:hover{background:var(--papel); color:var(--tinta)}
+  .expandible-body .fila.fila-edicion{display:block; padding:10px 0}
+  .form-edicion-fila{display:grid; grid-template-columns:1fr; gap:6px}
+  .form-edicion-fila input, .form-edicion-fila select{width:100%; padding:8px; border:1px solid var(--linea); border-radius:8px; font-family:inherit; font-size:var(--fs-md); background:#fff}
+  .form-edicion-fila-btns{display:flex; gap:8px; margin-top:8px}
+  .form-edicion-fila-btns button{flex:1 1 auto}
+  @media (min-width:600px){
+    .form-edicion-fila{grid-template-columns:1fr 1fr}
+  }
   .lista-plana .fila{display:flex; justify-content:space-between; gap:10px; padding:10px 2px; border-top:1px solid var(--linea); font-size:var(--fs-md)}
   .lista-plana .fila:first-child{border-top:none}
   .lista-plana .fila .f-nom{min-width:0; overflow-wrap:break-word; color:#28313f}
@@ -1656,24 +1666,65 @@ function dibujarGastoResumenCard(m){
       options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(tot?(c.raw/tot*100).toFixed(1):0)+'%)'}}}}});
   }
 }
-function abrirDetalleGastos(){
+function abrirDetalleGastos(catAbierta){
   const m=mesData(mesActual);
   const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
   const tot=ents.reduce((s,e)=>s+e[1],0);
   document.getElementById('capDetalleGastos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · '+clp(m.gastoOpe||0);
   document.getElementById('cuerpoDetalleGastos').innerHTML = ents.length ? ents.map(([cat,val],i)=>{
-    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat), idExp='expGasto'+i;
+    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat), idExp='expGasto'+i, abierta=cat===catAbierta;
     const filasCat=DATA.filas.filter(f=>f.tipo==='GASTO OPE'&&f.categoria===cat&&f.ym===m.ym).sort((a,b)=>b.monto-a.monto);
-    return `<div class="expandible" id="${idExp}">
+    return `<div class="expandible${abierta?' abierto':''}" id="${idExp}">
       <div class="expandible-header" data-toggle="${idExp}">
         <span class="punto" style="background:${color}"></span>
         <span class="nom">${cat}</span>
         <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}%</span>
         <span class="chev">▸</span>
       </div>
-      <div class="expandible-body hidden">${filasCat.length ? filasCat.map(f=>`<div class="fila"><span class="f-nom">${f.nombre||cat}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
+      <div class="expandible-body${abierta?'':' hidden'}">${filasCat.length ? filasCat.map(f=>`<div class="fila fila-editable" data-row="${f.rowIndex}"><span class="f-nom">${f.nombre||cat}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}</span><button type="button" class="btn-editar-fila" data-editar-fila="${f.rowIndex}" aria-label="Editar transacción" title="Editar">✎</button></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
     </div>`;
   }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
+}
+// Formulario de edición inline para una fila dentro del detalle de Gastos
+// operacionales: reutiliza selCategoria/selTipo/selCuenta (mismos dropdowns
+// que la pestaña Registros) y el mismo backend financiero_editar_fila, pero
+// al guardar refresca los datos y vuelve a abrir esta misma vista con la
+// misma categoría desplegada, en vez de recargar la página.
+function editarFilaGasto(rowIndex){
+  const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
+  const cont=document.querySelector(`#cuerpoDetalleGastos .fila-editable[data-row="${rowIndex}"]`);
+  if(!f||!cont)return;
+  cont.classList.add('fila-edicion');
+  cont.innerHTML=`
+    <div class="form-edicion-fila">
+      <input data-c="nombre" value="${f.nombre||''}" placeholder="Nombre">
+      <input data-c="fecha" value="${f.fecha||''}" placeholder="AAAA-MM-DD" class="col-fecha">
+      ${selCategoria(f.categoria)}
+      ${selTipo(f.tipo)}
+      ${selCuenta(f.cuenta)}
+      <input data-c="monto" type="number" value="${f.monto}" class="col-monto">
+    </div>
+    <div class="form-edicion-fila-btns">
+      <button type="button" class="btn btn-p" data-guardar-fila="${rowIndex}">Guardar</button>
+      <button type="button" class="btn-del" data-cancelar-fila="${rowIndex}">Cancelar</button>
+    </div>`;
+}
+function cancelarEdicionFilaGasto(rowIndex){
+  const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
+  abrirDetalleGastos(f?f.categoria:undefined);
+}
+async function guardarFilaGasto(rowIndex){
+  const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
+  const cont=document.querySelector(`#cuerpoDetalleGastos .fila-editable[data-row="${rowIndex}"]`);
+  if(!f||!cont)return;
+  const g=k=>cont.querySelector(`[data-c="${k}"]`).value;
+  const valores={nombre:g('nombre'),fecha:g('fecha'),categoria:g('categoria'),tipo:g('tipo'),cuenta:g('cuenta'),monto:Number(g('monto'))};
+  const btn=cont.querySelector('[data-guardar-fila]');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  const r=await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(rowIndex),valores});
+  if(r&&r.ok===false){ alert('Error al guardar: '+(r.error||'')); btn.disabled=false; btn.textContent='Guardar'; return; }
+  await refrescarDatosSilencioso();
+  abrirVista('detalleGastos', valores.categoria);
 }
 // Dinero por cobrar (préstamos a terceros): calcularPrestamos() factoriza el
 // mismo cálculo histórico (no por mes, ver nota anterior) que ya se usaba —
@@ -1727,9 +1778,9 @@ function abrirDetallePrestamos(){
 }
 // Navegación RESUMEN → CATEGORÍA → DETALLE dentro de #tab-resumen: mismo patrón
 // .hidden que ya usa el resto de la app para pestañas y modales.
-function abrirVista(id){
+function abrirVista(id, arg){
   document.getElementById('resumenPrincipal').classList.add('hidden');
-  if(id==='detalleGastos') abrirDetalleGastos();
+  if(id==='detalleGastos') abrirDetalleGastos(arg);
   if(id==='detallePrestamos') abrirDetallePrestamos();
   document.getElementById(id).classList.remove('hidden');
 }
@@ -1738,6 +1789,12 @@ function cerrarVista(){
   document.getElementById('resumenPrincipal').classList.remove('hidden');
 }
 document.addEventListener('click', e=>{
+  const editarFila=e.target.closest('[data-editar-fila]');
+  if(editarFila){ editarFilaGasto(editarFila.dataset.editarFila); return; }
+  const guardarFila=e.target.closest('[data-guardar-fila]');
+  if(guardarFila){ guardarFilaGasto(guardarFila.dataset.guardarFila); return; }
+  const cancelarFila=e.target.closest('[data-cancelar-fila]');
+  if(cancelarFila){ cancelarEdicionFilaGasto(cancelarFila.dataset.cancelarFila); return; }
   const abrir=e.target.closest('[data-abrir-vista]');
   if(abrir){ abrirVista(abrir.dataset.abrirVista); return; }
   const cerrar=e.target.closest('[data-cerrar-vista]');
