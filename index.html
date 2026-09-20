@@ -322,7 +322,7 @@
      tono de su propia fila al desplazar horizontalmente. El estado "dirty"
      va después para que gane sobre el cebra en cualquier fila. */
   .tabla-edit tbody tr:nth-child(odd) td{background:#fff}
-  .tabla-edit tbody tr:nth-child(even) td{background:var(--papel)}
+  .tabla-edit tbody tr:nth-child(even) td{background:var(--linea)}
   /* #tablaEdit (id) en vez de .tabla-edit (clase): así gana por especificidad
      sobre las dos reglas de cebra de arriba, que igualan en clases pero
      tienen un elemento más (tbody) en el selector. */
@@ -695,8 +695,12 @@
     #tablaEdit th.col-fija{z-index:3; background:#f6f8fc}
     /* Controles del encabezado: fijar columna + arrastrar para ajustar ancho */
     .th-ctrls{display:inline-flex; align-items:center; gap:2px; margin-left:4px; vertical-align:middle}
-    .th-btn{border:none; background:none; padding:2px 4px; font-size:11px; line-height:1; color:var(--gris); cursor:pointer; border-radius:5px; -webkit-tap-highlight-color:transparent}
-    .th-btn.activo{color:var(--acento)}
+    .th-btn{border:none; background:none; padding:3px 4px; line-height:1; color:var(--gris); cursor:pointer; border-radius:6px; -webkit-tap-highlight-color:transparent; display:inline-flex}
+    .th-btn svg{width:14px; height:14px; display:block}
+    /* Estado fijado: además de cambiar el color del trazo (el emoji anterior
+       no se podía recolorear vía CSS — de ahí que no se notara el cambio),
+       se agrega un fondo para que el estado sea inequívoco de un vistazo. */
+    .th-btn.activo{color:var(--acento); background:var(--acento-suave)}
     .th-resize{
       width:16px; height:20px; margin-left:2px; flex:0 0 auto; cursor:col-resize;
       touch-action:none; display:inline-flex; align-items:center; justify-content:center;
@@ -1079,13 +1083,13 @@
           <col style="width:44px">
         </colgroup>
         <thead><tr>
-          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nombre" title="Fijar columna">📌</button><span class="th-resize" data-resize="nombre" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="fecha" title="Fijar columna">📌</button><span class="th-resize" data-resize="fecha" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="categoria" title="Fijar columna">📌</button><span class="th-resize" data-resize="categoria" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="tipo" title="Fijar columna">📌</button><span class="th-resize" data-resize="tipo" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="cuenta" title="Fijar columna">📌</button><span class="th-resize" data-resize="cuenta" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="monto">Monto <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="monto" title="Fijar columna">📌</button><span class="th-resize" data-resize="monto" title="Arrastrar para ajustar ancho"></span></span></th>
-          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nop" title="Fijar columna">📌</button><span class="th-resize" data-resize="nop" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nombre" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="nombre" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="fecha" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="fecha" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="categoria" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="categoria" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="tipo" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="tipo" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="cuenta" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="cuenta" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="monto">Monto <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="monto" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="monto" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nop" title="Fijar columna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></button><span class="th-resize" data-resize="nop" title="Arrastrar para ajustar ancho"></span></span></th>
           <th></th>
         </tr></thead>
         <tbody></tbody>
