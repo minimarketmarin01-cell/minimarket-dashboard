@@ -2534,8 +2534,25 @@ const selCuenta=v=>`<select data-c="cuenta"><option ${v==='BANCO'?'selected':''}
 // abrir el desplegable.
 const selCategoria=v=>{
   const opciones=Array.from(new Set([...(DATA.categorias||[]), ...DATA.filas.map(f=>f.categoria).filter(Boolean), v].filter(Boolean))).sort();
-  return `<select data-c="categoria">${opciones.map(c=>`<option ${c===v?'selected':''}>${c}</option>`).join('')}</select>`;
+  return `<select data-c="categoria" data-valor-actual="${v||''}">${opciones.map(c=>`<option ${c===v?'selected':''}>${c}</option>`).join('')}<option value="__nueva__">+ Nueva categoría…</option></select>`;
 };
+// Permite crear una categoría que todavía no existe desde cualquier <select
+// data-c="categoria"> (Registros y el detalle de Gastos operacionales):
+// al elegir "+ Nueva categoría…" se pide el nombre, se agrega como opción
+// y queda seleccionada; si se cancela, vuelve al valor anterior.
+document.addEventListener('change', e=>{
+  const sel=e.target.closest('select[data-c="categoria"]');
+  if(!sel)return;
+  if(sel.value!=='__nueva__'){ sel.dataset.valorActual=sel.value; return; }
+  const nombre=(prompt('Nombre de la nueva categoría:')||'').trim().toUpperCase();
+  if(!nombre){ sel.value=sel.dataset.valorActual||''; return; }
+  if(!Array.from(sel.options).some(o=>o.value===nombre)){
+    const opt=document.createElement('option'); opt.value=nombre; opt.textContent=nombre;
+    sel.insertBefore(opt, sel.querySelector('option[value="__nueva__"]'));
+  }
+  sel.value=nombre; sel.dataset.valorActual=nombre;
+  sel.dispatchEvent(new Event('input',{bubbles:true}));
+});
 function marcarDirty(row,campo,val){ if(!dirty[row])dirty[row]={}; dirty[row][campo]=val; document.querySelector(`tr[data-row="${row}"]`)?.classList.add('dirty'); actualizarBarra(); actualizarSuma(); }
 function actualizarSuma(){
   const filas=filtrarFilas();
