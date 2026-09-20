@@ -316,7 +316,17 @@
   .tabla-edit td.num{text-align:right}
   .tabla-edit input,.tabla-edit select{width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:6px; font-size:var(--fs-md); font-family:inherit}
   .tabla-edit input:focus,.tabla-edit select:focus{border-color:var(--acento); background:#fff; outline:none}
-  .tabla-edit tr.dirty{background:#fff7e6}
+  /* Patrón cebra: alterna el fondo por fila (bajo contraste, mismos tonos
+     ya usados en el resto de la app). Se pinta en el td (no en tr) para que
+     una columna fijada (position:sticky) siga siendo opaca y conserve el
+     tono de su propia fila al desplazar horizontalmente. El estado "dirty"
+     va después para que gane sobre el cebra en cualquier fila. */
+  .tabla-edit tbody tr:nth-child(odd) td{background:#fff}
+  .tabla-edit tbody tr:nth-child(even) td{background:var(--papel)}
+  /* #tablaEdit (id) en vez de .tabla-edit (clase): así gana por especificidad
+     sobre las dos reglas de cebra de arriba, que igualan en clases pero
+     tienen un elemento más (tbody) en el selector. */
+  #tablaEdit tr.dirty td{background:var(--ambar-suave)}
   /* Tarjeta KPI clickeable (ej. "Otro ingreso" → abre detalle) */
   .kpi-click{cursor:pointer; transition:box-shadow .15s, border-color .15s}
   .kpi-click:hover{border-color:var(--acento); box-shadow:0 1px 2px rgba(15,27,48,.04), 0 14px 28px -12px rgba(47,109,240,.32)}
@@ -662,32 +672,37 @@
 
     /* --- Registros: la tabla de 8 columnas no cabe en 360px.
        En vez de apilarla como tarjetas, queda como tabla real con scroll
-       horizontal táctil, encabezado fijo (sticky) y una columna fijable
-       (por defecto Nombre) — ver initColumnasTabla()/aplicarEstadoColumnas(). */
+       horizontal táctil, encabezado fijo (sticky), una columna fijable
+       (por defecto Nombre) y columnas de ancho ajustable a mano arrastrando
+       el borde de cada encabezado — ver initColumnasTabla() en el JS. El
+       ancho de cada columna lo fija el <colgroup> (table-layout:fixed), así
+       que arrastrar solo cambia el width del <col> correspondiente. */
     .tabla-scroll{max-height:60vh; overflow:auto; border:1px solid var(--linea); border-radius:12px; -webkit-overflow-scrolling:touch}
-    #tablaEdit{width:max-content; min-width:100%; border-collapse:separate; border-spacing:0}
-    #tablaEdit th, #tablaEdit td{white-space:nowrap; min-width:112px}
-    #tablaEdit th:first-child, #tablaEdit td:first-child{min-width:150px}
+    #tablaEdit{width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed}
+    #tablaEdit th, #tablaEdit td{white-space:nowrap; overflow:hidden}
     #tablaEdit th{position:sticky; top:0; z-index:2}
-    #tablaEdit tr.dirty td{background:var(--ambar-suave)}
     #tablaEdit td{padding:8px 10px}
     #tablaEdit td input, #tablaEdit td select{
       width:100% !important; min-width:0;
       padding:7px 9px; border:1px solid var(--linea); border-radius:8px;
-      font-size:var(--fs-md); background:#fff;
+      font-size:var(--fs-md); background:#fff; overflow:hidden; text-overflow:ellipsis;
     }
     #tablaEdit td.num input{text-align:right}
-    /* Columna fijada: se mantiene visible al desplazar horizontalmente */
-    #tablaEdit th.col-fija, #tablaEdit td.col-fija{position:sticky; left:0; z-index:1; background:#fff}
+    /* Columna fijada: se mantiene visible al desplazar horizontalmente.
+       Sin fondo propio: lo hereda de la regla cebra/dirty (más específica),
+       así conserva el tono de su propia fila en vez de un blanco plano. */
+    #tablaEdit th.col-fija, #tablaEdit td.col-fija{position:sticky; left:0; z-index:1}
     #tablaEdit th.col-fija{z-index:3; background:#f6f8fc}
-    #tablaEdit tr.dirty td.col-fija{background:var(--ambar-suave)}
-    /* Columna contraída: oculta el detalle sin perder el dato (sigue editable al enfocar) */
-    #tablaEdit th.col-colapsada, #tablaEdit td.col-colapsada{min-width:0; width:44px; max-width:44px}
-    #tablaEdit td.col-colapsada input, #tablaEdit td.col-colapsada select{overflow:hidden; text-overflow:ellipsis}
-    /* Controles de fijar/contraer en el encabezado */
-    .th-ctrls{display:inline-flex; gap:2px; margin-left:4px; vertical-align:middle}
+    /* Controles del encabezado: fijar columna + arrastrar para ajustar ancho */
+    .th-ctrls{display:inline-flex; align-items:center; gap:2px; margin-left:4px; vertical-align:middle}
     .th-btn{border:none; background:none; padding:2px 4px; font-size:11px; line-height:1; color:var(--gris); cursor:pointer; border-radius:5px; -webkit-tap-highlight-color:transparent}
     .th-btn.activo{color:var(--acento)}
+    .th-resize{
+      width:16px; height:20px; margin-left:2px; flex:0 0 auto; cursor:col-resize;
+      touch-action:none; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .th-resize::after{content:''; width:3px; height:14px; border-radius:2px; background:var(--linea)}
+    .th-resize:active::after{background:var(--acento)}
     .barra-guardar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}
   }
 
@@ -1053,14 +1068,24 @@
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
+        <colgroup>
+          <col data-col="nombre" style="width:150px">
+          <col data-col="fecha" style="width:120px">
+          <col data-col="categoria" style="width:140px">
+          <col data-col="tipo" style="width:130px">
+          <col data-col="cuenta" style="width:110px">
+          <col data-col="monto" style="width:110px">
+          <col data-col="nop" style="width:150px">
+          <col style="width:44px">
+        </colgroup>
         <thead><tr>
-          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nombre" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="nombre" title="Contraer columna">‹›</button></span></th>
-          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="fecha" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="fecha" title="Contraer columna">‹›</button></span></th>
-          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="categoria" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="categoria" title="Contraer columna">‹›</button></span></th>
-          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="tipo" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="tipo" title="Contraer columna">‹›</button></span></th>
-          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="cuenta" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="cuenta" title="Contraer columna">‹›</button></span></th>
-          <th data-col="monto">Monto <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="monto" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="monto" title="Contraer columna">‹›</button></span></th>
-          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nop" title="Fijar columna">📌</button><button type="button" class="th-btn th-colapsar" data-colapsar="nop" title="Contraer columna">‹›</button></span></th>
+          <th data-col="nombre">Nombre <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nombre" title="Fijar columna">📌</button><span class="th-resize" data-resize="nombre" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="fecha">Fecha <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="fecha" title="Fijar columna">📌</button><span class="th-resize" data-resize="fecha" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="categoria">Categoría <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="categoria" title="Fijar columna">📌</button><span class="th-resize" data-resize="categoria" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="tipo">Tipo <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="tipo" title="Fijar columna">📌</button><span class="th-resize" data-resize="tipo" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="cuenta">Cuenta <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="cuenta" title="Fijar columna">📌</button><span class="th-resize" data-resize="cuenta" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="monto">Monto <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="monto" title="Fijar columna">📌</button><span class="th-resize" data-resize="monto" title="Arrastrar para ajustar ancho"></span></span></th>
+          <th data-col="nop">N° op. <span class="sort-ico">▲▼</span><span class="th-ctrls"><button type="button" class="th-btn th-pin" data-pin="nop" title="Fijar columna">📌</button><span class="th-resize" data-resize="nop" title="Arrastrar para ajustar ancho"></span></span></th>
           <th></th>
         </tr></thead>
         <tbody></tbody>
@@ -2427,21 +2452,21 @@ function initTabla(){
   initColumnasTabla();
   pintarTabla();
 }
-// --- Fijar/contraer columnas de la tabla Registros en celular (tabla con
-// scroll horizontal): columnaFija se pinta con position:sticky;left:0, las
-// de columnasColapsadas se angostan sin perder el dato (el input sigue ahí,
-// solo se ve truncado hasta que se vuelve a expandir). Sin efecto visual en
-// tablet/escritorio (ver .th-ctrls/.col-fija/.col-colapsada en el CSS). ---
+// --- Columnas de la tabla Registros en celular (tabla con scroll horizontal):
+// columnaFija se pinta con position:sticky;left:0; el ancho de cada columna
+// se ajusta a mano arrastrando el tirador del encabezado (th-resize), que
+// cambia el width del <col> de esa columna en el <colgroup> — así el usuario
+// deja cada columna tan angosta o ancha como quiera, sin un botón intermedio
+// que se pueda quedar "atascado" (antes existía un contraer/expandir de un
+// solo paso que, al angostar el encabezado, dejaba el propio botón para
+// volver a expandir fuera de alcance). Sin efecto visual en tablet/escritorio
+// (ver .th-ctrls/.col-fija en el CSS). ---
 let columnaFija='nombre';
-const columnasColapsadas=new Set();
 function aplicarEstadoColumnas(){
   document.querySelectorAll('#tablaEdit [data-col]').forEach(el=>{
-    const col=el.dataset.col;
-    el.classList.toggle('col-fija',col===columnaFija);
-    el.classList.toggle('col-colapsada',columnasColapsadas.has(col));
+    el.classList.toggle('col-fija',el.dataset.col===columnaFija);
   });
   document.querySelectorAll('#tablaEdit .th-pin').forEach(b=>b.classList.toggle('activo',b.dataset.pin===columnaFija));
-  document.querySelectorAll('#tablaEdit .th-colapsar').forEach(b=>b.classList.toggle('activo',columnasColapsadas.has(b.dataset.colapsar)));
 }
 function initColumnasTabla(){
   document.querySelectorAll('#tablaEdit .th-pin').forEach(btn=>{
@@ -2451,13 +2476,44 @@ function initColumnasTabla(){
       aplicarEstadoColumnas();
     });
   });
-  document.querySelectorAll('#tablaEdit .th-colapsar').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      const col=btn.dataset.colapsar;
-      columnasColapsadas.has(col)?columnasColapsadas.delete(col):columnasColapsadas.add(col);
-      aplicarEstadoColumnas();
+  const ANCHO_MIN=44, ANCHO_MAX=420;
+  // Si el arrastre soltó el puntero lejos del tirador (columna angosta o
+  // muy ancha), el "click" sintético que el navegador dispara al soltar cae
+  // sobre lo que haya debajo en ese punto -a veces el propio encabezado-, lo
+  // que reordenaría la tabla sin querer. Se frena una única vez, en fase de
+  // captura (antes de llegar al listener de orden del encabezado).
+  let arrastreReciente=false;
+  document.addEventListener('click',e=>{
+    if(arrastreReciente){ arrastreReciente=false; e.stopPropagation(); }
+  },true);
+  document.querySelectorAll('#tablaEdit .th-resize').forEach(handle=>{
+    let col=null, anchoInicial=0, xInicial=0, movio=false;
+    const mover=e=>{
+      const x=e.touches?e.touches[0].clientX:e.clientX;
+      if(Math.abs(x-xInicial)>3) movio=true;
+      const nuevo=Math.min(ANCHO_MAX,Math.max(ANCHO_MIN,anchoInicial+(x-xInicial)));
+      col.style.width=nuevo+'px';
+    };
+    const soltar=()=>{
+      document.removeEventListener('pointermove',mover);
+      document.removeEventListener('pointerup',soltar);
+      document.removeEventListener('pointercancel',soltar);
+      if(movio) arrastreReciente=true;
+    };
+    handle.addEventListener('pointerdown',e=>{
+      e.stopPropagation(); e.preventDefault();
+      col=document.querySelector(`#tablaEdit colgroup col[data-col="${handle.dataset.resize}"]`);
+      if(!col)return;
+      xInicial=e.clientX;
+      anchoInicial=col.getBoundingClientRect().width;
+      movio=false;
+      document.addEventListener('pointermove',mover);
+      document.addEventListener('pointerup',soltar);
+      document.addEventListener('pointercancel',soltar);
     });
+    // Un simple toque (sin arrastre) también dispara "click" al soltar; se
+    // frena aquí para que nunca reordene la columna por accidente.
+    handle.addEventListener('click',e=>e.stopPropagation());
   });
   aplicarEstadoColumnas();
 }
