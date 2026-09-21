@@ -1096,7 +1096,7 @@
         Filtros<span class="badge-filtros hidden" id="badgeFiltrosActivos">0</span>
       </button>
       <button type="button" class="btn-limpiar-filtros hidden" id="btnLimpiarFiltros">Limpiar</button>
-      <button class="btn btn-g" id="btnAgregar">+ Fila</button>
+      <button class="btn btn-g" id="btnAgregar">+ Agregar registro</button>
     </div>
     <datalist id="listaCategoriasReg"></datalist>
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
@@ -1519,7 +1519,13 @@ function init(){
     const guardado=localStorage.getItem('mesActivo');
     if(guardado && DATA.meses.some(m=>m.ym===guardado)) mesActual=guardado;
   }catch(e){}
-  document.getElementById('sello').textContent='actualizado '+new Date(DATA.generado).toLocaleString('es-CL');
+  // Formato manual (DD/MM/AAAA · HH:MM, 24 horas) en vez de toLocaleString: el
+  // formato es-CL de 12 horas agrega "a. m./p. m." que se corta en pantallas
+  // angostas ("a." queda en una línea y "m." en la siguiente).
+  const gen=new Date(DATA.generado);
+  const dd=String(gen.getDate()).padStart(2,'0'), mm=String(gen.getMonth()+1).padStart(2,'0');
+  const hh=String(gen.getHours()).padStart(2,'0'), mi=String(gen.getMinutes()).padStart(2,'0');
+  document.getElementById('sello').textContent='Actualizado '+dd+'/'+mm+'/'+gen.getFullYear()+' · '+hh+':'+mi;
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
   render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab(); sincronizarBarraInferior();
 }
@@ -1656,7 +1662,16 @@ document.querySelectorAll('.submenu-link').forEach(a=>{
 
 function render(){
   const m=mesData(mesActual);
-  document.querySelectorAll('#selMes button').forEach(b=>b.classList.toggle('on',b.dataset.ym===mesActual));
+  let botonMesActivo=null;
+  document.querySelectorAll('#selMes button').forEach(b=>{
+    const on=b.dataset.ym===mesActual;
+    b.classList.toggle('on',on);
+    if(on) botonMesActivo=b;
+  });
+  // En celular el selector de meses es un carrusel horizontal (overflow-x:auto);
+  // sin esto el mes más reciente (el que suele estar activo) queda cortado en
+  // el borde derecho hasta que el usuario lo desplaza a mano.
+  if(botonMesActivo) botonMesActivo.scrollIntoView({inline:'center', block:'nearest'});
   document.getElementById('alerta').classList.toggle('ver',m.incompleto);
   const uc=m.utilidad>=0?'pos':'neg';
   // Mes anterior (para comparativos ▲▼). null si es el primer mes cargado.
@@ -2744,13 +2759,13 @@ function pintarTabla(){
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
     const d=dirty[f.rowIndex]||{};
     tr.innerHTML=`
-      <td data-lbl="Nombre" data-col="nombre"><input value="${d.nombre??f.nombre}" data-c="nombre"></td>
+      <td data-lbl="Nombre" data-col="nombre"><input value="${d.nombre??f.nombre}" data-c="nombre" title="${(d.nombre??f.nombre??'').replace(/"/g,'&quot;')}"></td>
       <td data-lbl="Fecha" data-col="fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
-      <td data-lbl="Categoría" data-col="categoria">${selCategoria(d.categoria??f.categoria)}</td>
+      <td data-lbl="Categoría" data-col="categoria" title="${(d.categoria??f.categoria??'').replace(/"/g,'&quot;')}">${selCategoria(d.categoria??f.categoria)}</td>
       <td data-lbl="Tipo" data-col="tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta" data-col="cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
       <td class="num" data-lbl="Monto" data-col="monto"><input type="text" inputmode="numeric" value="${clp(d.monto??f.monto)}" data-c="monto" class="col-monto"></td>
-      <td data-lbl="N° op." data-col="nop"><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly></td>
+      <td data-lbl="N° op." data-col="nop"><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly title="${(d.nop??f.nop??'').replace(/"/g,'&quot;')}"></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
     tr.querySelectorAll('input,select').forEach(inp=>{
       if(inp.dataset.c==='monto'){
