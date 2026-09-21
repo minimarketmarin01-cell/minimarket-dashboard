@@ -861,6 +861,39 @@
     .filtro-rango input{flex:1 1 0; width:auto; min-width:0}
   }
 
+  /* Barra de filtros compacta de Registros: solo Buscar + Tipo quedan
+     visibles; Mes/Categoría/Cuenta/Fecha/Monto viven en el modal
+     #modalFiltrosReg (mismo patrón .modal-overlay/.modal-box ya usado en
+     el detalle de "Otro ingreso"). */
+  .filtros-compactas .buscar-registro{flex:1 1 220px}
+  .btn-filtros{
+    display:inline-flex; align-items:center; gap:7px; padding:10px 14px;
+    border:1px solid var(--linea); border-radius:12px; background:#fff;
+    color:var(--tinta); font-family:inherit; font-size:var(--fs-lg); font-weight:600;
+    cursor:pointer; min-height:44px}
+  .btn-filtros:hover{border-color:var(--acento); color:var(--acento)}
+  .btn-filtros svg{width:18px; height:18px; flex:0 0 auto}
+  .badge-filtros{
+    display:inline-flex; align-items:center; justify-content:center; min-width:19px; height:19px;
+    padding:0 5px; border-radius:999px; background:var(--acento); color:#fff;
+    font-size:var(--fs-xs); font-weight:800; line-height:1}
+  .btn-limpiar-filtros{
+    border:none; background:none; color:var(--acento); font-family:inherit;
+    font-size:var(--fs-md); font-weight:700; cursor:pointer; padding:10px 6px; min-height:44px}
+  .btn-limpiar-filtros:hover{text-decoration:underline}
+  /* Campos dentro del modal de filtros: etiqueta + control, uno debajo del otro */
+  .campo-filtro{margin-bottom:16px}
+  .campo-filtro:last-child{margin-bottom:0}
+  .campo-filtro label{
+    display:block; font-size:var(--fs-sm); font-weight:700; color:var(--gris);
+    text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px}
+  .campo-filtro > select, .campo-filtro > input{
+    width:100%; padding:11px 14px; border:1px solid var(--linea); border-radius:12px;
+    font-size:var(--fs-lg); background:#fff; font-family:inherit; min-height:44px}
+  .campo-filtro .filtro-rango{width:100%}
+  .campo-filtro .filtro-rango input{flex:1 1 0; width:auto; min-width:0}
+  .modal-filtros-footer{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; padding-top:14px; border-top:1px solid var(--linea)}
+
   /* ===== Transición suave solo en los ítems de navegación ===== */
   .tabs .menu-nivel1 button{ transition: background .15s, color .15s; }
 </style>
@@ -1055,27 +1088,17 @@
     </div>
 
   <div id="tab-registros" class="hidden">
-    <div class="filtros">
-      <input type="search" id="fBuscar" placeholder="Buscar nombre, categoría, N° operación…">
-      <select id="fMes"><option value="">Todos los meses</option></select>
+    <div class="filtros filtros-compactas">
+      <input type="search" id="fBuscar" placeholder="Buscar registro…" class="buscar-registro">
       <select id="fTipo"><option value="">Todos los tipos</option></select>
-      <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Buscar categoría…" style="padding:8px 10px;border:1px solid var(--linea);border-radius:9px;font-size:var(--fs-md);background:#fff;min-width:150px">
-      <datalist id="listaCategoriasReg"></datalist>
-      <select id="fCuenta"><option value="">Banco y efectivo</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
-      <span class="filtro-rango" id="filtroFecha">
-        <input type="date" id="fFechaMin" aria-label="Fecha desde" title="Fecha desde">
-        <span class="filtro-rango-sep">–</span>
-        <input type="date" id="fFechaMax" aria-label="Fecha hasta" title="Fecha hasta">
-        <button type="button" id="fFechaLimpiar" title="Limpiar rango de fechas">✕</button>
-      </span>
-      <span class="filtro-rango" id="filtroMonto">
-        <input type="number" id="fMontoMin" placeholder="Monto mín." inputmode="numeric">
-        <span class="filtro-rango-sep">–</span>
-        <input type="number" id="fMontoMax" placeholder="Monto máx." inputmode="numeric">
-        <button type="button" id="fMontoLimpiar" title="Limpiar rango de monto">✕</button>
-      </span>
+      <button type="button" class="btn-filtros" id="btnAbrirFiltros" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtros<span class="badge-filtros hidden" id="badgeFiltrosActivos">0</span>
+      </button>
+      <button type="button" class="btn-limpiar-filtros hidden" id="btnLimpiarFiltros">Limpiar</button>
       <button class="btn btn-g" id="btnAgregar">+ Fila</button>
     </div>
+    <datalist id="listaCategoriasReg"></datalist>
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
@@ -1105,6 +1128,51 @@
     <div class="barra-guardar" id="barraGuardar">
       <span id="dirtyCount">0 cambios</span>
       <div><button class="btn btn-g" id="btnDescartar">Descartar</button> <button class="btn btn-p" id="btnGuardar">Guardar cambios</button></div>
+    </div>
+  </div>
+
+  <div id="modalFiltrosReg" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalFiltrosRegTitulo">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalFiltrosRegTitulo">Filtros</h3>
+        <button class="modal-x" id="btnCerrarFiltrosReg" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="campo-filtro">
+          <label for="fCuenta">Cuenta</label>
+          <select id="fCuenta"><option value="">Todas</option><option value="BANCO">Banco</option><option value="EFECTIVO">Efectivo</option></select>
+        </div>
+        <div class="campo-filtro">
+          <label for="fCategoria">Categoría</label>
+          <input type="search" id="fCategoria" list="listaCategoriasReg" placeholder="Todas">
+        </div>
+        <div class="campo-filtro">
+          <label for="fMes">Mes</label>
+          <select id="fMes"><option value="">Todos los meses</option></select>
+        </div>
+        <div class="campo-filtro">
+          <label>Fecha</label>
+          <span class="filtro-rango" id="filtroFecha">
+            <input type="date" id="fFechaMin" aria-label="Fecha desde" title="Fecha desde">
+            <span class="filtro-rango-sep">–</span>
+            <input type="date" id="fFechaMax" aria-label="Fecha hasta" title="Fecha hasta">
+            <button type="button" id="fFechaLimpiar" title="Limpiar rango de fechas">✕</button>
+          </span>
+        </div>
+        <div class="campo-filtro">
+          <label>Monto</label>
+          <span class="filtro-rango" id="filtroMonto">
+            <input type="number" id="fMontoMin" placeholder="Mínimo" inputmode="numeric">
+            <span class="filtro-rango-sep">–</span>
+            <input type="number" id="fMontoMax" placeholder="Máximo" inputmode="numeric">
+            <button type="button" id="fMontoLimpiar" title="Limpiar rango de monto">✕</button>
+          </span>
+        </div>
+      </div>
+      <div class="modal-filtros-footer">
+        <button type="button" class="btn-limpiar-filtros" id="btnLimpiarFiltrosModal">Limpiar todos</button>
+        <button type="button" class="btn btn-p" id="btnAplicarFiltros">Aplicar filtros</button>
+      </div>
     </div>
   </div>
 
@@ -2467,9 +2535,55 @@ function initTabla(){
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
   document.getElementById('btnAgregar').onclick=agregarFilaNueva;
+  initFiltrosModal();
   initOrdenTabla();
   initColumnasTabla();
   pintarTabla();
+}
+// --- Modal de filtros secundarios de Registros (Mes/Categoría/Cuenta/Fecha/
+// Monto): mismo patrón .modal-overlay/.modal-box que ya usa "Otro ingreso —
+// detalle". El filtrado sigue siendo instantáneo (no hay red de por medio);
+// "Aplicar filtros" solo cierra el modal, "Limpiar"/"Limpiar todos" resetean
+// TODOS los filtros (incluidos Buscar y Tipo) de una vez. ---
+const IDS_FILTROS_SECUNDARIOS=['fMes','fCategoria','fCuenta','fFechaMin','fFechaMax','fMontoMin','fMontoMax'];
+function contarFiltrosActivos(){
+  const activo=id=>document.getElementById(id).value.trim()!=='';
+  let n=0;
+  if(activo('fMes'))n++;
+  if(activo('fCategoria'))n++;
+  if(activo('fCuenta'))n++;
+  if(activo('fFechaMin')||activo('fFechaMax'))n++;
+  if(activo('fMontoMin')||activo('fMontoMax'))n++;
+  return n;
+}
+function actualizarBadgeFiltros(){
+  const n=contarFiltrosActivos();
+  const badge=document.getElementById('badgeFiltrosActivos');
+  badge.textContent=n; badge.classList.toggle('hidden',n===0);
+  document.getElementById('btnLimpiarFiltros').classList.toggle('hidden',n===0&&!document.getElementById('fBuscar').value&&!document.getElementById('fTipo').value);
+}
+function limpiarTodosFiltros(){
+  document.getElementById('fBuscar').value='';
+  document.getElementById('fTipo').value='';
+  IDS_FILTROS_SECUNDARIOS.forEach(id=>document.getElementById(id).value='');
+  filasMostradas=FILAS_POR_PAGINA; pintarTabla();
+}
+function abrirModalFiltros(){
+  document.getElementById('modalFiltrosReg').classList.remove('hidden');
+  document.getElementById('btnCerrarFiltrosReg').focus();
+}
+function cerrarModalFiltros(){
+  document.getElementById('modalFiltrosReg').classList.add('hidden');
+  document.getElementById('btnAbrirFiltros').focus();
+}
+function initFiltrosModal(){
+  document.getElementById('btnAbrirFiltros').addEventListener('click',abrirModalFiltros);
+  document.getElementById('btnCerrarFiltrosReg').addEventListener('click',cerrarModalFiltros);
+  document.getElementById('btnAplicarFiltros').addEventListener('click',cerrarModalFiltros);
+  document.getElementById('modalFiltrosReg').addEventListener('click',e=>{ if(e.target.id==='modalFiltrosReg') cerrarModalFiltros(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalFiltrosReg').classList.contains('hidden')) cerrarModalFiltros(); });
+  document.getElementById('btnLimpiarFiltros').addEventListener('click',limpiarTodosFiltros);
+  document.getElementById('btnLimpiarFiltrosModal').addEventListener('click',limpiarTodosFiltros);
 }
 // --- Columnas de la tabla Registros en celular (tabla con scroll horizontal):
 // columnaFija se pinta con position:sticky;left:0; el ancho de cada columna
@@ -2579,6 +2693,7 @@ function initOrdenTabla(){
   actualizarIconosOrden();
 }
 function filtrarFilas(){
+  actualizarBadgeFiltros();
   const q=document.getElementById('fBuscar').value.toLowerCase();
   const mes=document.getElementById('fMes').value, tipo=document.getElementById('fTipo').value, cta=document.getElementById('fCuenta').value, categoria=document.getElementById('fCategoria').value.trim().toLowerCase();
   // Rango de fechas: cualquiera de los dos extremos puede ir vacío. Se usa
