@@ -327,6 +327,14 @@
      sobre las dos reglas de cebra de arriba, que igualan en clases pero
      tienen un elemento más (tbody) en el selector. */
   #tablaEdit tr.dirty td{background:var(--ambar-suave)}
+  /* Ingreso/Egreso: indicador sutil (borde izquierdo en la primera celda,
+     siempre la de Nombre sin importar qué columna esté fijada) + signo y
+     color en el monto — nunca solo color, el "+"/"-" ya está en el texto. */
+  #tablaEdit tbody tr.fila-ingreso td:first-child{border-left:3px solid var(--verde)}
+  #tablaEdit tbody tr.fila-egreso td:first-child{border-left:3px solid var(--rojo)}
+  #tablaEdit td.monto-cifra input{font-variant-numeric:tabular-nums; font-weight:700}
+  #tablaEdit tr.fila-ingreso td.monto-cifra input{color:var(--verde)}
+  #tablaEdit tr.fila-egreso td.monto-cifra input{color:var(--rojo)}
   /* Tarjeta KPI clickeable (ej. "Otro ingreso" → abre detalle) */
   .kpi-click{cursor:pointer; transition:box-shadow .15s, border-color .15s}
   .kpi-click:hover{border-color:var(--acento); box-shadow:0 1px 2px rgba(15,27,48,.04), 0 14px 28px -12px rgba(47,109,240,.32)}
@@ -2758,23 +2766,45 @@ function pintarTabla(){
   filas.forEach(f=>{
     const tr=document.createElement('tr'); tr.dataset.row=f.rowIndex; if(dirty[f.rowIndex])tr.classList.add('dirty');
     const d=dirty[f.rowIndex]||{};
+    // Ingreso/Egreso se deriva del campo "tipo" que ya existe (único valor
+    // real de entrada de dinero es INGRESO; todo lo demás — COSTOS, GASTO
+    // OPE, MERMA, PLASTICOS, RETIRO_UTILIDAD, PRESTAMO — es salida de caja,
+    // igual que ya trata PRESTAMO en el detalle de "Dinero por cobrar"). No
+    // se inventa una clasificación nueva ni se toca el monto guardado: el
+    // signo es solo visual.
+    const tipoInicial=d.tipo??f.tipo;
+    tr.classList.add(tipoInicial==='INGRESO'?'fila-ingreso':'fila-egreso');
+    const signoMonto=v=>(tipoInicial==='INGRESO'?'+':'-')+clp(v);
     tr.innerHTML=`
       <td data-lbl="Nombre" data-col="nombre"><input value="${d.nombre??f.nombre}" data-c="nombre" title="${(d.nombre??f.nombre??'').replace(/"/g,'&quot;')}"></td>
       <td data-lbl="Fecha" data-col="fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
       <td data-lbl="Categoría" data-col="categoria" title="${(d.categoria??f.categoria??'').replace(/"/g,'&quot;')}">${selCategoria(d.categoria??f.categoria)}</td>
       <td data-lbl="Tipo" data-col="tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta" data-col="cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
-      <td class="num" data-lbl="Monto" data-col="monto"><input type="text" inputmode="numeric" value="${clp(d.monto??f.monto)}" data-c="monto" class="col-monto"></td>
+      <td class="num monto-cifra" data-lbl="Monto" data-col="monto"><input type="text" inputmode="numeric" value="${signoMonto(d.monto??f.monto)}" data-c="monto" class="col-monto"></td>
       <td data-lbl="N° op." data-col="nop"><input value="${d.nop??f.nop}" data-c="nop" class="col-nop" readonly title="${(d.nop??f.nop??'').replace(/"/g,'&quot;')}"></td>
       <td><button class="btn-del" title="Eliminar">✕</button></td>`;
     tr.querySelectorAll('input,select').forEach(inp=>{
       if(inp.dataset.c==='monto'){
-        // Se formatea en pesos chilenos mientras se escribe; marcarDirty
-        // siempre recibe el número limpio, nunca el texto con "$" y puntos.
+        // Se formatea en pesos chilenos con signo mientras se escribe;
+        // marcarDirty siempre recibe el número limpio y positivo, nunca el
+        // texto con "+"/"-", "$" y puntos (limpiarMonto() descarta cualquier
+        // caracter que no sea dígito).
         inp.addEventListener('input',()=>{
           const limpio=limpiarMonto(inp.value);
-          inp.value=limpio?clp(limpio):'';
+          const tipoActual=tr.querySelector('[data-c="tipo"]').value;
+          inp.value=limpio?(tipoActual==='INGRESO'?'+':'-')+clp(limpio):'';
           marcarDirty(f.rowIndex,'monto',limpio);
+        });
+      } else if(inp.dataset.c==='tipo'){
+        inp.addEventListener('input',()=>{
+          marcarDirty(f.rowIndex,'tipo',inp.value);
+          const esIngreso=inp.value==='INGRESO';
+          tr.classList.toggle('fila-ingreso',esIngreso);
+          tr.classList.toggle('fila-egreso',!esIngreso);
+          const montoInp=tr.querySelector('[data-c="monto"]');
+          const limpio=limpiarMonto(montoInp.value);
+          montoInp.value=limpio?(esIngreso?'+':'-')+clp(limpio):'';
         });
       } else {
         inp.addEventListener('input',()=>marcarDirty(f.rowIndex,inp.dataset.c,inp.value));
