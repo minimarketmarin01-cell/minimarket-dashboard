@@ -690,10 +690,21 @@
     #tablaEdit th, #tablaEdit td{white-space:nowrap; overflow:hidden}
     #tablaEdit th{position:sticky; top:0; z-index:2}
     #tablaEdit td{padding:8px 10px}
+    /* Sin marco ni caja por celda: el input/select queda a ras de la fila,
+       mostrando solo el color de fondo de esa fila (cebra/dirty/ingreso-
+       egreso). El borde+fondo blanco vuelve nada más al enfocar (ver
+       .tabla-edit input:focus más arriba), así se sigue viendo claramente
+       qué celda se está editando. */
     #tablaEdit td input, #tablaEdit td select{
       width:100% !important; min-width:0;
-      padding:7px 9px; border:1px solid var(--linea); border-radius:8px;
-      font-size:var(--fs-md); background:#fff; overflow:hidden; text-overflow:ellipsis;
+      padding:7px 9px; border:1px solid transparent; border-radius:0;
+      font-size:var(--fs-md); background:transparent; overflow:hidden; text-overflow:ellipsis;
+    }
+    /* La regla de arriba (con #tablaEdit, más específica que la clase
+       .tabla-edit input:focus de base) taparía el aviso de foco si no se
+       repite aquí con :focus — se restaura el borde+fondo solo al editar. */
+    #tablaEdit td input:focus, #tablaEdit td select:focus{
+      border-color:var(--acento); background:#fff; border-radius:8px; outline:none;
     }
     #tablaEdit td.num input{text-align:right}
     /* Columna fijada: se mantiene visible al desplazar horizontalmente.
