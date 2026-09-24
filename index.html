@@ -2925,8 +2925,9 @@ function leerFoto(file){
     document.getElementById('cierreEstado').innerHTML='<p style="margin:12px 0;color:var(--gris)"><span class="spin"></span> Leyendo la foto con Claude…</p>';
     post({accion:'leerCierre',token:TOKEN,imagenBase64:fotoBase64,mediaType:fotoMime}).then(r=>{
       if(!r.ok){
-        document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+
-          '</p><button class="btn btn-g" id="btnManualDesdeError" style="margin-top:8px">✏️ Ingresar este cierre manualmente</button>';
+        const detalleCrudo=r.crudo?'<pre style="white-space:pre-wrap;font-size:var(--fs-sm);color:var(--gris);margin-top:6px">'+String(r.crudo).slice(0,500)+'</pre>':'';
+        document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+'</p>'+detalleCrudo+
+          '<button class="btn btn-g" id="btnManualDesdeError" style="margin-top:8px">✏️ Ingresar este cierre manualmente</button>';
         document.getElementById('btnManualDesdeError').onclick=()=>abrirCierreManual();
         return;
       }
