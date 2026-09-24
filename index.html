@@ -1205,6 +1205,7 @@
       <h2>Cierre de caja por foto</h2>
       <div class="cap">Toma o sube una foto del cuaderno de cierre. Claude lee la venta en efectivo y los costos pagados en efectivo; tú revisas y confirmas antes de guardar.</div>
       <div class="drop" id="drop">📷 Toca para tomar o subir la foto del cierre<input type="file" id="fileFoto" accept="image/*" class="hidden"></div>
+      <button class="btn btn-g" id="btnManualCierre" style="margin-top:10px;width:100%">✏️ Ingresar manualmente (sin foto)</button>
       <img id="previewImg" class="hidden">
       <div id="cierreEstado"></div>
       <div id="cierreForm" class="hidden">
@@ -2899,6 +2900,7 @@ function initCierre(){
   drop.onclick=()=>file.click();
   file.onchange=e=>{const f=e.target.files[0]; if(f)leerFoto(f);};
   document.getElementById('btnMasCosto').onclick=()=>agregarCostoUI();
+  document.getElementById('btnManualCierre').onclick=()=>abrirCierreManual();
   document.getElementById('btnGuardarCierre').onclick=guardarCierreUI;
   document.getElementById('btnCancelarCierre').onclick=()=>document.getElementById('confirmarCancelarCierre').classList.remove('hidden');
   document.getElementById('btnVolverCierre').onclick=()=>document.getElementById('confirmarCancelarCierre').classList.add('hidden');
@@ -2922,7 +2924,12 @@ function leerFoto(file){
     fotoBase64=rd.result.split(',')[1];
     document.getElementById('cierreEstado').innerHTML='<p style="margin:12px 0;color:var(--gris)"><span class="spin"></span> Leyendo la foto con Claude…</p>';
     post({accion:'leerCierre',token:TOKEN,imagenBase64:fotoBase64,mediaType:fotoMime}).then(r=>{
-      if(!r.ok){document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+'</p>';return;}
+      if(!r.ok){
+        document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+
+          '</p><button class="btn btn-g" id="btnManualDesdeError" style="margin-top:8px">✏️ Ingresar este cierre manualmente</button>';
+        document.getElementById('btnManualDesdeError').onclick=()=>abrirCierreManual();
+        return;
+      }
       document.getElementById('cierreEstado').innerHTML='<p style="color:var(--verde);margin:12px 0">✓ Leído. Revisa y corrige antes de guardar.</p>';
       const ex=r.extraido||{};
       document.getElementById('cierreForm').classList.remove('hidden');
@@ -2934,6 +2941,18 @@ function leerFoto(file){
     });
   };
   rd.readAsDataURL(file);
+}
+// Mismo formulario que la revisión post-IA (Fecha/Venta efectivo/lista de costos),
+// pero vacío y sin depender de que la lectura por foto haya funcionado.
+function abrirCierreManual(){
+  const hoy=new Date();
+  const dd=String(hoy.getDate()).padStart(2,'0'), mm=String(hoy.getMonth()+1).padStart(2,'0');
+  document.getElementById('cierreEstado').innerHTML='<p style="color:var(--gris);margin:12px 0">Llenando cierre manualmente — no se usa IA.</p>';
+  document.getElementById('cierreForm').classList.remove('hidden');
+  document.getElementById('cFecha').value=dd+'/'+mm+'/'+hoy.getFullYear();
+  document.getElementById('cVenta').value='';
+  document.querySelector('#tablaCierre').innerHTML='';
+  agregarCostoUI();
 }
 const selTipoCierre=v=>`<select data-k="tipo" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg);background:#fff">${TIPOS_OPC.filter(t=>t!=='INGRESO').map(t=>`<option ${t===v?'selected':''}>${t}</option>`).join('')}</select>`;
 function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
