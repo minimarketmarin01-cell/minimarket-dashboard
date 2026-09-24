@@ -3098,18 +3098,38 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
       }
     }
 
+    // Las distintas exportaciones de BancoEstado ("Cartola en línea" vs "Chequera
+    // electrónica histórica") no ponen Fecha/N°Operación/Descripción/Cargos/Abonos
+    // en las mismas columnas. En vez de asumir posiciones fijas, se detecta el
+    // encabezado real de cada archivo y se ubican las columnas por su nombre.
+    let idxEncabezado = 0;
+    let colFecha=0, colNop=2, colDesc=3, colCargo=4, colAbono=5;
+    for(let i=0;i<Math.min(filasRaw.length,5);i++){
+      const norm = (filasRaw[i]||[]).map(v=>String(v||'').trim().toLowerCase());
+      const iFecha = norm.indexOf('fecha');
+      const iNop = norm.findIndex(v=>v.indexOf('operaci')!==-1);
+      const iDesc = norm.findIndex(v=>v.indexOf('descripci')!==-1);
+      const iCargo = norm.findIndex(v=>v.indexOf('cargo')!==-1);
+      const iAbono = norm.findIndex(v=>v.indexOf('abono')!==-1);
+      if(iFecha!==-1 && iNop!==-1 && iDesc!==-1 && iCargo!==-1 && iAbono!==-1){
+        idxEncabezado = i;
+        colFecha=iFecha; colNop=iNop; colDesc=iDesc; colCargo=iCargo; colAbono=iAbono;
+        break;
+      }
+    }
+
     const filas = [];
-    for(let i=1;i<filasRaw.length;i++){
+    for(let i=idxEncabezado+1;i<filasRaw.length;i++){
       const c = filasRaw[i];
-      if(!c || !c[0]) continue;
-      const fm = String(c[0]).match(/^(\d{1,2})\/(\d{1,2})/);
+      if(!c || !c[colFecha]) continue;
+      const fm = String(c[colFecha]).match(/^(\d{1,2})\/(\d{1,2})/);
       if(!fm) continue;
       filas.push({
         fecha: anio+'-'+fm[2].padStart(2,'0')+'-'+fm[1].padStart(2,'0'),
-        nOperacion: String(c[5]||'').trim(),
-        descripcion: String(c[6]||'').trim(),
-        cargo: c[7],
-        abono: c[8]
+        nOperacion: String(c[colNop]||'').trim(),
+        descripcion: String(c[colDesc]||'').trim(),
+        cargo: c[colCargo],
+        abono: c[colAbono]
       });
     }
 
