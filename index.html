@@ -2072,21 +2072,38 @@ function dibujarMixSku(m){
 }
 function dibujarRotacion(m){
   const cont=document.getElementById('rotacionTabla');
-  const filas=Object.entries(m.rotacionProveedor||{}).map(([prov,v])=>({prov,...v})).sort((a,b)=>b.margen-a.margen);
-  if(!filas.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
-  // Participación (venta de ese proveedor sobre el total de venta con proveedor cruzado) y
-  // Margen% (margen/venta) — mismo estilo que la tabla de sectores (Amorín): % grande arriba,
-  // monto en pesos chico abajo. OJO: a diferencia del margen por sector, "Compra" acá sale de
-  // la cartola bancaria (lo pagado ese mes), no del costo real de lo vendido — sensible a
-  // compras grandes puntuales, igual que "Costos merc." del semáforo de gasto.
+  // Une las dos fuentes que antes vivían en pestañas separadas y confundían (mismo proveedor,
+  // dos números de "margen" distintos): "Rotación por proveedor" (Compra de la cartola
+  // bancaria — lo pagado ese mes, sensible a compras en bulto o cartola no cargada) y "Por
+  // proveedor" en Rentabilidad (costo real de lo efectivamente vendido, vía utilidad de
+  // Loyverse — confiable aunque falte cartola). Ahora una sola tabla, con el costo real como
+  // columna principal de margen y "Pagado (cartola)" como referencia de caja aparte.
+  const cash=m.rotacionProveedor||{};
+  const real=(m.margenGlobalProveedor&&m.margenGlobalProveedor.porProveedor)||{};
+  const provs=Array.from(new Set([...Object.keys(cash),...Object.keys(real)]));
+  if(!provs.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
+  const filas=provs.map(prov=>{
+    const c=cash[prov]||{compra:0,venta:0};
+    const r=real[prov];
+    const venta=(r?r.venta:0)||c.venta||0;
+    const tieneReal=!!r;
+    const costoReal=tieneReal?(r.venta-(r.utilidad||0)):null;
+    const margenReal=tieneReal?r.utilidad:null;
+    const margenRealPct=tieneReal&&venta?(margenReal/venta*100):0;
+    return {prov, venta, pagado:c.compra||0, costoReal, margenReal, margenRealPct, tieneReal};
+  }).sort((a,b)=>b.venta-a.venta);
   const totalVenta=filas.reduce((s,f)=>s+(f.venta||0),0);
-  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Compra</th><th>Margen</th></tr></thead><tbody>
+  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Costo real</th><th>Margen real</th><th>Pagado (cartola)</th></tr></thead><tbody>
     ${filas.map(f=>{
       const participacionPct=totalVenta?(f.venta||0)/totalVenta*100:0;
-      const margenPct=f.venta?(f.margen||0)/f.venta*100:0;
-      return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${clp(f.compra)}</td><td style="color:${f.margen>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margen)}</div></td></tr>`;
+      const costoTxt=f.tieneReal?clp(f.costoReal):'<span class="cap">—</span>';
+      const margenTxt=f.tieneReal
+        ? `<span style="color:${f.margenReal>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${f.margenRealPct.toFixed(1)}%</span><div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margenReal)}</div>`
+        : '<span class="cap">sin venta con proveedor asignado</span>';
+      return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${costoTxt}</td><td>${margenTxt}</td><td style="color:var(--gris)">${clp(f.pagado)}</td></tr>`;
     }).join('')}
-  </tbody></table>`;
+  </tbody></table>
+  <div class="cap" style="margin-top:8px">💡 "Costo real" y "Margen real" usan lo efectivamente vendido según Loyverse — confiable aunque no hayas cargado la cartola ese mes o hayas comprado en bulto. "Pagado (cartola)" es solo referencia de caja: cuánto le transferiste/pagaste a ese proveedor este mes, y puede no coincidir con el costo real.</div>`;
 }
 function dibujarVentaSector(m){
   const cont=document.getElementById('sectorCard');
@@ -2132,7 +2149,9 @@ function dibujarMargenGlobal(m){
 function dibujarMargenProveedorHTML(m){
   const mgp=m.margenGlobalProveedor;
   if(!mgp || !mgp.ventaTotal) return '<div class="cap" style="margin-top:14px">Sin ventas con proveedor asignado todavía — necesita el Proveedor en los productos de Pedidos Marín.</div>';
-  const filasProv=Object.entries(mgp.porProveedor||{}).sort((a,b)=>b[1].participacionPct-a[1].participacionPct);
+  // El detalle proveedor por proveedor se unificó en Surtido → Rotación por proveedor (antes
+  // esta tarjeta repetía la misma tabla con otro criterio de orden, y dos "margen" distintos
+  // para el mismo proveedor confundían). Acá queda solo el resumen ponderado.
   return `
     <div class="cap" style="margin:16px 0 8px;font-weight:700;color:var(--ink,inherit)">Por proveedor</div>
     <div class="kpi" style="margin-bottom:10px;max-width:280px">
@@ -2140,13 +2159,7 @@ function dibujarMargenProveedorHTML(m){
       <div class="val" style="color:${mgp.pct>=0?'var(--verde)':'var(--rojo)'}">${mgp.pct.toFixed(1)}%</div>
       <div class="sub">${clp(mgp.utilidadTotal)} sobre ${clp(mgp.ventaTotal)} vendidos</div>
     </div>
-    <table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
-      ${filasProv.map(([prov,v])=>{
-        const costoProv=v.venta-v.utilidad;
-        return `<tr><td style="text-align:left">${prov}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoProv)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
-      }).join('')}
-    </tbody></table>
-    <div class="cap" style="margin-top:8px">💡 Mismo cálculo que por sector, pero por proveedor — a diferencia de "Rotación por proveedor" (Surtido), esto usa el costo real de lo vendido, no lo pagado en la cartola ese mes: es confiable aunque no hayas cargado la cartola, o hayas comprado en bulto un mes puntual.</div>`;
+    <div class="cap">💡 El detalle proveedor por proveedor (venta, costo real, margen y lo pagado en cartola) está en <b>Surtido → Rotación por proveedor</b>.</div>`;
 }
 // Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
 // clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
