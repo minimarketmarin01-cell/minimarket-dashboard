@@ -1097,7 +1097,7 @@
     <div id="tab-surtido" class="hidden">
       <div class="grid">
         <div class="card" id="graf-mix-sku"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
-        <div class="card full" id="graf-rotacion-prov"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Ordenado por margen.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
+        <div class="card full" id="graf-rotacion-prov"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Toca un encabezado para ordenar.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
         <div class="card full" id="graf-venta-sector"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
         <div class="card full" id="graf-sin-rotacion"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
       </div>
@@ -2075,6 +2075,7 @@ function dibujarMixSku(m){
     </div>
     <div class="cap" style="margin-top:8px">💡 Los benchmarks de Marcos Amorín (>23 SKU/m², >$230 venta/SKU) están calibrados en dólares y otro mercado — úsalos como referencia de tendencia mes a mes, no como meta exacta todavía.</div>`;
 }
+let sortRotacion={campo:'venta',dir:-1};
 function dibujarRotacion(m){
   const cont=document.getElementById('rotacionTabla');
   // Une las dos fuentes que antes vivían en pestañas separadas y confundían (mismo proveedor,
@@ -2087,7 +2088,7 @@ function dibujarRotacion(m){
   const real=(m.margenGlobalProveedor&&m.margenGlobalProveedor.porProveedor)||{};
   const provs=Array.from(new Set([...Object.keys(cash),...Object.keys(real)]));
   if(!provs.length){ cont.innerHTML='<div class="cap">Sin cruce todavía — necesita compras en Registros y ventas de productos con proveedor asignado en Pedidos Marín.</div>'; return; }
-  const filas=provs.map(prov=>{
+  const base=provs.map(prov=>{
     const c=cash[prov]||{compra:0,venta:0};
     const r=real[prov];
     const venta=(r?r.venta:0)||c.venta||0;
@@ -2096,19 +2097,53 @@ function dibujarRotacion(m){
     const margenReal=tieneReal?r.utilidad:null;
     const margenRealPct=tieneReal&&venta?(margenReal/venta*100):0;
     return {prov, venta, pagado:c.compra||0, costoReal, margenReal, margenRealPct, tieneReal};
-  }).sort((a,b)=>b.venta-a.venta);
-  const totalVenta=filas.reduce((s,f)=>s+(f.venta||0),0);
-  cont.innerHTML=`<table><thead><tr><th style="text-align:left">Proveedor</th><th>Participación</th><th>Costo real</th><th>Margen real</th><th>Pagado (cartola)</th></tr></thead><tbody>
-    ${filas.map(f=>{
-      const participacionPct=totalVenta?(f.venta||0)/totalVenta*100:0;
-      const costoTxt=f.tieneReal?clp(f.costoReal):'<span class="cap">—</span>';
-      const margenTxt=f.tieneReal
-        ? `<span style="color:${f.margenReal>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${f.margenRealPct.toFixed(1)}%</span><div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margenReal)}</div>`
-        : '<span class="cap">sin venta con proveedor asignado</span>';
-      return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${costoTxt}</td><td>${margenTxt}</td><td style="color:var(--gris)">${clp(f.pagado)}</td></tr>`;
-    }).join('')}
-  </tbody></table>
-  <div class="cap" style="margin-top:8px">💡 "Costo real" y "Margen real" usan lo efectivamente vendido según Loyverse — confiable aunque no hayas cargado la cartola ese mes o hayas comprado en bulto. "Pagado (cartola)" es solo referencia de caja: cuánto le transferiste/pagaste a ese proveedor este mes, y puede no coincidir con el costo real.</div>`;
+  });
+  const totalVenta=base.reduce((s,f)=>s+(f.venta||0),0);
+  // Encabezados clicables para ordenar (por defecto: venta real, de mayor a menor —
+  // "Participación" es proporcional a venta, así que ordenar por una ordena por la otra).
+  // Los proveedores sin venta real (tieneReal=false) se van al fondo al ordenar por costo o
+  // margen, sin importar la dirección, porque no hay dato real que comparar.
+  const COLUMNAS=[
+    {campo:'prov', etiqueta:'Proveedor', izq:true, valor:f=>f.prov, defaultDir:1},
+    {campo:'venta', etiqueta:'Participación', valor:f=>f.venta, defaultDir:-1},
+    {campo:'costoReal', etiqueta:'Costo real', valor:f=>f.costoReal||0, defaultDir:-1, sinDatoAlFondo:true},
+    {campo:'margenReal', etiqueta:'Margen real', valor:f=>f.margenRealPct, defaultDir:-1, sinDatoAlFondo:true},
+    {campo:'pagado', etiqueta:'Pagado (cartola)', valor:f=>f.pagado, defaultDir:-1},
+  ];
+  function render(){
+    const col=COLUMNAS.find(c=>c.campo===sortRotacion.campo)||COLUMNAS[1];
+    const filas=[...base].sort((a,b)=>{
+      // Sin venta real (tieneReal=false) siempre al fondo en Costo/Margen real, sea cual sea
+      // la dirección — no es "el peor valor", es simplemente que no hay dato que comparar.
+      if(col.sinDatoAlFondo && a.tieneReal!==b.tieneReal) return a.tieneReal?-1:1;
+      const va=col.valor(a), vb=col.valor(b);
+      if(typeof va==='string') return va.localeCompare(vb)*sortRotacion.dir;
+      return (va-vb)*sortRotacion.dir;
+    });
+    const flecha=campo=>campo!==sortRotacion.campo?'':(sortRotacion.dir===1?' ▲':' ▼');
+    cont.innerHTML=`<table><thead><tr>${COLUMNAS.map(c=>
+      `<th style="${c.izq?'text-align:left;':''}cursor:pointer;user-select:none" data-campo="${c.campo}">${c.etiqueta}${flecha(c.campo)}</th>`
+    ).join('')}</tr></thead><tbody>
+      ${filas.map(f=>{
+        const participacionPct=totalVenta?(f.venta||0)/totalVenta*100:0;
+        const costoTxt=f.tieneReal?clp(f.costoReal):'<span class="cap">—</span>';
+        const margenTxt=f.tieneReal
+          ? `<span style="color:${f.margenReal>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${f.margenRealPct.toFixed(1)}%</span><div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margenReal)}</div>`
+          : '<span class="cap">sin venta con proveedor asignado</span>';
+        return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${costoTxt}</td><td>${margenTxt}</td><td style="color:var(--gris)">${clp(f.pagado)}</td></tr>`;
+      }).join('')}
+    </tbody></table>
+    <div class="cap" style="margin-top:8px">💡 "Costo real" y "Margen real" usan lo efectivamente vendido según Loyverse — confiable aunque no hayas cargado la cartola ese mes o hayas comprado en bulto. "Pagado (cartola)" es solo referencia de caja: cuánto le transferiste/pagaste a ese proveedor este mes, y puede no coincidir con el costo real.</div>`;
+  }
+  cont.onclick=(e)=>{
+    const th=e.target.closest('th[data-campo]');
+    if(!th) return;
+    const campo=th.dataset.campo;
+    if(sortRotacion.campo===campo) sortRotacion={campo, dir:sortRotacion.dir*-1};
+    else sortRotacion={campo, dir:COLUMNAS.find(c=>c.campo===campo).defaultDir};
+    render();
+  };
+  render();
 }
 function dibujarVentaSector(m){
   const cont=document.getElementById('sectorCard');
