@@ -947,6 +947,7 @@
           <li><button data-tab="rentabilidad"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span><span class="tab-txt">Rentabilidad</span></button>
             <ul class="submenu-n2">
               <li><a href="#graf-rent-mes" class="submenu-link" data-tab-padre="rentabilidad">Rentabilidad por mes</a></li>
+              <li><a href="#graf-venta-gasto-mes" class="submenu-link" data-tab-padre="rentabilidad">Venta vs. gastos por mes</a></li>
               <li><a href="#graf-flujo-diario" class="submenu-link" data-tab-padre="rentabilidad">Flujo diario</a></li>
               <li><a href="#graf-margen-global" class="submenu-link" data-tab-padre="rentabilidad">Margen global (Amorín)</a></li>
             </ul>
@@ -1055,6 +1056,10 @@
           <div style="position:absolute;top:-40px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(47,109,240,.10),rgba(63,127,140,.05) 60%,transparent 75%);pointer-events:none"></div>
           <h2>Rentabilidad por mes</h2><div class="cap" id="capRent">Utilidad neta sobre ingresos.</div>
           <div class="graf-mini" style="height:112px;position:relative"><canvas id="chRent"></canvas></div>
+        </div>
+        <div class="card full" id="graf-venta-gasto-mes">
+          <h2>Venta vs. gastos totales por mes</h2><div class="cap">Venta (ingreso) contra costos + gasto operacional + merma + plásticos, mes a mes.</div>
+          <div class="graf-mini" style="height:190px;position:relative"><canvas id="chVentaGastoMes"></canvas></div>
         </div>
         <div class="card full" id="graf-flujo-diario" style="position:relative">
           <div style="position:absolute;top:-36px;left:-26px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 60% 60%,rgba(182,64,47,.07),transparent 70%);pointer-events:none"></div>
@@ -1713,7 +1718,7 @@ function render(){
   dibujarResumenDia(m);
   dibujarGastoResumenCard(m);
   dibujarDineroPorCobrarCard();
-  dibujarRent(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarVentaGastoMes(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 // ==== Resumen: pantalla RESUMEN → CATEGORÍA → DETALLE ====
 // Todas las funciones de acá abajo leen exclusivamente m=mesData(mesActual) y
@@ -2343,6 +2348,24 @@ function dibujarRent(){
     `<b>${MESES_ES[actual.ym.split('-')[1]]}:</b> utilidad ${clp(actual.utilidad)} (${pct(actual.rentabilidad)}) sobre ingreso total ${clp(actual.ingreso)} `
     + `<span style="color:${dirColor};font-weight:700">· tendencia ${dirTexto} (${pend>=0?'+':''}${pend.toFixed(1)} pp/mes)</span>`
     + `<br>💡 ${consejoTend}`;
+}
+// Venta total vs. gastos totales por mes — mismo dato que ya arma cada mes en DATA.meses
+// (ingreso, y costos+gastoOpe+merma+plasticos), solo que hasta ahora "Rentabilidad por mes"
+// mostraba nada más el % derivado. Acá se ven los dos montos absolutos lado a lado, para
+// notar de un vistazo si el gasto está creciendo más rápido que la venta.
+function dibujarVentaGastoMes(){
+  const serie=[...DATA.meses].filter((v,i,a)=>a.findIndex(x=>x.ym===v.ym)===i).sort((a,b)=>a.ym<b.ym?-1:1);
+  const clpCompacto=n=>{n=Math.round(n||0);const s=n<0?'-':'';n=Math.abs(n);
+    if(n>=1000000)return s+'$'+(n/1000000).toFixed(1).replace('.0','')+'M';
+    if(n>=1000)return s+'$'+Math.round(n/1000)+'K'; return s+'$'+n;};
+  const gastos=m=>(m.costos||0)+(m.gastoOpe||0)+(m.merma||0)+(m.plasticos||0);
+  nuevoChart('chVentaGastoMes',{type:'bar',data:{labels:serie.map(m=>MESES_ES[m.ym.split('-')[1]].slice(0,3)),datasets:[
+    {label:'Venta',data:serie.map(m=>m.ingreso),backgroundColor:'#2f6df0',borderRadius:6,barPercentage:.8,categoryPercentage:.7},
+    {label:'Gastos totales',data:serie.map(m=>gastos(m)),backgroundColor:'#b6402f',borderRadius:6,barPercentage:.8,categoryPercentage:.7}
+  ]},options:{plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
+    tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>clpCompacto(v),font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
+      x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f'}}}}});
 }
 let rangoDiaActual={desde:1,hasta:31,ymActual:null};
 function dibujarDia(m){
