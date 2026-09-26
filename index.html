@@ -1112,6 +1112,11 @@
     </div>
 
   <div id="tab-registros" class="hidden">
+    <div class="alerta" id="alertaFechasInvalidas"><span>⚠️</span><div>
+      <b><span id="nFechasInvalidas"></span> registro(s) con fecha en formato inválido.</b> No aparecen en esta tabla ni en ningún total mientras no se corrijan.
+      <div id="listaFechasInvalidas" style="margin:6px 0;font-size:var(--fs-sm)"></div>
+      <button type="button" class="btn" id="btnCorregirFechas">Corregir automáticamente</button>
+    </div></div>
     <div class="filtros filtros-compactas">
       <input type="search" id="fBuscar" placeholder="Buscar registro…" class="buscar-registro">
       <select id="fTipo"><option value="">Todos los tipos</option></select>
@@ -1552,8 +1557,37 @@ function init(){
   const hh=String(gen.getHours()).padStart(2,'0'), mi=String(gen.getMinutes()).padStart(2,'0');
   document.getElementById('sello').textContent='Actualizado '+dd+'/'+mm+'/'+gen.getFullYear()+' · '+hh+':'+mi;
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
-  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab(); sincronizarBarraInferior();
+  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab(); sincronizarBarraInferior(); cargarFechasInvalidas();
 }
+// Registros con `fecha` en formato no-ISO (ej. "03/09/26"): payloadFinanciero los excluye en
+// silencio de todo (WHERE fecha >= ?), así que sin este aviso no había forma de saber que
+// existían sin consultar la base de datos directamente.
+async function cargarFechasInvalidas(){
+  const cont=document.getElementById('alertaFechasInvalidas');
+  try{
+    const r=await fetch(WORKER_FINANZAS_URL+"?action=fechas_invalidas").then(r=>r.json());
+    const filas=(r&&r.filas)||[];
+    if(!filas.length){ cont.classList.remove('ver'); return; }
+    document.getElementById('nFechasInvalidas').textContent=filas.length;
+    document.getElementById('listaFechasInvalidas').innerHTML=filas.map(f=>
+      `${f.fecha} · ${f.nombre||f.categoria||'(sin nombre)'} · ${clp(f.monto)}`
+    ).join('<br>');
+    cont.classList.add('ver');
+  }catch(e){ cont.classList.remove('ver'); /* si falla, no bloquea el resto del dashboard */ }
+}
+document.getElementById('btnCorregirFechas').addEventListener('click', async ()=>{
+  const btn=document.getElementById('btnCorregirFechas');
+  btn.disabled=true; btn.textContent='Corrigiendo…';
+  try{
+    const r=await fetch(WORKER_FINANZAS_URL+"?action=migrar_fechas_cierre").then(r=>r.json());
+    await cargarFechasInvalidas();
+    alert('Corregidas '+((r.corregidas||[]).length)+' fila(s). Vuelve a cargar la página para ver los datos actualizados en los reportes.');
+  }catch(e){
+    alert('Error al corregir: '+e.message);
+  }finally{
+    btn.disabled=false; btn.textContent='Corregir automáticamente';
+  }
+});
 function poblarCategorias(){
   const dl=document.getElementById('listaCategorias'); if(!dl)return;
   dl.innerHTML=(DATA.categorias||[]).map(c=>`<option value="${c}">`).join('');
