@@ -3012,9 +3012,21 @@ function actualizarBarra(){ const n=Object.keys(dirty).length; document.getEleme
 async function guardarCambios(){
   const cambios=Object.entries(dirty); if(!cambios.length)return;
   document.getElementById('btnGuardar').innerHTML='<span class="spin"></span> Guardando…';
+  const errores=[];
   for(const [row,vals] of cambios){
     const f=DATA.filas.find(x=>x.rowIndex==row);
-    await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(row),valores:vals});
+    const r=await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(row),valores:vals});
+    // El backend rechaza una fecha que no puede interpretar (antes se guardaba tal cual y la
+    // fila desaparecía en silencio de Registros y de todos los totales) — si eso pasa, el
+    // cambio de esa fila NO se guardó, así que hay que avisar en vez de decir "todo guardado".
+    if(r&&r.ok===false){ errores.push('Fila '+row+': '+(r.error||'error desconocido')); }
+    else{ delete dirty[row]; }
+  }
+  if(errores.length){
+    document.getElementById('btnGuardar').textContent='Guardar cambios';
+    alert('Algunos cambios NO se guardaron:\n'+errores.join('\n')+'\n\nCorrígelos e intenta de nuevo. El resto de los cambios sí se guardó.');
+    actualizarBarra();
+    return;
   }
   dirty={}; alert('Cambios guardados. Recargando…'); location.reload();
 }
@@ -3024,7 +3036,10 @@ async function eliminarFila(f){
   alert('Fila eliminada. Recargando…'); location.reload();
 }
 async function agregarFilaNueva(){
-  const hoy=new Date(); const fecha=('0'+hoy.getDate()).slice(-2)+'/'+('0'+(hoy.getMonth()+1)).slice(-2)+'/'+hoy.getFullYear();
+  // ISO directo (AAAA-MM-DD), no DD/MM/AAAA: el backend ya normaliza cualquier formato que
+  // reciba, pero payloadFinanciero compara fechas como texto (WHERE fecha >= ?) — mandar ISO
+  // de una es lo único que garantiza que la fila quede donde corresponde de inmediato.
+  const hoy=new Date(); const fecha=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
   await post({accion:'agregar',token:TOKEN,valores:{nombre:'Nuevo',fecha:fecha,categoria:'',tipo:'COSTOS',cuenta:'EFECTIVO',monto:0}});
   alert('Fila agregada. Recargando…'); location.reload();
 }
