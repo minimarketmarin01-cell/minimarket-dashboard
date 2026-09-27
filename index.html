@@ -1085,7 +1085,7 @@
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — recomendación Amorín como % del ingreso mensual (no es gasto operativo).</div><div class="lista-barras" id="chUtilidad"></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — recomendación Amorín como % del ingreso mensual (no es gasto operativo).</div><div class="lista-barras" id="chUtilidad"></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div><div class="cap" id="capDetalleUtilidad" style="margin:10px 0 4px"></div><div id="cuerpoDetalleUtilidad"></div></div>
       </div>
     </div>
 
@@ -1346,6 +1346,10 @@ const WORKER_FINANZAS_URL = "https://marin376-finanzas.minimarketmarin01.workers
 const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero";
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO'];
+// Meta Amorín para gasto operacional: suma de RRHH (8%) + operacionales (5%) + administrativos
+// (1%) + marketing (1.2%) + financieros (1%) del ingreso — mismo techo usado en la barra
+// "Gasto ope." de "Estructura de costos vs. benchmark".
+const META_GASTO_OPE=15;
 const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
 // Vuelve un valor de un input de monto formateado (p.ej. "$11.850") al
 // número plano que espera el resto del código (dirty, guardarCambios, etc.).
@@ -1852,7 +1856,9 @@ function dibujarResumenDia(m){
 // que viva este HTML en el documento.
 function dibujarGastoResumenCard(m, catAbierta){
   const total=m.gastoOpe||0, ing=m.ingreso||0;
-  document.getElementById('totGastoOpe').innerHTML=`${clp(total)}<span class="sub">${(ing?total/ing*100:0).toFixed(1)}% de los ingresos</span>`;
+  const pctGasto=ing?total/ing*100:0, sobreMeta=pctGasto>META_GASTO_OPE;
+  document.getElementById('totGastoOpe').innerHTML=`${clp(total)}<span class="sub">${pctGasto.toFixed(1)}% de los ingresos</span>`+
+    `<div class="cap" style="margin-top:4px;color:${sobreMeta?'var(--rojo)':'var(--verde)'}">${sobreMeta?'⚠️ Sobre':'✓ Dentro de'} la meta Amorín (≤${META_GASTO_OPE}% del ingreso)</div>`;
   const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
 
   const TOPN=4;
@@ -2037,7 +2043,7 @@ function dibujarControl(m){
     {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
     {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
     ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
-    {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:15, tipo:'gasto'},
+    {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto'},
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
     {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto'},
@@ -2105,20 +2111,41 @@ function dibujarUtilidad(m){
   if(!ing){
     if(charts['chUtilidad']){charts['chUtilidad'].destroy();delete charts['chUtilidad'];}
     document.getElementById('capUtilidad').innerHTML='Sin ingresos registrados este mes — no hay base para calcular la distribución recomendada.';
+    document.getElementById('capDetalleUtilidad').textContent='';
+    document.getElementById('cuerpoDetalleUtilidad').innerHTML='';
     return;
   }
-  dona('chUtilidad',{'Retiro socios':d.retiroSocios,'Inversión':d.inversion,'Reserva':d.reserva},null,'categoría');
-  const porSubtipo=Object.entries(m.retiroPorSubtipo||{}).sort((a,b)=>b[1]-a[1]);
-  const desgloseSubtipo=porSubtipo.length
-    ? '<br>Por quién retira: '+porSubtipo.map(([s,v])=>`${s} ${clp(v)}`).join(' · ')
-    : '';
+  dona('chUtilidad',{'Retiro socios':d.retiroSocios,'Inversión':d.inversion,'Reserva':d.reserva},null,'categoría',ing);
   const retiroReal=m.retiroUtilidad||0;
   const comparacion=retiroReal
     ? `Este mes retiraste ${clp(retiroReal)}${retiroReal>d.retiroSocios?' — por sobre lo recomendado ('+clp(d.retiroSocios)+')':' (dentro de lo recomendado)'}.`
     : 'Este mes no has registrado retiro de utilidad todavía.';
   document.getElementById('capUtilidad').innerHTML=
     `💡 Según metodología Amorín, de ${clp(ing)} en ventas este mes deberías destinar: Retiro socios ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
-    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). ${comparacion}${desgloseSubtipo}`;
+    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). ${comparacion}`;
+
+  // Desglose por quién retira (subtipo_original), igual estructura expandible que Gastos
+  // operacionales: categoría = persona, cuerpo = cada transacción individual de ese mes.
+  const porSubtipo=Object.entries(m.retiroPorSubtipo||{}).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('capDetalleUtilidad').textContent = porSubtipo.length
+    ? 'Por quién retira · toca a alguien para ver el detalle'
+    : '';
+  document.getElementById('cuerpoDetalleUtilidad').innerHTML = porSubtipo.length ? porSubtipo.map(([subtipo,val],i)=>{
+    const pctv=ing?val/ing*100:0, color=colorPorNombre(subtipo), idExp='expUtilidad'+i;
+    const filasSub=DATA.filas.filter(f=>f.tipo==='RETIRO_UTILIDAD'&&f.ym===m.ym&&(f.subtipo||'OTRO')===subtipo).sort((a,b)=>b.monto-a.monto);
+    return `<div class="expandible" id="${idExp}">
+      <div class="expandible-header" data-toggle="${idExp}">
+        <span class="punto" style="background:${color}"></span>
+        <span class="nom">${subtipo}</span>
+        <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}% del ingreso</span>
+        <span class="chev">▸</span>
+      </div>
+      <div class="expandible-body hidden">${filasSub.length ? filasSub.map(f=>{
+        const pctItem=ing?f.monto/ing*100:0;
+        return `<div class="fila"><span class="f-nom">${f.nombre||subtipo}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}<span class="f-sub">${pctItem.toFixed(1)}%</span></span></div>`;
+      }).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
+    </div>`;
+  }).join('') : '';
 }
 function dibujarMixSku(m){
   const sku=DATA.skuActivos||0, area=DATA.areaVentasM2||0, mix=DATA.mixSkuM2||0;
@@ -2607,10 +2634,15 @@ document.addEventListener('click', e=>{
 // <canvas>). Se mantiene el nombre para no tocar los llamados existentes
 // (dona('chProv', ...), dona('chGasto', ...), dona('chUtilidad', ...)) ni
 // las fuentes de datos que les llegan — mismos números, otra vista.
-function dona(id,obj,lecturaId,tipoTexto){
+function dona(id,obj,lecturaId,tipoTexto,basePct){
   _barrasUltimoRender[id] = {obj,lecturaId,tipoTexto};
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
   const tot=ents.reduce((s,e)=>s+e[1],0);
+  // basePct: para "Distribución de utilidad" el % correcto es sobre el ingreso del mes, no
+  // sobre la suma de las 3 barras (que siempre da 40/30/30 por la proporción fija de las metas
+  // Amorín, sin relación con el % real destinado). Por defecto usa `tot` (comportamiento previo,
+  // correcto para chProv/chGasto: % de participación entre categorías/proveedores).
+  const base = basePct!=null ? basePct : tot;
   const colorDe = nombre => nombre==='Otros' ? '#9aa3b5' : colorPorNombre(nombre);
 
   // Pocas categorías: se muestran todas, sin agrupar (regla: no crear
@@ -2628,7 +2660,7 @@ function dona(id,obj,lecturaId,tipoTexto){
 
   const maxVal = vista.length ? vista[0][1] : 0;
   const filas = vista.map(([nombre,val])=>{
-    const pct = tot ? val/tot*100 : 0;
+    const pct = base ? val/base*100 : 0;
     const anchoPct = maxVal ? Math.max(2, Math.round(val/maxVal*100)) : 2;
     const color = colorDe(nombre);
     return `<div class="barra-h-fila">`
@@ -2644,7 +2676,7 @@ function dona(id,obj,lecturaId,tipoTexto){
   document.getElementById(id).innerHTML = filas + verMas;
 
   if(!lecturaId || !ents.length) return;
-  const [topNombre,topValor]=ents[0]; const topPct=tot?topValor/tot*100:0;
+  const [topNombre,topValor]=ents[0]; const topPct=base?topValor/base*100:0;
   const esProv = tipoTexto==='proveedor';
   const art = esProv ? 'un solo proveedor' : 'una sola categoría';   // concordancia de género
   const plural = esProv ? 'proveedores' : 'categorías de gasto';
