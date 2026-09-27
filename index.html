@@ -1007,8 +1007,9 @@
         <div class="card" id="seccionGastoOpe">
           <h2>Gastos operacionales</h2>
           <div class="resumen-total" id="totGastoOpe"></div>
-          <div class="donut-mini-wrap"><div class="graf-donut-mini"><canvas id="chResumenGasto"></canvas></div><div class="lista-barras" id="rankGastoOpe" style="flex:1"></div></div>
-          <button type="button" class="btn-ver-detalle" data-abrir-vista="detalleGastos">Ver detalle →</button>
+          <div class="graf-donut-mini" style="margin:6px auto 12px"><canvas id="chResumenGasto"></canvas></div>
+          <div class="cap" id="capDetalleGastos" style="margin-bottom:4px"></div>
+          <div id="cuerpoDetalleGastos"></div>
         </div>
 
         <div class="card" id="seccionIngresos">
@@ -1030,12 +1031,6 @@
 
         <div class="card"><h2>Para afinar el margen</h2><div class="cap">Con esto el margen deja de ser provisional.</div><ul class="faltan" id="faltan"></ul></div>
       </div>
-
-      <section class="vista-detalle hidden" id="detalleGastos">
-        <div class="vista-detalle-header"><button type="button" class="btn-volver" data-cerrar-vista="detalleGastos">← Volver</button><h2>Gastos operacionales — detalle</h2></div>
-        <div class="cap" id="capDetalleGastos"></div>
-        <div id="cuerpoDetalleGastos"></div>
-      </section>
 
       <section class="vista-detalle hidden" id="detalleIngresos">
         <div class="vista-detalle-header"><button type="button" class="btn-volver" data-cerrar-vista="detalleIngresos">← Volver</button><h2>Ingresos — detalle</h2></div>
@@ -1846,44 +1841,51 @@ function dibujarResumenDia(m){
 // etiquetas dibujadas en el canvas (nada que medir/cortar), agrupando en
 // top-4+"Otros" nada más para ese dibujo. El detalle real (sin agrupar) se arma
 // al abrir "Ver detalle" con las transacciones reales de DATA.filas.
-function dibujarGastoResumenCard(m){
+// Antes esto vivía repartido en dos funciones: un resumen (donut + lista plana,
+// % sobre la suma de gastos mostrados) en esta tarjeta, y el desglose expandible de
+// verdad (categoría → transacciones) en una pantalla aparte ("Ver detalle"), con su
+// propio % también sobre esa misma suma parcial — nunca sobre el ingreso del mes.
+// Ahora es una sola función: el ingreso del mes (`ing`) es la base común del 100% en
+// todos los niveles (categoría Y cada transacción individual), y el desglose
+// expandible vive directo en esta tarjeta — nada de eso requiere cambiar de pantalla,
+// el mismo listener delegado de [data-toggle]/[data-editar-fila] ya funciona donde sea
+// que viva este HTML en el documento.
+function dibujarGastoResumenCard(m, catAbierta){
   const total=m.gastoOpe||0, ing=m.ingreso||0;
   document.getElementById('totGastoOpe').innerHTML=`${clp(total)}<span class="sub">${(ing?total/ing*100:0).toFixed(1)}% de los ingresos</span>`;
   const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
-  const tot=ents.reduce((s,e)=>s+e[1],0);
-  const max=ents.length?ents[0][1]:1;
-  document.getElementById('rankGastoOpe').innerHTML = ents.length ? ents.map(([cat,val])=>{
-    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat);
-    return `<div class="barra-h-fila">
-      <div class="barra-h-nombre-row"><span class="barra-h-punto" style="background:${color}"></span><span class="barra-h-nombre">${cat}</span></div>
-      <div class="barra-h-pista-row"><span class="barra-h-pista"><span class="barra-h-relleno" style="width:${Math.max(2,Math.round(val/max*100))}%;background:${color}"></span></span><span class="barra-h-cifra">${clp(val)} · ${pctv.toFixed(1)}%</span></div>
-    </div>`;
-  }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
+
   const TOPN=4;
   const entsDonut = ents.length>TOPN+1 ? [...ents.slice(0,TOPN), ['Otros', ents.slice(TOPN).reduce((s,e)=>s+e[1],0)]] : ents;
   if(entsDonut.length){
     nuevoChart('chResumenGasto',{type:'doughnut',data:{labels:entsDonut.map(e=>e[0]),datasets:[{data:entsDonut.map(e=>e[1]),backgroundColor:entsDonut.map(e=>e[0]==='Otros'?'#9aa3b5':colorPorNombre(e[0])),borderWidth:2,borderColor:'#fff'}]},
-      options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(tot?(c.raw/tot*100).toFixed(1):0)+'%)'}}}}});
+      options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(ing?(c.raw/ing*100).toFixed(1):0)+'%)'}}}}});
   }
-}
-function abrirDetalleGastos(catAbierta){
-  const m=mesData(mesActual);
-  const ents=Object.entries(m.gastoCats||{}).sort((a,b)=>b[1]-a[1]);
-  const tot=ents.reduce((s,e)=>s+e[1],0);
-  document.getElementById('capDetalleGastos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · '+clp(m.gastoOpe||0);
+
+  document.getElementById('capDetalleGastos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · toca una categoría para ver el detalle';
   document.getElementById('cuerpoDetalleGastos').innerHTML = ents.length ? ents.map(([cat,val],i)=>{
-    const pctv=tot?val/tot*100:0, color=colorPorNombre(cat), idExp='expGasto'+i, abierta=cat===catAbierta;
+    const pctv=ing?val/ing*100:0, color=colorPorNombre(cat), idExp='expGasto'+i, abierta=cat===catAbierta;
     const filasCat=DATA.filas.filter(f=>f.tipo==='GASTO OPE'&&f.categoria===cat&&f.ym===m.ym).sort((a,b)=>b.monto-a.monto);
     return `<div class="expandible${abierta?' abierto':''}" id="${idExp}">
       <div class="expandible-header" data-toggle="${idExp}">
         <span class="punto" style="background:${color}"></span>
         <span class="nom">${cat}</span>
-        <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}%</span>
+        <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}% del ingreso</span>
         <span class="chev">▸</span>
       </div>
-      <div class="expandible-body${abierta?'':' hidden'}">${filasCat.length ? filasCat.map(f=>`<div class="fila fila-editable" data-row="${f.rowIndex}"><span class="f-nom">${f.nombre||cat}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}</span><button type="button" class="btn-editar-fila" data-editar-fila="${f.rowIndex}" aria-label="Editar transacción" title="Editar">✎</button></div>`).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
+      <div class="expandible-body${abierta?'':' hidden'}">${filasCat.length ? filasCat.map(f=>{
+        const pctItem=ing?f.monto/ing*100:0;
+        return `<div class="fila fila-editable" data-row="${f.rowIndex}"><span class="f-nom">${f.nombre||cat}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}<span class="f-sub">${pctItem.toFixed(1)}%</span></span><button type="button" class="btn-editar-fila" data-editar-fila="${f.rowIndex}" aria-label="Editar transacción" title="Editar">✎</button></div>`;
+      }).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
     </div>`;
   }).join('') : '<p class="cap">Sin gastos operacionales este mes.</p>';
+}
+// Compatibilidad: código existente (editar/cancelar edición de una transacción)
+// pedía "volver a abrir la vista de detalle en tal categoría" — ahora es solo
+// re-pintar esta misma tarjeta con esa categoría expandida, nada de cambiar de
+// pantalla.
+function abrirDetalleGastos(catAbierta){
+  dibujarGastoResumenCard(mesData(mesActual), catAbierta);
 }
 // Formulario de edición inline para una fila dentro del detalle de Gastos
 // operacionales: reutiliza selCategoria/selTipo/selCuenta (mismos dropdowns
@@ -1928,7 +1930,7 @@ async function guardarFilaGasto(rowIndex){
   const r=await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(rowIndex),valores});
   if(r&&r.ok===false){ alert('Error al guardar: '+(r.error||'')); btn.disabled=false; btn.textContent='Guardar'; return; }
   await refrescarDatosSilencioso();
-  abrirVista('detalleGastos', valores.categoria);
+  abrirDetalleGastos(valores.categoria);
 }
 // Dinero por cobrar (préstamos a terceros): calcularPrestamos() factoriza el
 // mismo cálculo histórico (no por mes, ver nota anterior) que ya se usaba —
@@ -1983,8 +1985,9 @@ function abrirDetallePrestamos(){
 // Navegación RESUMEN → CATEGORÍA → DETALLE dentro de #tab-resumen: mismo patrón
 // .hidden que ya usa el resto de la app para pestañas y modales.
 function abrirVista(id, arg){
+  // "Gastos operacionales" ya no es una vista aparte (ver dibujarGastoResumenCard):
+  // su desglose vive siempre expandido/colapsable dentro de #resumenPrincipal.
   document.getElementById('resumenPrincipal').classList.add('hidden');
-  if(id==='detalleGastos') abrirDetalleGastos(arg);
   if(id==='detallePrestamos') abrirDetallePrestamos();
   document.getElementById(id).classList.remove('hidden');
 }
