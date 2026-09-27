@@ -1127,6 +1127,21 @@
       <button type="button" class="btn-limpiar-filtros hidden" id="btnLimpiarFiltros">Limpiar</button>
       <button class="btn btn-g" id="btnAgregar">+ Agregar registro</button>
     </div>
+    <div class="card" id="formNuevoRegistro" style="margin-bottom:14px" hidden>
+      <h3 style="margin:0 0 10px">Nuevo registro</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+        <div class="campo"><label>Fecha</label><input type="date" id="nrFecha"></div>
+        <div class="campo"><label>Nombre / descripción</label><input type="text" id="nrNombre" placeholder="Ej: Coca Cola"></div>
+        <div class="campo"><label>Tipo</label><div id="nrTipoWrap"></div></div>
+        <div class="campo"><label id="nrCatLabel">Proveedor</label><div id="nrCatWrap"></div></div>
+        <div class="campo"><label>Cuenta</label><div id="nrCuentaWrap"></div></div>
+        <div class="campo"><label>Monto</label><input type="number" id="nrMonto" min="0" placeholder="0"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" class="btn btn-p" id="btnGuardarNuevoRegistro">Guardar</button>
+        <button type="button" class="btn-del" id="btnCancelarNuevoRegistro">Cancelar</button>
+      </div>
+    </div>
     <datalist id="listaCategoriasReg"></datalist>
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
     <div class="tabla-scroll">
@@ -1883,7 +1898,7 @@ function editarFilaGasto(rowIndex){
   cont.innerHTML=`
     <div class="form-edicion-fila">
       <input data-c="nombre" value="${f.nombre||''}" placeholder="Nombre">
-      <input data-c="fecha" value="${f.fecha||''}" placeholder="AAAA-MM-DD" class="col-fecha">
+      <input data-c="fecha" type="date" value="${f.fecha||''}" class="col-fecha">
       ${selCategoria(f.categoria)}
       ${selTipo(f.tipo)}
       ${selCuenta(f.cuenta)}
@@ -2674,7 +2689,9 @@ function initTabla(){
   });
   document.getElementById('btnGuardar').onclick=guardarCambios;
   document.getElementById('btnDescartar').onclick=()=>{dirty={};pintarTabla();actualizarBarra();};
-  document.getElementById('btnAgregar').onclick=agregarFilaNueva;
+  document.getElementById('btnAgregar').onclick=abrirFormNuevoRegistro;
+  document.getElementById('btnGuardarNuevoRegistro').onclick=guardarNuevoRegistro;
+  document.getElementById('btnCancelarNuevoRegistro').onclick=cerrarFormNuevoRegistro;
   initFiltrosModal();
   initOrdenTabla();
   initColumnasTabla();
@@ -2906,7 +2923,7 @@ function pintarTabla(){
     const signoMonto=v=>(tipoInicial==='INGRESO'?'+':'-')+clp(v);
     tr.innerHTML=`
       <td data-lbl="Nombre" data-col="nombre"><input value="${d.nombre??f.nombre}" data-c="nombre" title="${(d.nombre??f.nombre??'').replace(/"/g,'&quot;')}"></td>
-      <td data-lbl="Fecha" data-col="fecha"><input value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
+      <td data-lbl="Fecha" data-col="fecha"><input type="date" value="${d.fecha??f.fecha}" data-c="fecha" class="col-fecha"></td>
       <td data-lbl="${labelCategoria(tipoInicial)}" data-col="categoria" title="${(d.categoria??f.categoria??'').replace(/"/g,'&quot;')}">${selCategoria(d.categoria??f.categoria,tipoInicial)}</td>
       <td data-lbl="Tipo" data-col="tipo">${selTipo(d.tipo??f.tipo)}</td>
       <td data-lbl="Cuenta" data-col="cuenta">${selCuenta(d.cuenta??f.cuenta)}</td>
@@ -3035,13 +3052,51 @@ async function eliminarFila(f){
   await post({accion:'eliminar',token:TOKEN,nop:f.nop,rowIndex:f.rowIndex});
   alert('Fila eliminada. Recargando…'); location.reload();
 }
-async function agregarFilaNueva(){
-  // ISO directo (AAAA-MM-DD), no DD/MM/AAAA: el backend ya normaliza cualquier formato que
-  // reciba, pero payloadFinanciero compara fechas como texto (WHERE fecha >= ?) — mandar ISO
-  // de una es lo único que garantiza que la fila quede donde corresponde de inmediato.
-  const hoy=new Date(); const fecha=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
-  await post({accion:'agregar',token:TOKEN,valores:{nombre:'Nuevo',fecha:fecha,categoria:'',tipo:'COSTOS',cuenta:'EFECTIVO',monto:0}});
-  alert('Fila agregada. Recargando…'); location.reload();
+// "+ Agregar registro" antes creaba una fila en blanco directo en la base (nombre:"Nuevo",
+// monto:0) y recién después había que encontrarla en la tabla para completarla — así quedó a
+// medio llenar el registro que causó el bug de la fecha ("27/09/2026"). Ahora pide los datos
+// en un formulario ANTES de guardar nada; solo se llama a la API cuando el usuario confirma
+// con datos reales. La fecha usa <input type="date"> (igual que los filtros, que ya lo usaban)
+// — el navegador la muestra en el formato local (día/mes/año) pero su `.value` siempre es ISO
+// "AAAA-MM-DD", así que no hay forma de escribir un formato inválido.
+function abrirFormNuevoRegistro(){
+  const hoy=new Date();
+  document.getElementById('nrFecha').value=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
+  document.getElementById('nrNombre').value='';
+  document.getElementById('nrMonto').value='';
+  document.getElementById('nrTipoWrap').innerHTML=selTipo('COSTOS');
+  document.getElementById('nrCuentaWrap').innerHTML=selCuenta('EFECTIVO');
+  actualizarCategoriaNuevoRegistro('COSTOS');
+  document.getElementById('nrTipoWrap').querySelector('select').addEventListener('change', e=>actualizarCategoriaNuevoRegistro(e.target.value));
+  document.getElementById('formNuevoRegistro').hidden=false;
+  document.getElementById('nrNombre').focus();
+}
+function actualizarCategoriaNuevoRegistro(tipo){
+  document.getElementById('nrCatLabel').textContent=labelCategoria(tipo);
+  document.getElementById('nrCatWrap').innerHTML=selCategoria('',tipo);
+}
+function cerrarFormNuevoRegistro(){ document.getElementById('formNuevoRegistro').hidden=true; }
+async function guardarNuevoRegistro(){
+  const nombre=document.getElementById('nrNombre').value.trim();
+  const fecha=document.getElementById('nrFecha').value;
+  const categoria=document.getElementById('nrCatWrap').querySelector('select').value;
+  const tipo=document.getElementById('nrTipoWrap').querySelector('select').value;
+  const cuenta=document.getElementById('nrCuentaWrap').querySelector('select').value;
+  const monto=Number(document.getElementById('nrMonto').value)||0;
+  if(!nombre){ alert('Ponle un nombre o descripción al registro.'); return; }
+  if(!fecha){ alert('Falta la fecha.'); return; }
+  if(!categoria || categoria==='__nueva__'){ alert('Elige '+labelCategoria(tipo).toLowerCase()+'.'); return; }
+  if(!monto){ alert('El monto debe ser mayor a 0.'); return; }
+  const btn=document.getElementById('btnGuardarNuevoRegistro');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
+  const r=await post({accion:'agregar',token:TOKEN,valores:{nombre,fecha,categoria,tipo,cuenta,monto}});
+  if(r&&r.ok===false){
+    alert('Error al guardar: '+(r.error||''));
+    btn.disabled=false; btn.textContent='Guardar';
+    return;
+  }
+  cerrarFormNuevoRegistro();
+  alert('Registro agregado. Recargando…'); location.reload();
 }
 
 let fotoBase64=null, fotoMime='image/jpeg';
