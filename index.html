@@ -1135,7 +1135,7 @@
         <div class="campo"><label>Tipo</label><div id="nrTipoWrap"></div></div>
         <div class="campo"><label id="nrCatLabel">Proveedor</label><div id="nrCatWrap"></div></div>
         <div class="campo"><label>Cuenta</label><div id="nrCuentaWrap"></div></div>
-        <div class="campo"><label>Monto</label><input type="number" id="nrMonto" min="0" placeholder="0"></div>
+        <div class="campo"><label>Monto</label><input type="text" inputmode="numeric" id="nrMonto" placeholder="$0"></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:12px">
         <button type="button" class="btn btn-p" id="btnGuardarNuevoRegistro">Guardar</button>
@@ -1902,12 +1902,16 @@ function editarFilaGasto(rowIndex){
       ${selCategoria(f.categoria)}
       ${selTipo(f.tipo)}
       ${selCuenta(f.cuenta)}
-      <input data-c="monto" type="number" value="${f.monto}" class="col-monto">
+      <input data-c="monto" type="text" inputmode="numeric" value="${clp(f.monto)}" class="col-monto">
     </div>
     <div class="form-edicion-fila-btns">
       <button type="button" class="btn btn-p" data-guardar-fila="${rowIndex}">Guardar</button>
       <button type="button" class="btn-del" data-cancelar-fila="${rowIndex}">Cancelar</button>
     </div>`;
+  // Mismo formato en vivo ($ con separador de miles) que usa la tabla principal de Registros
+  // — este monto quedaba como número plano sin signo de peso mientras se escribe.
+  const inpMonto=cont.querySelector('[data-c="monto"]');
+  inpMonto.addEventListener('input',()=>{ const limpio=limpiarMonto(inpMonto.value); inpMonto.value=limpio?clp(limpio):''; });
 }
 function cancelarEdicionFilaGasto(rowIndex){
   const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
@@ -1918,7 +1922,7 @@ async function guardarFilaGasto(rowIndex){
   const cont=document.querySelector(`#cuerpoDetalleGastos .fila-editable[data-row="${rowIndex}"]`);
   if(!f||!cont)return;
   const g=k=>cont.querySelector(`[data-c="${k}"]`).value;
-  const valores={nombre:g('nombre'),fecha:g('fecha'),categoria:g('categoria'),tipo:g('tipo'),cuenta:g('cuenta'),monto:Number(g('monto'))};
+  const valores={nombre:g('nombre'),fecha:g('fecha'),categoria:g('categoria'),tipo:g('tipo'),cuenta:g('cuenta'),monto:limpiarMonto(g('monto'))};
   const btn=cont.querySelector('[data-guardar-fila]');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   const r=await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(rowIndex),valores});
@@ -3071,6 +3075,7 @@ function abrirFormNuevoRegistro(){
   document.getElementById('formNuevoRegistro').hidden=false;
   document.getElementById('nrNombre').focus();
 }
+document.getElementById('nrMonto').addEventListener('input', e=>{ const limpio=limpiarMonto(e.target.value); e.target.value=limpio?clp(limpio):''; });
 function actualizarCategoriaNuevoRegistro(tipo){
   document.getElementById('nrCatLabel').textContent=labelCategoria(tipo);
   document.getElementById('nrCatWrap').innerHTML=selCategoria('',tipo);
@@ -3082,7 +3087,7 @@ async function guardarNuevoRegistro(){
   const categoria=document.getElementById('nrCatWrap').querySelector('select').value;
   const tipo=document.getElementById('nrTipoWrap').querySelector('select').value;
   const cuenta=document.getElementById('nrCuentaWrap').querySelector('select').value;
-  const monto=Number(document.getElementById('nrMonto').value)||0;
+  const monto=limpiarMonto(document.getElementById('nrMonto').value);
   if(!nombre){ alert('Ponle un nombre o descripción al registro.'); return; }
   if(!fecha){ alert('Falta la fecha.'); return; }
   if(!categoria || categoria==='__nueva__'){ alert('Elige '+labelCategoria(tipo).toLowerCase()+'.'); return; }
