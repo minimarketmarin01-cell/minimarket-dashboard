@@ -1085,7 +1085,7 @@
 
     <div id="tab-retiro" class="hidden">
       <div class="grid">
-        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — sobre Insumos + Isabel (lo que hoy se retira, no es gasto operativo).</div><div class="lista-barras" id="chUtilidad"></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
+        <div class="card full" id="graf-retiro"><h2>Distribución de utilidad</h2><div class="cap">Reserva / Inversión / Retiro de socios — recomendación Amorín como % del ingreso mensual (no es gasto operativo).</div><div class="lista-barras" id="chUtilidad"></div><div class="cap" id="capUtilidad" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
       </div>
     </div>
 
@@ -2101,9 +2101,10 @@ function dibujarControl(m){
 }
 function dibujarUtilidad(m){
   const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
-  if(!d.total){
+  const ing=m.ingreso||0;
+  if(!ing){
     if(charts['chUtilidad']){charts['chUtilidad'].destroy();delete charts['chUtilidad'];}
-    document.getElementById('capUtilidad').innerHTML='Este mes no hay retiro de utilidad registrado — nada que repartir todavía.';
+    document.getElementById('capUtilidad').innerHTML='Sin ingresos registrados este mes — no hay base para calcular la distribución recomendada.';
     return;
   }
   dona('chUtilidad',{'Retiro socios':d.retiroSocios,'Inversión':d.inversion,'Reserva':d.reserva},null,'categoría');
@@ -2111,9 +2112,13 @@ function dibujarUtilidad(m){
   const desgloseSubtipo=porSubtipo.length
     ? '<br>Por quién retira: '+porSubtipo.map(([s,v])=>`${s} ${clp(v)}`).join(' · ')
     : '';
+  const retiroReal=m.retiroUtilidad||0;
+  const comparacion=retiroReal
+    ? `Este mes retiraste ${clp(retiroReal)}${retiroReal>d.retiroSocios?' — por sobre lo recomendado ('+clp(d.retiroSocios)+')':' (dentro de lo recomendado)'}.`
+    : 'Este mes no has registrado retiro de utilidad todavía.';
   document.getElementById('capUtilidad').innerHTML=
-    `💡 Sobre ${clp(d.total)} de retiro de utilidad este mes: Retiro ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
-    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). Ajustable en configuracion.${desgloseSubtipo}`;
+    `💡 Según metodología Amorín, de ${clp(ing)} en ventas este mes deberías destinar: Retiro socios ${clp(d.retiroSocios)} (${DATA.pctRetiroSocios||0}%) · `+
+    `Inversión ${clp(d.inversion)} (${DATA.pctInversion||0}%) · Reserva ${clp(d.reserva)} (${DATA.pctReserva||0}%). ${comparacion}${desgloseSubtipo}`;
 }
 function dibujarMixSku(m){
   const sku=DATA.skuActivos||0, area=DATA.areaVentasM2||0, mix=DATA.mixSkuM2||0;
