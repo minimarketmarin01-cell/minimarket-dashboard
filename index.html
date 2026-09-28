@@ -938,7 +938,7 @@
           <li><button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button></li>
           <li><button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button>
             <ul class="submenu-n2">
-              <li><a href="#graf-mix-sku" class="submenu-link" data-tab-padre="surtido">Mix SKU/m²</a></li>
+              <li><a href="#graf-mix-sku" class="submenu-link" data-tab-padre="surtido">Ingresos y Surtido</a></li>
               <li><a href="#graf-rotacion-prov" class="submenu-link" data-tab-padre="surtido">Rotación por proveedor</a></li>
               <li><a href="#graf-venta-sector" class="submenu-link" data-tab-padre="surtido">Venta por sector</a></li>
               <li><a href="#graf-sin-rotacion" class="submenu-link" data-tab-padre="surtido">Categorías sin rotación</a></li>
@@ -1060,7 +1060,7 @@
 
     <div id="tab-surtido" class="hidden">
       <div class="grid">
-        <div class="card" id="graf-mix-sku"><h2>Mix de surtido (SKU/m²)</h2><div class="cap">Productividad del catálogo — cruza el catálogo de Loyverse (Pedidos Marín) con tu ingreso.</div><div id="mixSku"></div></div>
+        <div class="card full" id="graf-mix-sku"><h2>Ingresos y Surtido</h2><div class="cap">Dinero real recibido vs. ventas registradas (incluye fiados) — más productividad del catálogo de Loyverse.</div><div id="mixSku"></div></div>
         <div class="card full" id="graf-rotacion-prov"><h2>Rotación por proveedor — compras vs. ventas</h2><div class="cap">Compras (Registros) vs. ventas reales, cruzadas por Proveedor asignado en Pedidos Marín. Toca un encabezado para ordenar.</div><div id="rotacionTabla" style="overflow-x:auto"></div></div>
         <div class="card full" id="graf-venta-sector"><h2>Venta por sector</h2><div class="cap">Desde el campo Sector asignado a cada producto en Pedidos Marín.</div><div id="sectorCard" style="overflow-x:auto"></div></div>
         <div class="card full" id="graf-sin-rotacion"><h2>Categorías sin rotación</h2><div class="cap">Stock con costo pagado, sin ninguna venta registrada desde julio — capital inmovilizado.</div><div id="sinRotacionCard"></div></div>
@@ -2165,16 +2165,25 @@ function dibujarUtilidad(m, subtipoAbierto){
 function dibujarMixSku(m){
   const sku=DATA.skuActivos||0, area=DATA.areaVentasM2||0, mix=DATA.mixSkuM2||0;
   const ventaSku=m.ventaPorSku||0, ventaTot=m.ventaLoyverseMes||0;
+  // ventaTot ("Ventas registradas") ya excluye "Abono Fiado" (mecanismo de caja, no mercadería)
+  // pero SÍ incluye fiados generados (venta real a crédito, aún no cobrada) — por eso no es lo
+  // mismo que el dinero que de verdad entró. ingresoEfectivoMes ya viene calculado del backend;
+  // si algún mes faltara (versión vieja del payload), se cae a ventaTot para no romper la vista.
+  const ingresoEfectivo=m.ingresoEfectivoMes!=null?m.ingresoEfectivoMes:ventaTot;
+  const fiadoGenerado=m.fiadoGenerado||0, abonosFiado=m.abonosFiado||0;
   if(!sku){
     document.getElementById('mixSku').innerHTML='<div class="cap">Sin catálogo de Loyverse disponible todavía en esta base.</div>';
     return;
   }
   document.getElementById('mixSku').innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+      <div class="kpi hero-util" style="grid-column:1/-1"><div class="lbl">💰 Ingreso efectivo del mes</div><div class="val">${clp(ingresoEfectivo)}</div><div class="sub">Dinero realmente recibido</div></div>
+      <div class="kpi"><div class="lbl">Ventas registradas</div><div class="val">${clp(ventaTot)}</div><div class="sub">Total vendido en Loyverse</div></div>
+      <div class="kpi"><div class="lbl">Fiado generado</div><div class="val">${clp(fiadoGenerado)}</div><div class="sub">Ventas que quedaron pendientes de pago</div></div>
+      <div class="kpi"><div class="lbl">Abonos de fiado</div><div class="val">${clp(abonosFiado)}</div><div class="sub">Pagos de deudas/fiados anteriores</div></div>
+      <div class="kpi"><div class="lbl">Venta por SKU</div><div class="val">${clp(ventaSku)}</div><div class="sub">venta mes ÷ SKU activos</div></div>
       <div class="kpi"><div class="lbl">SKU activos</div><div class="val">${sku.toLocaleString('es-CL')}</div><div class="sub">catálogo Loyverse</div></div>
       <div class="kpi"><div class="lbl">SKU por m²</div><div class="val">${mix.toFixed(1)}</div><div class="sub">${area?area+' m² de venta':'falta área en configuracion'}</div></div>
-      <div class="kpi"><div class="lbl">Venta del mes (Loyverse)</div><div class="val">${clp(ventaTot)}</div><div class="sub">todas las categorías</div></div>
-      <div class="kpi"><div class="lbl">Venta por SKU</div><div class="val">${clp(ventaSku)}</div><div class="sub">venta mes ÷ SKU activos</div></div>
     </div>
     <div class="cap" style="margin-top:8px">💡 Los benchmarks de Marcos Amorín (>23 SKU/m², >$230 venta/SKU) están calibrados en dólares y otro mercado — úsalos como referencia de tendencia mes a mes, no como meta exacta todavía.</div>`;
 }
