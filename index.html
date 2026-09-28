@@ -1312,8 +1312,22 @@
 <script>
 const TOKEN = "marin376xyz"; // debe coincidir EXACTO con TOKEN_DASHBOARD de Apps Script
 const WORKER_FINANZAS_URL = "https://marin376-finanzas.minimarketmarin01.workers.dev/";
+// Token del Worker de finanzas (separado de TOKEN de arriba, que es de Apps Script/Pedidos
+// Marín). Este repo es público, así que el token NUNCA va en el código fuente: se pide una
+// sola vez y queda en localStorage de este navegador — solo quien ya tenga el token puede
+// escribirlo acá la primera vez.
+function obtenerTokenFinanzas(){
+  let t = '';
+  try { t = localStorage.getItem('tokenFinanzas') || ''; } catch(e) {}
+  if (!t) {
+    t = prompt('Token de acceso al panel de finanzas:') || '';
+    try { if (t) localStorage.setItem('tokenFinanzas', t); } catch(e) {}
+  }
+  return t;
+}
+const TOKEN_FINANZAS = obtenerTokenFinanzas();
 // Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
-const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero";
+const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero&token=" + encodeURIComponent(TOKEN_FINANZAS);
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO'];
 // Meta Amorín para gasto operacional: suma de RRHH (8%) + operacionales (5%) + administrativos
@@ -1549,7 +1563,7 @@ function init(){
 async function cargarFechasInvalidas(){
   const cont=document.getElementById('alertaFechasInvalidas');
   try{
-    const r=await fetch(WORKER_FINANZAS_URL+"?action=fechas_invalidas").then(r=>r.json());
+    const r=await fetch(WORKER_FINANZAS_URL+"?action=fechas_invalidas&token="+encodeURIComponent(TOKEN_FINANZAS)).then(r=>r.json());
     const filas=(r&&r.filas)||[];
     if(!filas.length){ cont.classList.remove('ver'); return; }
     document.getElementById('nFechasInvalidas').textContent=filas.length;
@@ -1563,7 +1577,7 @@ document.getElementById('btnCorregirFechas').addEventListener('click', async ()=
   const btn=document.getElementById('btnCorregirFechas');
   btn.disabled=true; btn.textContent='Corrigiendo…';
   try{
-    const r=await fetch(WORKER_FINANZAS_URL+"?action=migrar_fechas_cierre").then(r=>r.json());
+    const r=await fetch(WORKER_FINANZAS_URL+"?action=migrar_fechas_cierre&token="+encodeURIComponent(TOKEN_FINANZAS)).then(r=>r.json());
     await cargarFechasInvalidas();
     alert('Corregidas '+((r.corregidas||[]).length)+' fila(s). Vuelve a cargar la página para ver los datos actualizados en los reportes.');
   }catch(e){
@@ -3344,7 +3358,7 @@ async function post(body){
   }
   const resp = await fetch(WORKER_FINANZAS_URL, {
     method:'POST',
-    body: JSON.stringify(Object.assign({}, body, { action: accionNueva }))
+    body: JSON.stringify(Object.assign({}, body, { action: accionNueva, token: TOKEN_FINANZAS }))
   });
   return resp.json();
 }
@@ -3427,7 +3441,7 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
 
     const resp = await fetch(WORKER_FINANZAS_URL, {
       method:'POST',
-      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN, archivo: archivo.name, filas })
+      body: JSON.stringify({ action: "ingesta_cartola_finanzas", token: TOKEN_FINANZAS, archivo: archivo.name, filas })
     });
     const data = await resp.json();
     if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
@@ -3492,7 +3506,7 @@ document.getElementById('fileAbonoSCQ').addEventListener('change', async (e)=>{
     } 
     const resp = await fetch(WORKER_FINANZAS_URL, {
       method:'POST',
-      body: JSON.stringify({ action:'ingesta_abonos_scq', token: TOKEN, archivo: archivo.name, filas })
+      body: JSON.stringify({ action:'ingesta_abonos_scq', token: TOKEN_FINANZAS, archivo: archivo.name, filas })
     });
     const data = await resp.json();
     if(!data.ok){ estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>${data.error||'Error desconocido'}</div></div>`; return; }
