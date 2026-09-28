@@ -1852,8 +1852,12 @@ function dibujarGastoResumenCard(m, catAbierta){
   const TOPN=4;
   const entsDonut = ents.length>TOPN+1 ? [...ents.slice(0,TOPN), ['Otros', ents.slice(TOPN).reduce((s,e)=>s+e[1],0)]] : ents;
   if(entsDonut.length){
-    nuevoChart('chResumenGasto',{type:'doughnut',data:{labels:entsDonut.map(e=>e[0]),datasets:[{data:entsDonut.map(e=>e[1]),backgroundColor:entsDonut.map(e=>e[0]==='Otros'?'#9aa3b5':colorPorNombre(e[0])),borderWidth:2,borderColor:'#fff'}]},
-      options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(ing?(c.raw/ing*100).toFixed(1):0)+'%)'}}}}});
+    // Si el donut falla (Chart.js aún no cargó, error de layout, etc.) el detalle de abajo
+    // igual debe pintarse — antes un error acá cortaba en seco el resto de la tarjeta.
+    try{
+      nuevoChart('chResumenGasto',{type:'doughnut',data:{labels:entsDonut.map(e=>e[0]),datasets:[{data:entsDonut.map(e=>e[1]),backgroundColor:entsDonut.map(e=>e[0]==='Otros'?'#9aa3b5':colorPorNombre(e[0])),borderWidth:2,borderColor:'#fff'}]},
+        options:{cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+clp(c.raw)+' ('+(ing?(c.raw/ing*100).toFixed(1):0)+'%)'}}}}});
+    }catch(e){ console.error('chResumenGasto', e); }
   }
 
   document.getElementById('capDetalleGastos').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · toca una categoría para ver el detalle';
@@ -2021,10 +2025,17 @@ document.addEventListener('click', e=>{
 function dibujarControl(m){
   const ing=m.ingreso||0;
   const p=v=>ing? v/ing*100 : 0;
-  const adm=(m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0;
+  // "Almuerzo personal"/Edwin se clasifican como GASTO OPE, pero la categoría real que usa el
+  // diccionario aprendido es "ALMUERZO" (no "ADMINISTRATIVO" del diccionario estático original)
+  // — sin sumar ambas, esta barra siempre daba $0 aunque sí hubiera gasto administrativo real.
+  const adm=((m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0)+((m.gastoCats&&m.gastoCats['ALMUERZO'])||0);
   const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
   const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
-  const luz=(m.gastoCats&&m.gastoCats['ENEL'])||0;
+  // La categoría real que usa el diccionario de clasificación es "SERVICIOS BÁSICOS" (agua+luz),
+  // no "ENEL" — esa clave nunca existe en gastoCats, así que esta barra siempre daba $0.
+  const luz=(m.gastoCats&&m.gastoCats['SERVICIOS BÁSICOS'])||0;
+  const mermaReal=(m.mermaDetalle&&m.mermaDetalle.real)||0;
+  const plasticosReal=(m.gastoCats&&m.gastoCats['PLASTICOS'])||0;
   // Acumulado/promedio de los últimos 3 meses de "Costos merc." — suaviza el ruido de una
   // compra grande pagada de una vez en un mes, cuya venta se reparte en los 1-3 meses
   // siguientes. El problema real es que este promedio se mantenga sobre la meta, no que un
@@ -2047,8 +2058,12 @@ function dibujarControl(m){
     {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
     {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto'},
-    {n:'Merma',      v:m.merma,    pc:p(m.merma), meta:2,  tipo:'gasto'},
-    {n:'Plásticos',  v:m.plasticos,pc:p(m.plasticos),meta:1,tipo:'gasto'},
+    // m.merma es tipo='MERMA' en `registros`, tabla que nunca se usa para esto — la merma real
+    // vive en la tabla `mermas` (compartida con Pedidos Marín 376) y ya llega en mermaDetalle.real.
+    {n:'Merma',      v:mermaReal,  pc:p(mermaReal), meta:2, tipo:'gasto'},
+    // m.plasticos es tipo='PLASTICOS' en `registros`, pero el diccionario clasifica esas compras
+    // como GASTO OPE / categoría PLASTICOS — por eso esta barra siempre daba $0.
+    {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
     {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:null, tipo:'util'}
   ];
@@ -2415,14 +2430,23 @@ function nuevoChart(id,cfg){
   const canvas = document.getElementById(id);
   const parent = canvas.parentElement;
 
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
-  parent.style.width = "100%";
-  // En celular vertical NO se toca el alto del contenedor: el CSS del media
-  // query portrait ya lo fija. Escribir height:"100%" aquí era justamente lo
-  // que disparaba el bucle de resize infinito (contenedor sin alto definido).
-  // En tablet/landscape/desktop se mantiene el comportamiento de siempre.
-  if (!ESFONO_V()) parent.style.height = "100%";
+  // El donut mini decorativo (tarjeta "Gastos operacionales" de la portada) es 120x120 fijo
+  // en CSS a propósito y nunca debe estirarse al 100% del padre como los demás gráficos: en
+  // tablet/landscape/desktop, nuevoChart() corre ANTES de que el resto de la tarjeta (el
+  // detalle por categoría) se llene, así que en ese instante el .card todavía es muy bajo —
+  // forzar height:100% ahí deformaba el contenedor (dejaba de ser 120x120) y el <canvas>
+  // terminaba con un tamaño indeterminado que el navegador pintaba como ícono roto.
+  const esDonutMini = parent.classList.contains('graf-donut-mini');
+  if (!esDonutMini) {
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    parent.style.width = "100%";
+    // En celular vertical NO se toca el alto del contenedor: el CSS del media
+    // query portrait ya lo fija. Escribir height:"100%" aquí era justamente lo
+    // que disparaba el bucle de resize infinito (contenedor sin alto definido).
+    // En tablet/landscape/desktop se mantiene el comportamiento de siempre.
+    if (!ESFONO_V()) parent.style.height = "100%";
+  }
 
   charts[id] = new Chart(canvas, cfg);
 
