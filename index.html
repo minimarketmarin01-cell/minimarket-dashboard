@@ -796,23 +796,6 @@
       height:430px !important; max-height:none !important}
   }
 
-  /* El limitante real del radio en estos anchos NO era el alto sino el ANCHO
-     de la card: con .grid en 2 columnas cada card quedaba en 276–333px, y
-     descontando las etiquetas a ambos lados al anillo le sobraban ~100px de
-     diámetro. Dándoles la fila completa, la card pasa a ~560–1000px y el
-     donut recupera tamaño de verdad. Solo afecta a las dos cards de donut
-     de la pestaña Costos; el resto de la grilla sigue en 2 columnas.
-     chUtilidad ya era .card full, así que no necesita regla. */
-  /* CAUSA RAÍZ del donut chico con el riel contraído: al colapsar, en ≥900px
-     .wrap.sidebar-oculto .grid pasa de 2 a 3 columnas, así que la card se
-     ANGOSTA (671→504px medido en 1920) aunque .main-content gane 186px. Como
-     el ancho es el limitante del anillo, contraer lo hacía más chico. Dándole
-     la fila completa en todo ancho ≥600px, la card ahora sí crece al contraer
-     y el radio deja de depender del estado del riel. */
-  @media screen and (min-width:600px){
-    #graf-compras-cat, #graf-gasto-cat{grid-column:1 / -1}
-  }
-
   /* SEGUNDA CAUSA: el alto del contenedor era un valor FIJO en px por
      breakpoint (440px), fijado por @media de viewport y no por el tamaño real
      del contenedor. Con el ancho saturado sobraban entre 92 y 238px de alto
@@ -952,13 +935,6 @@
               <li><a href="#graf-margen-global" class="submenu-link" data-tab-padre="rentabilidad">Margen global (Amorín)</a></li>
             </ul>
           </li>
-          <li><button data-tab="costos"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span><span class="tab-txt">Costos</span></button>
-            <ul class="submenu-n2">
-              <li><a href="#graf-compras-cat" class="submenu-link" data-tab-padre="costos">Compras por categoría</a></li>
-              <li><a href="#graf-gasto-cat" class="submenu-link" data-tab-padre="costos">Gasto operacional</a></li>
-              <li><a href="#graf-estructura-costos" class="submenu-link" data-tab-padre="costos">Estructura vs. benchmark</a></li>
-            </ul>
-          </li>
           <li><button data-tab="retiro"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span><span class="tab-txt">Retiro utilidad</span></button></li>
           <li><button data-tab="surtido"><span class="tab-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span><span class="tab-txt">Surtido</span></button>
             <ul class="submenu-n2">
@@ -1000,6 +976,7 @@
 
       <div id="resumenPrincipal">
         <section class="resumen-kpi3" id="resumenKpis"><div class="cargando">Conectando…</div></section>
+        <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
         <div class="card" id="seccionAutoAnalisis"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
 
         <div class="card" id="seccionResumenDia"><h2>Ingresos vs Gastos</h2><div class="cap" id="capResumenDia">Comparación diaria del mes.</div><div class="graf-mini" style="height:190px;position:relative"><canvas id="chResumenDia"></canvas></div></div>
@@ -1072,14 +1049,6 @@
           <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
         </div>
         <div class="card full" id="graf-margen-global"><h2>Margen global promedio (Amorín)</h2><div class="cap">Participación × margen por sector — usa la utilidad real de cada venta (venta − costo del producto en ese momento), no una aproximación por compras del mes.</div><div id="margenGlobalCard"></div></div>
-      </div>
-    </div>
-
-    <div id="tab-costos" class="hidden">
-      <div class="grid">
-        <div class="card" id="graf-compras-cat"><h2>Compras por categoría</h2><div class="cap">Todas las categorías de mercadería.</div><div class="lista-barras" id="chProv"></div><div class="cap" id="lecturaProv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card" id="graf-gasto-cat"><h2>Gasto operacional por categoría</h2><div class="cap">Todas las categorías de gasto.</div><div class="lista-barras" id="chGasto"></div><div class="cap" id="lecturaGasto" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--linea)"></div></div>
-        <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
       </div>
     </div>
 
@@ -1332,7 +1301,6 @@
       <div class="bi-sheet-tirador"></div>
       <h3 id="biSheetTit">Análisis del mes</h3>
       <button class="bi-sheet-item" data-ir="rentabilidad"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Rentabilidad</button>
-      <button class="bi-sheet-item" data-ir="costos"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></span>Costos</button>
       <button class="bi-sheet-item" data-ir="retiro"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H8"/><circle cx="16" cy="14" r="1.6"/></svg></span>Retiro utilidad</button>
       <button class="bi-sheet-item" data-ir="surtido"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Surtido</button>
       <button class="bi-sheet-item" data-ir="mermas"><span class="bi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/></svg></span>Mermas</button>
@@ -1626,14 +1594,14 @@ const mesData=ym=>DATA.meses.find(m=>m.ym===ym);
 document.querySelectorAll('.tabs button[data-tab]').forEach(b=>b.onclick=()=>{
   if(!b.dataset.tab) return;
   document.querySelectorAll('.tabs button[data-tab]').forEach(x=>x.classList.toggle('on',x===b));
-  ['resumen','rentabilidad','costos','retiro','surtido','mermas','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
+  ['resumen','rentabilidad','retiro','surtido','mermas','registros','revisar','cierre','cartolas'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('hidden',t!==b.dataset.tab));
   try{ localStorage.setItem('tabActiva', b.dataset.tab); }catch(e){}
 });
 // ================= BARRA INFERIOR (solo celular vertical) =================
 // No duplica la lógica de pestañas: cada botón delega en el botón del riel
 // lateral que ya existe (.tabs button[data-tab]), que es quien cambia la
 // vista, marca .on y escribe localStorage. Aquí solo se refleja el estado.
-const BI_SECUNDARIAS = ['rentabilidad','costos','retiro','surtido','mermas','cartolas'];
+const BI_SECUNDARIAS = ['rentabilidad','retiro','surtido','mermas','cartolas'];
 const biSheetOv = document.getElementById('biSheetOv');
 
 function biAbrirSheet(){
@@ -1773,7 +1741,7 @@ function render(){
   dibujarResumenDia(m);
   dibujarGastoResumenCard(m);
   dibujarDineroPorCobrarCard();
-  dibujarRent(); dibujarVentaGastoMes(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dona('chProv',m.proveedores,'lecturaProv','proveedor'); dona('chGasto',m.gastoCats,'lecturaGasto','categoría de gasto'); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
+  dibujarRent(); dibujarVentaGastoMes(); dibujarDia(m); dibujarMargenGlobal(m); dibujarControl(m); dibujarUtilidad(m); dibujarMixSku(m); dibujarRotacion(m); dibujarVentaSector(m); dibujarMermas(m); dibujarQuiebre(); dibujarVencimientos(); dibujarSinRotacion(); tablaMes(m); autoAnalisis(m); faltantes(m);
 }
 // ==== Resumen: pantalla RESUMEN → CATEGORÍA → DETALLE ====
 // Todas las funciones de acá abajo leen exclusivamente m=mesData(mesActual) y
@@ -1847,8 +1815,7 @@ function dibujarResumenDia(m){
   }});
 }
 // Gastos operacionales: total/% ya existentes (m.gastoOpe, m.ingreso) + m.gastoCats
-// (misma fuente que ya usa dona('chGasto', m.gastoCats, ...) en tab-costos) para
-// la lista COMPLETA (nunca agrupada) y para un donut chico solo decorativo — sin
+// para la lista COMPLETA (nunca agrupada) y para un donut chico solo decorativo — sin
 // etiquetas dibujadas en el canvas (nada que medir/cortar), agrupando en
 // top-4+"Otros" nada más para ese dibujo. El detalle real (sin agrupar) se arma
 // al abrir "Ver detalle" con las transacciones reales de DATA.filas.
@@ -2662,9 +2629,8 @@ document.addEventListener('click', e=>{
 // Nombre histórico ("dona"): esta función dibujaba un donut de Chart.js;
 // ahora renderiza barras horizontales en HTML/CSS plano (más legibles en
 // celular, sin el recorte/solapamiento de dibujar texto sobre un
-// <canvas>). Se mantiene el nombre para no tocar los llamados existentes
-// (dona('chProv', ...), dona('chGasto', ...), dona('chUtilidad', ...)) ni
-// las fuentes de datos que les llegan — mismos números, otra vista.
+// <canvas>). Se mantiene el nombre para no tocar el llamado existente
+// (dona('chUtilidad', ...)) ni las fuentes de datos que le llegan.
 function dona(id,obj,lecturaId,tipoTexto,basePct){
   _barrasUltimoRender[id] = {obj,lecturaId,tipoTexto};
   let ents=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
