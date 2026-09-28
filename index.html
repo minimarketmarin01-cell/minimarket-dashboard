@@ -1945,10 +1945,17 @@ async function guardarFilaGasto(rowIndex){
 // Dinero por cobrar (préstamos a terceros): calcularPrestamos() factoriza el
 // mismo cálculo histórico (no por mes, ver nota anterior) que ya se usaba —
 // solo se reparte en tarjeta-resumen + vista de detalle.
+// "RETIRO EFECTIVO" se usa para traspasos internos de caja (ej. alguien
+// recibe efectivo y transfiere el equivalente desde el banco): ambos lados
+// del movimiento quedan como tipo=PRESTAMO porque no hay una devolución real
+// que registrar, así que esa categoría se excluye de este cálculo — si no,
+// se suma como "prestado" sin nunca poder marcarse como "devuelto" y aparece
+// un saldo pendiente de cobro que en realidad no existe.
+const CATEGORIAS_SIN_PRESTAMO_REAL=['RETIRO EFECTIVO'];
 function calcularPrestamos(){
   const deudores={};
   (DATA.filas||[]).forEach(f=>{
-    if(f.tipo==='PRESTAMO'){
+    if(f.tipo==='PRESTAMO' && !CATEGORIAS_SIN_PRESTAMO_REAL.includes(f.categoria)){
       if(!deudores[f.categoria]) deudores[f.categoria]={prestado:0,devuelto:0};
       deudores[f.categoria].prestado+=f.monto;
     }
