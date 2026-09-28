@@ -1131,6 +1131,7 @@
         <div class="campo"><label id="nrCatLabel">Proveedor</label><div id="nrCatWrap"></div></div>
         <div class="campo"><label>Cuenta</label><div id="nrCuentaWrap"></div></div>
         <div class="campo"><label>Monto</label><input type="text" inputmode="numeric" id="nrMonto" placeholder="$0"></div>
+        <div class="campo" id="nrSubtipoCampo" style="display:none"><label>Quién retira</label><input type="text" id="nrSubtipo" list="listaSubtipos" placeholder="Marcos, Isabel, ..."></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:12px">
         <button type="button" class="btn btn-p" id="btnGuardarNuevoRegistro">Guardar</button>
@@ -1138,6 +1139,7 @@
       </div>
     </div>
     <datalist id="listaCategoriasReg"></datalist>
+    <datalist id="listaSubtipos"></datalist>
     <div class="cap" style="margin-bottom:8px;color:var(--gris);font-size:var(--fs-md)" id="contFilas"></div>
     <div class="tabla-scroll">
       <table class="tabla-edit" id="tablaEdit">
@@ -1571,7 +1573,7 @@ function init(){
   const hh=String(gen.getHours()).padStart(2,'0'), mi=String(gen.getMinutes()).padStart(2,'0');
   document.getElementById('sello').textContent='Actualizado '+dd+'/'+mm+'/'+gen.getFullYear()+' · '+hh+':'+mi;
   document.getElementById('pie').textContent='Datos en vivo desde REGISTROS · se refresca al recargar';
-  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); restaurarTab(); sincronizarBarraInferior(); cargarFechasInvalidas();
+  render(); initTabla(); initCierre(); initRevisar(); poblarCategorias(); poblarSubtipos(); restaurarTab(); sincronizarBarraInferior(); cargarFechasInvalidas();
 }
 // Registros con `fecha` en formato no-ISO (ej. "03/09/26"): payloadFinanciero los excluye en
 // silencio de todo (WHERE fecha >= ?), así que sin este aviso no había forma de saber que
@@ -1605,6 +1607,11 @@ document.getElementById('btnCorregirFechas').addEventListener('click', async ()=
 function poblarCategorias(){
   const dl=document.getElementById('listaCategorias'); if(!dl)return;
   dl.innerHTML=(DATA.categorias||[]).map(c=>`<option value="${c}">`).join('');
+}
+function poblarSubtipos(){
+  const dl=document.getElementById('listaSubtipos'); if(!dl)return;
+  const nombres=[...new Set((DATA.filas||[]).filter(f=>f.tipo==='RETIRO_UTILIDAD'&&f.subtipo&&f.subtipo!=='OTRO').map(f=>f.subtipo))].sort();
+  dl.innerHTML=nombres.map(s=>`<option value="${s}">`).join('');
 }
 const mesData=ym=>DATA.meses.find(m=>m.ym===ym);
 // ===== FIX CRÍTICO (contenido derecho que desaparecía al usar el menú) =====
@@ -1893,23 +1900,30 @@ function dibujarGastoResumenCard(m, catAbierta){
 function abrirDetalleGastos(catAbierta){
   dibujarGastoResumenCard(mesData(mesActual), catAbierta);
 }
+function abrirDetalleUtilidad(subtipoAbierto){
+  dibujarUtilidad(mesData(mesActual), subtipoAbierto);
+}
 // Formulario de edición inline para una fila dentro del detalle de Gastos
 // operacionales: reutiliza selCategoria/selTipo/selCuenta (mismos dropdowns
 // que la pestaña Registros) y el mismo backend financiero_editar_fila, pero
 // al guardar refresca los datos y vuelve a abrir esta misma vista con la
 // misma categoría desplegada, en vez de recargar la página.
+// Misma edición inline para el detalle de Gastos operacionales y el desglose de
+// Distribución de utilidad (RETIRO_UTILIDAD no tiene categoría/tipo/cuenta que editar
+// aquí, sino "quién retira" — subtipo_original).
 function editarFilaGasto(rowIndex){
   const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
-  const cont=document.querySelector(`#cuerpoDetalleGastos .fila-editable[data-row="${rowIndex}"]`);
+  const cont=document.querySelector(`.fila-editable[data-row="${rowIndex}"]`);
   if(!f||!cont)return;
+  const esUtilidad=f.tipo==='RETIRO_UTILIDAD';
   cont.classList.add('fila-edicion');
   cont.innerHTML=`
     <div class="form-edicion-fila">
       <input data-c="nombre" value="${f.nombre||''}" placeholder="Nombre">
       <input data-c="fecha" type="date" value="${f.fecha||''}" class="col-fecha">
-      ${selCategoria(f.categoria)}
-      ${selTipo(f.tipo)}
-      ${selCuenta(f.cuenta)}
+      ${esUtilidad
+        ? `<input data-c="subtipo" value="${f.subtipo||''}" list="listaSubtipos" placeholder="Quién retira">`
+        : `${selCategoria(f.categoria)}${selTipo(f.tipo)}${selCuenta(f.cuenta)}`}
       <input data-c="monto" type="text" inputmode="numeric" value="${clp(f.monto)}" class="col-monto">
     </div>
     <div class="form-edicion-fila-btns">
@@ -1923,20 +1937,25 @@ function editarFilaGasto(rowIndex){
 }
 function cancelarEdicionFilaGasto(rowIndex){
   const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
-  abrirDetalleGastos(f?f.categoria:undefined);
+  if(f&&f.tipo==='RETIRO_UTILIDAD') abrirDetalleUtilidad(f.subtipo||'OTRO');
+  else abrirDetalleGastos(f?f.categoria:undefined);
 }
 async function guardarFilaGasto(rowIndex){
   const f=DATA.filas.find(x=>x.rowIndex==rowIndex);
-  const cont=document.querySelector(`#cuerpoDetalleGastos .fila-editable[data-row="${rowIndex}"]`);
+  const cont=document.querySelector(`.fila-editable[data-row="${rowIndex}"]`);
   if(!f||!cont)return;
   const g=k=>cont.querySelector(`[data-c="${k}"]`).value;
-  const valores={nombre:g('nombre'),fecha:g('fecha'),categoria:g('categoria'),tipo:g('tipo'),cuenta:g('cuenta'),monto:limpiarMonto(g('monto'))};
+  const esUtilidad=f.tipo==='RETIRO_UTILIDAD';
+  const valores=esUtilidad
+    ? {nombre:g('nombre'),fecha:g('fecha'),subtipo:g('subtipo').trim(),monto:limpiarMonto(g('monto'))}
+    : {nombre:g('nombre'),fecha:g('fecha'),categoria:g('categoria'),tipo:g('tipo'),cuenta:g('cuenta'),monto:limpiarMonto(g('monto'))};
   const btn=cont.querySelector('[data-guardar-fila]');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
   const r=await post({accion:'editar',token:TOKEN,nop:f.nop,rowIndex:Number(rowIndex),valores});
   if(r&&r.ok===false){ alert('Error al guardar: '+(r.error||'')); btn.disabled=false; btn.textContent='Guardar'; return; }
   await refrescarDatosSilencioso();
-  abrirDetalleGastos(valores.categoria);
+  if(esUtilidad) abrirDetalleUtilidad(valores.subtipo||'OTRO');
+  else abrirDetalleGastos(valores.categoria);
 }
 // Dinero por cobrar (préstamos a terceros): calcularPrestamos() factoriza el
 // mismo cálculo histórico (no por mes, ver nota anterior) que ya se usaba —
@@ -2105,7 +2124,7 @@ function dibujarControl(m){
         : '')
     + '<br>💡 '+txtControl;
 }
-function dibujarUtilidad(m){
+function dibujarUtilidad(m, subtipoAbierto){
   const d=m.distribucionUtilidad||{total:0,retiroSocios:0,inversion:0,reserva:0};
   const ing=m.ingreso||0;
   if(!ing){
@@ -2131,18 +2150,18 @@ function dibujarUtilidad(m){
     ? 'Por quién retira · toca a alguien para ver el detalle'
     : '';
   document.getElementById('cuerpoDetalleUtilidad').innerHTML = porSubtipo.length ? porSubtipo.map(([subtipo,val],i)=>{
-    const pctv=ing?val/ing*100:0, color=colorPorNombre(subtipo), idExp='expUtilidad'+i;
+    const pctv=ing?val/ing*100:0, color=colorPorNombre(subtipo), idExp='expUtilidad'+i, abierta=subtipo===subtipoAbierto;
     const filasSub=DATA.filas.filter(f=>f.tipo==='RETIRO_UTILIDAD'&&f.ym===m.ym&&(f.subtipo||'OTRO')===subtipo).sort((a,b)=>b.monto-a.monto);
-    return `<div class="expandible" id="${idExp}">
+    return `<div class="expandible${abierta?' abierto':''}" id="${idExp}">
       <div class="expandible-header" data-toggle="${idExp}">
         <span class="punto" style="background:${color}"></span>
         <span class="nom">${subtipo}</span>
         <span class="cifra"><b>${clp(val)}</b>${pctv.toFixed(1)}% del ingreso</span>
         <span class="chev">▸</span>
       </div>
-      <div class="expandible-body hidden">${filasSub.length ? filasSub.map(f=>{
+      <div class="expandible-body${abierta?'':' hidden'}">${filasSub.length ? filasSub.map(f=>{
         const pctItem=ing?f.monto/ing*100:0;
-        return `<div class="fila"><span class="f-nom">${f.nombre||subtipo}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}<span class="f-sub">${pctItem.toFixed(1)}%</span></span></div>`;
+        return `<div class="fila fila-editable" data-row="${f.rowIndex}"><span class="f-nom">${f.nombre||subtipo}<span class="f-sub">${f.fecha}</span></span><span class="f-cifra">${clp(f.monto)}<span class="f-sub">${pctItem.toFixed(1)}%</span></span><button type="button" class="btn-editar-fila" data-editar-fila="${f.rowIndex}" aria-label="Editar transacción" title="Editar">✎</button></div>`;
       }).join('') : '<div class="fila"><span class="f-nom">Sin transacciones individuales</span></div>'}</div>
     </div>`;
   }).join('') : '';
@@ -3108,6 +3127,7 @@ function abrirFormNuevoRegistro(){
   document.getElementById('nrFecha').value=hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2);
   document.getElementById('nrNombre').value='';
   document.getElementById('nrMonto').value='';
+  document.getElementById('nrSubtipo').value='';
   document.getElementById('nrTipoWrap').innerHTML=selTipo('COSTOS');
   document.getElementById('nrCuentaWrap').innerHTML=selCuenta('EFECTIVO');
   actualizarCategoriaNuevoRegistro('COSTOS');
@@ -3119,6 +3139,7 @@ document.getElementById('nrMonto').addEventListener('input', e=>{ const limpio=l
 function actualizarCategoriaNuevoRegistro(tipo){
   document.getElementById('nrCatLabel').textContent=labelCategoria(tipo);
   document.getElementById('nrCatWrap').innerHTML=selCategoria('',tipo);
+  document.getElementById('nrSubtipoCampo').style.display=tipo==='RETIRO_UTILIDAD'?'':'none';
 }
 function cerrarFormNuevoRegistro(){ document.getElementById('formNuevoRegistro').hidden=true; }
 async function guardarNuevoRegistro(){
@@ -3128,13 +3149,16 @@ async function guardarNuevoRegistro(){
   const tipo=document.getElementById('nrTipoWrap').querySelector('select').value;
   const cuenta=document.getElementById('nrCuentaWrap').querySelector('select').value;
   const monto=limpiarMonto(document.getElementById('nrMonto').value);
+  const subtipo=document.getElementById('nrSubtipo').value.trim();
   if(!nombre){ alert('Ponle un nombre o descripción al registro.'); return; }
   if(!fecha){ alert('Falta la fecha.'); return; }
   if(!categoria || categoria==='__nueva__'){ alert('Elige '+labelCategoria(tipo).toLowerCase()+'.'); return; }
   if(!monto){ alert('El monto debe ser mayor a 0.'); return; }
+  const valores={nombre,fecha,categoria,tipo,cuenta,monto};
+  if(tipo==='RETIRO_UTILIDAD') valores.subtipo=subtipo;
   const btn=document.getElementById('btnGuardarNuevoRegistro');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
-  const r=await post({accion:'agregar',token:TOKEN,valores:{nombre,fecha,categoria,tipo,cuenta,monto}});
+  const r=await post({accion:'agregar',token:TOKEN,valores});
   if(r&&r.ok===false){
     alert('Error al guardar: '+(r.error||''));
     btn.disabled=false; btn.textContent='Guardar';
@@ -3274,7 +3298,7 @@ async function refrescarDatosSilencioso(){
   try{
     const d=await fetch(FINANZAS_GET_URL).then(r=>r.json());
     DATA=d;
-    render(); initTabla(); initRevisar(); poblarCategorias(); sincronizarBarraInferior();
+    render(); initTabla(); initRevisar(); poblarCategorias(); poblarSubtipos(); sincronizarBarraInferior();
   }catch(e){ /* si falla, los datos se refrescarán al recargar manualmente */ }
 }
 
@@ -3299,6 +3323,7 @@ function initRevisar(){
         <input placeholder="${labelCategoria('COSTOS')}" data-k="categoria" list="listaCategorias" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px;text-transform:uppercase">
         <select data-k="tipo" style="padding:8px;border:1px solid var(--linea);border-radius:8px">${TIPOS_OPC.map(t=>`<option ${t==='COSTOS'?'selected':''}>${t}</option>`).join('')}</select>
         <select data-k="cuenta" style="padding:8px;border:1px solid var(--linea);border-radius:8px"><option>BANCO</option><option>EFECTIVO</option></select>
+        <input placeholder="Quién retira" data-k="subtipo" list="listaSubtipos" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px;display:none">
         <button class="btn btn-p" data-act="aprobar">Aprobar</button>
         <button class="btn-del" data-act="descartar">Descartar</button>
       </div>`;
@@ -3307,6 +3332,7 @@ function initRevisar(){
     card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
     card.querySelector('[data-k=tipo]').addEventListener('change',e=>{
       card.querySelector('[data-k=categoria]').placeholder=labelCategoria(e.target.value);
+      card.querySelector('[data-k=subtipo]').style.display=e.target.value==='RETIRO_UTILIDAD'?'':'none';
     });
     cont.appendChild(card);
   });
@@ -3316,8 +3342,10 @@ async function aprobarRev(r,card){
   const nombre=g('nombre'),categoria=g('categoria'),tipo=g('tipo'),cuenta=g('cuenta');
   if(!categoria){alert('Pon un '+labelCategoria(tipo).toLowerCase());return;}
   card.querySelector('[data-act=aprobar]').innerHTML='<span class="spin"></span>';
+  const valores={nombre,fecha:r.fecha,categoria,tipo,cuenta,monto:r.monto,nop:r.nop,patron:r.descripcion};
+  if(tipo==='RETIRO_UTILIDAD') valores.subtipo=g('subtipo').trim();
   // agrega a REGISTROS con el N° operación original y borra de POR_REVISAR
-  await post({accion:'agregar',token:TOKEN,valores:{nombre,fecha:r.fecha,categoria,tipo,cuenta,monto:r.monto,nop:r.nop,patron:r.descripcion}});
+  await post({accion:'agregar',token:TOKEN,valores});
   await post({accion:'quitarRevisar',token:TOKEN,fila:r.fila,nop:r.nop});
   card.style.opacity=.4; card.innerHTML='<div style="text-align:center;color:var(--verde);padding:10px">✓ Aprobado y movido a registros</div>';
 }
