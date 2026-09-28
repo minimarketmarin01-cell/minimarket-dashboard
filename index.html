@@ -2347,9 +2347,21 @@ function dibujarMermas(m){
       <div class="kpi"><div class="lbl">Consumo interno</div><div class="val">${clp(d.consumoInterno)}</div><div class="sub">retiro para uso propio — no es pérdida de gestión</div></div>
       <div class="kpi"><div class="lbl">En gestión con proveedor</div><div class="val">${clp(d.cambioProveedor)}</div><div class="sub">pendiente de cambio/abono — no se cuenta como pérdida aún</div></div>
     </div>
-    ${catsOrdenadas.length?`<div class="cap" style="margin-bottom:6px">Categorías con más merma real este mes:</div><table><thead><tr><th style="text-align:left">Categoría</th><th>Merma</th></tr></thead><tbody>
-      ${catsOrdenadas.map(([cat,v])=>`<tr><td style="text-align:left">${cat}</td><td>${clp(v)}</td></tr>`).join('')}
-    </tbody></table>`:''}
+    ${catsOrdenadas.length?`<div class="cap" style="margin-bottom:6px">Categorías con más merma real este mes · toca una para ver el detalle:</div>${catsOrdenadas.map(([cat,v],i)=>{
+      const idExp='expMerma'+i, color=colorPorNombre(cat);
+      // "Real" = mismo criterio que el backend para mermaCategoriaYm: todo motivo que NO sea
+      // consumo_interno ni cambio_proveedor (vencido/dañado/robo/liquidado).
+      const filasCat=(DATA.mermasFilas||[]).filter(f=>f.categoria===cat&&f.ym===m.ym&&f.motivo!=='consumo_interno'&&f.motivo!=='cambio_proveedor').sort((a,b)=>b.monto-a.monto);
+      return `<div class="expandible" id="${idExp}">
+        <div class="expandible-header" data-toggle="${idExp}">
+          <span class="punto" style="background:${color}"></span>
+          <span class="nom">${cat}</span>
+          <span class="cifra"><b>${clp(v)}</b></span>
+          <span class="chev">▸</span>
+        </div>
+        <div class="expandible-body hidden">${filasCat.length ? filasCat.map(f=>`<div class="fila"><span class="f-nom">${f.producto||f.sku||'(sin nombre)'}<span class="f-sub">${f.fecha} · ${f.motivo}${f.cantidad?' · x'+f.cantidad:''}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`).join('') : '<div class="fila"><span class="f-nom">Sin detalle individual</span></div>'}</div>
+      </div>`;
+    }).join('')}`:''}
     ${alertasSector.length?`<div class="cap" style="margin:10px 0 6px">Merma vs. techo por rubro (referencia Amorín) — % sobre la venta de ese mismo rubro:</div><table><thead><tr><th style="text-align:left">Rubro</th><th>Merma</th><th>% s/venta rubro</th><th>Techo</th></tr></thead><tbody>
       ${alertasSector.map(a=>`<tr><td style="text-align:left">${a.etiqueta}</td><td>${clp(a.montoMerma)}</td><td style="color:${a.sobreTecho?'var(--rojo)':'var(--verde)'};font-weight:700">${a.pct!=null?a.pct.toFixed(1)+'%':'sin venta registrada'}</td><td>≤${a.techoPct}%</td></tr>`).join('')}
     </tbody></table>`:''}
