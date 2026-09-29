@@ -2072,11 +2072,13 @@ function dibujarControl(m){
     // como GASTO OPE / categoría PLASTICOS — por eso esta barra siempre daba $0.
     {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
-    // Meta Amorín para Utilidad: piso recomendado, no techo — es la resta de los otros dos
-    // techos de la misma metodología (100% − 70% costo merc. − 15% gasto ope. = 15%). A
-    // diferencia de las barras de gasto, acá "fuera de meta" es quedar POR DEBAJO, no por
-    // encima — por eso el orden de comparación se invierte en `color` y en `fueraDeMeta`.
-    {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:15, tipo:'util'}
+    // Meta Amorín para Utilidad: piso recomendado, no techo. El mismo autor da valores
+    // distintos según la fuente — la estructura de costos de este archivo (100% − 70% costo
+    // merc. − 15% gasto ope.) da 15%, pero su curso "Escuela de Supermercados" da un rango de
+    // 5% a 12% de rentabilidad neta de referencia. Se usa el piso de ese rango (5%) como meta:
+    // por encima también es bueno, así que "fuera de meta" sigue siendo solo quedar por debajo
+    // del piso — por eso el orden de comparación se invierte en `color` y en `fueraDeMeta`.
+    {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:5, tipo:'util'}
   ];
   // "Fuera de meta": para gastos es pasarse del techo, para utilidad es no llegar al piso.
   const fueraDeMeta=it=>it.meta!==null && (it.tipo==='util' ? it.pc<it.meta : it.pc>it.meta);
@@ -2355,8 +2357,11 @@ function dibujarMargenProveedorHTML(m){
 // Techo de merma por rubro (referencia "Supermercado Lucrativo"/Amorín) — match por palabra
 // clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
 // variar (ej. "FRUTAS Y VERDURAS" vs "VERDULERIA"); ajustar los patrones si no calzan.
+// Frutería/Verdulería actualizado a 4% según el curso "Escuela de Supermercados" de Amorín
+// (antes 5%, de su libro/tabla de indicadores) — Carnicería y Panadería no se tocan porque ese
+// curso no dio una cifra específica para esos rubros.
 const TECHOS_MERMA_SECTOR=[
-  {match:/FRUT|VERDURA|HORTALIZA/i, techoPct:5,   etiqueta:'Frutería/Verdulería'},
+  {match:/FRUT|VERDURA|HORTALIZA/i, techoPct:4,   etiqueta:'Frutería/Verdulería'},
   {match:/CARN|VACUNO|POLLO|CERDO/i, techoPct:3,   etiqueta:'Carnicería'},
   {match:/\bPAN\b|PANADER/i,        techoPct:3.5, etiqueta:'Panadería'}
 ];
@@ -2371,7 +2376,10 @@ function dibujarMermas(m){
     cont.innerHTML='<div class="cap">Sin registros de mermas este mes en la tabla compartida con Pedidos Marín 376.</div>';
     return;
   }
-  const META_PERDIDA=3; // referencia de Amorín (carnicería ≤3%, panadería ≤3,5%) — se usa como meta general
+  // Meta global de merma actualizada a 2,2% según el curso "Escuela de Supermercados" de Amorín
+  // ("Pérdidas totales: hasta 2,2%") — antes 3%, aproximado de sus techos por rubro (carnicería
+  // ≤3%, panadería ≤3,5%) al no tener una cifra global explícita en ese momento.
+  const META_PERDIDA=2.2;
   const sobreMeta=d.tasaPerdida>META_PERDIDA;
   const catsOrdenadas=Object.entries(d.porCategoria||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
   // Merma como % de la VENTA de ese mismo sector (no del ingreso total) — solo para los rubros
