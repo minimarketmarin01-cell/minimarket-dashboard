@@ -2084,7 +2084,10 @@ function dibujarControl(m){
     if(it.tipo==='ing') return '#2f6df0';
     return fueraDeMeta(it) ? '#b23b3b' : '#1f7a54';
   };
-  const metaLabel=it=>it.meta===null?'':(it.tipo==='util'?' (meta ≥'+it.meta+'%)':' (meta ≤'+it.meta+'%)');
+  // Meta junto al nombre en el eje, para verla de un vistazo sin tener que leer el texto de
+  // abajo o pasar el dedo por la barra — versión corta (sin la palabra "meta") porque el eje Y
+  // tiene poco ancho en celular.
+  const nombreConMeta=it=>it.meta===null?it.n:it.n+' '+(it.tipo==='util'?'≥':'≤')+it.meta+'%';
   // plugin inline: dibuja "$monto · %" al final de cada barra
   // En celular se acorta la etiqueta ($ compacto) y se reduce el padding
   // derecho: con right:120 en una pantalla de 360px la barra quedaba en 240px.
@@ -2124,13 +2127,25 @@ function dibujarControl(m){
     });
     ctx.restore();
   }};
-  nuevoChart('chControl',{type:'bar',data:{labels:items.map(i=>i.n),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
-    options:{indexAxis:'y',layout:{padding:{right:padDer}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+metaLabel(it);}}}},
+  const FUENTE_EJE = fuenteChart('--fs-chart-eje',14,'600');
+  // Ancho fijo del eje Y, medido con el mismo canvas que usa el resto del gráfico — con las
+  // etiquetas más largas (nombre + meta), dejar que Chart.js calcule solo el ancho podía
+  // quedar corto y cortar el "%" final si el font todavía no había terminado de cargar al
+  // momento del primer layout (letter-spacing/ancho reales listos recién con Inter cargado).
+  const anchoEjeY = Math.ceil(Math.max(...items.map(it=>medirTexto(nombreConMeta(it), FUENTE_EJE)))) + 8;
+  nuevoChart('chControl',{type:'bar',data:{labels:items.map(nombreConMeta),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
+    options:{indexAxis:'y',layout:{padding:{right:padDer}},
+      // Por defecto Chart.js solo muestra el detalle si el toque cae justo sobre el color de la
+      // barra — con Merma/Plásticos/Administr. tan cerca de 0% esa área es casi invisible en
+      // celular. Con intersect:false, tocar en cualquier punto de esa fila (aunque sea a la
+      // derecha, sobre el texto o el espacio vacío) muestra el detalle de esa barra.
+      interaction:{mode:'index', intersect:false, axis:'y'},
+      plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso';}}}},
       scales:{
         x:{max:100,grid:{color:'#eee'},
            ticks:{callback:v=>v+'%', font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#7b8496'}},
-        y:{grid:{display:false},
+        y:{grid:{display:false}, afterFit:s=>{s.width=anchoEjeY;},
            ticks:{font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#28313f', crossAlign:'far'}}}},
     plugins:[etiquetas]});
   const sobrepasados=items.filter(fueraDeMeta);
