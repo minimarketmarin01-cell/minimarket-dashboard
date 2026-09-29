@@ -2072,13 +2072,19 @@ function dibujarControl(m){
     // como GASTO OPE / categoría PLASTICOS — por eso esta barra siempre daba $0.
     {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
-    {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:null, tipo:'util'}
+    // Meta Amorín para Utilidad: piso recomendado, no techo — es la resta de los otros dos
+    // techos de la misma metodología (100% − 70% costo merc. − 15% gasto ope. = 15%). A
+    // diferencia de las barras de gasto, acá "fuera de meta" es quedar POR DEBAJO, no por
+    // encima — por eso el orden de comparación se invierte en `color` y en `fueraDeMeta`.
+    {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:15, tipo:'util'}
   ];
+  // "Fuera de meta": para gastos es pasarse del techo, para utilidad es no llegar al piso.
+  const fueraDeMeta=it=>it.meta!==null && (it.tipo==='util' ? it.pc<it.meta : it.pc>it.meta);
   const color=it=>{
     if(it.tipo==='ing') return '#2f6df0';
-    if(it.tipo==='util') return it.v>=0?'#1f7a54':'#b23b3b';
-    return (it.meta!==null && it.pc>it.meta) ? '#b23b3b' : '#1f7a54';  // rojo si sobrepasa meta
+    return fueraDeMeta(it) ? '#b23b3b' : '#1f7a54';
   };
+  const metaLabel=it=>it.meta===null?'':(it.tipo==='util'?' (meta ≥'+it.meta+'%)':' (meta ≤'+it.meta+'%)');
   // plugin inline: dibuja "$monto · %" al final de cada barra
   // En celular se acorta la etiqueta ($ compacto) y se reduce el padding
   // derecho: con right:120 en una pantalla de 360px la barra quedaba en 240px.
@@ -2104,24 +2110,35 @@ function dibujarControl(m){
       const it=items[i];
       ctx.fillStyle='#28313f'; ctx.textAlign='left';
       ctx.fillText(txtBarra(it), bar.x+6, bar.y);
+      // Indicador de meta: marca vertical en la barra, en el punto exacto (% del ingreso)
+      // que recomienda Amorín — así se ve de un vistazo qué tan lejos está el real de la meta,
+      // no solo el color de la barra.
+      if(it.meta!==null){
+        const xMeta=ch.scales.x.getPixelForValue(it.meta);
+        ctx.strokeStyle='#28313f'; ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(xMeta, bar.y-bar.height/2);
+        ctx.lineTo(xMeta, bar.y+bar.height/2);
+        ctx.stroke();
+      }
     });
     ctx.restore();
   }};
   nuevoChart('chControl',{type:'bar',data:{labels:items.map(i=>i.n),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
     options:{indexAxis:'y',layout:{padding:{right:padDer}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+(it.meta!==null?' (meta ≤'+it.meta+'%)':'');}}}},
+      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso'+metaLabel(it);}}}},
       scales:{
         x:{max:100,grid:{color:'#eee'},
            ticks:{callback:v=>v+'%', font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#7b8496'}},
         y:{grid:{display:false},
            ticks:{font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#28313f', crossAlign:'far'}}}},
     plugins:[etiquetas]});
-  const sobrepasados=items.filter(it=>it.meta!==null && it.pc>it.meta);
+  const sobrepasados=items.filter(fueraDeMeta);
   const txtControl = sobrepasados.length
-    ? `⚠️ Sobre la meta: ${sobrepasados.map(it=>it.n+' ('+it.pc.toFixed(1)+'% vs meta '+it.meta+'%)').join(', ')}. Revisa esas categorías antes de la próxima compra.`
+    ? `⚠️ Fuera de meta: ${sobrepasados.map(it=>it.n+' ('+it.pc.toFixed(1)+'% vs meta '+(it.tipo==='util'?'≥':'')+it.meta+'%)').join(', ')}. Revisa esas categorías antes de la próxima compra.`
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
-    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa.'
+    'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa (o, en Utilidad, no llega al piso). La marca | es la meta Amorín.'
     + (nMesesVent>1
         ? '<br><small style="color:var(--gris)">"Costos merc. ('+nMesesVent+'m)" = compras acumuladas de los últimos '+nMesesVent+' meses ÷ ingreso de esos mismos meses. Suaviza compras grandes pagadas en un solo mes pero vendidas en varios — preocúpate si este promedio se mantiene sobre 70%, no por un mes puntual.</small>'
         : '')
