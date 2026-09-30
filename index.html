@@ -2316,9 +2316,11 @@ function dibujarVentaSector(m){
 // se incluye: Amorín las junta en un solo "Frutas y Verduras", pero acá son dos sectores
 // separados y compararlas por separado contra el total combinado sería engañoso. Panadería y
 // Galletas tampoco distinguen industrial/propia ni dulce/salada como sí hace el autor, así que
-// se usa la suma de sus sub-rubros como referencia.
+// se usa la suma de sus sub-rubros como referencia. "Carnicería" tampoco se incluye: el 25-30%
+// de Amorín es para una carnicería real (corte de vacuno/pollo/cerdo); el sector "CARNICERIA" de
+// este negocio es solo embutidos/cecinas envasados, un rubro distinto sin referencia propia en
+// las fuentes recopiladas.
 const PARTICIPACION_IDEAL_SECTOR=[
-  {match:/CARNICER/i,      etiqueta:'Carnicería',       min:25,  max:30},
   {match:/BEBIDA/i,        etiqueta:'Bebidas',          min:12,  max:15},
   {match:/LACTEO/i,        etiqueta:'Lácteos',          min:7.5, max:10.5},
   {match:/LIMPIEZA/i,      etiqueta:'Limpieza',         min:4.5, max:5.5},
@@ -2385,11 +2387,12 @@ function dibujarMargenProveedorHTML(m){
 // clave, no por nombre exacto, porque las categorías reales de Loyverse/Pedidos Marín pueden
 // variar (ej. "FRUTAS Y VERDURAS" vs "VERDULERIA"); ajustar los patrones si no calzan.
 // Frutería/Verdulería actualizado a 4% según el curso "Escuela de Supermercados" de Amorín
-// (antes 5%, de su libro/tabla de indicadores) — Carnicería y Panadería no se tocan porque ese
-// curso no dio una cifra específica para esos rubros.
+// (antes 5%, de su libro/tabla de indicadores) — Panadería no se toca porque ese curso no dio
+// una cifra específica para ese rubro. Carnicería se sacó de esta lista: el 3% de Amorín es para
+// una carnicería real con corte de vacuno/pollo/cerdo — el sector "CARNICERIA" de este negocio es
+// solo embutidos/cecinas envasados, un rubro sin referencia propia en las fuentes recopiladas.
 const TECHOS_MERMA_SECTOR=[
   {match:/FRUT|VERDURA|HORTALIZA/i, techoPct:4,   etiqueta:'Frutería/Verdulería'},
-  {match:/CARN|VACUNO|POLLO|CERDO/i, techoPct:3,   etiqueta:'Carnicería'},
   {match:/\bPAN\b|PANADER/i,        techoPct:3.5, etiqueta:'Panadería'}
 ];
 function techoMermaPorCategoria(cat){
