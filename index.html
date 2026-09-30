@@ -1329,7 +1329,7 @@ const TOKEN_FINANZAS = obtenerTokenFinanzas();
 // Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
 const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero&token=" + encodeURIComponent(TOKEN_FINANZAS);
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
-const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO'];
+const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO','IMPUESTOS','INVERSION'];
 // Meta Amorín para gasto operacional: suma de RRHH (8%) + operacionales (5%) + administrativos
 // (1%) + marketing (1.2%) + financieros (1%) del ingreso — mismo techo usado en la barra
 // "Gasto ope." de "Estructura de costos vs. benchmark".
