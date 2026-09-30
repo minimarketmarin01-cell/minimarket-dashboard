@@ -2308,6 +2308,29 @@ function dibujarVentaSector(m){
     ${filas.map(([sec,v])=>`<tr><td style="text-align:left">${sec}</td><td>${clp(v)}</td><td>${total?(v/total*100).toFixed(1):'0.0'}%</td></tr>`).join('')}
   </tbody></table>`;
 }
+// Participación ideal por sector (referencia "Supermercado Lucrativo"/Amorín) — combina la
+// "Tabla de indicadores", el libro (pág 249-250) y el curso "Escuela de Supermercados", que dan
+// valores algo distintos entre sí; se usa el rango que cubre las fuentes (o el punto ±holgura
+// cuando solo hay una fuente). Igual que TECHOS_MERMA_SECTOR, match por palabra clave porque las
+// categorías reales de Loyverse no calzan siempre con los nombres del autor. Frutas/Verduras no
+// se incluye: Amorín las junta en un solo "Frutas y Verduras", pero acá son dos sectores
+// separados y compararlas por separado contra el total combinado sería engañoso. Panadería y
+// Galletas tampoco distinguen industrial/propia ni dulce/salada como sí hace el autor, así que
+// se usa la suma de sus sub-rubros como referencia.
+const PARTICIPACION_IDEAL_SECTOR=[
+  {match:/CARNICER/i,      etiqueta:'Carnicería',       min:25,  max:30},
+  {match:/BEBIDA/i,        etiqueta:'Bebidas',          min:12,  max:15},
+  {match:/LACTEO/i,        etiqueta:'Lácteos',          min:7.5, max:10.5},
+  {match:/LIMPIEZA/i,      etiqueta:'Limpieza',         min:4.5, max:5.5},
+  {match:/CUIDADO PERSONAL|PERFUMER/i, etiqueta:'Perfumería/Cuidado personal', min:4, max:5.5},
+  {match:/PANADER/i,       etiqueta:'Panadería',        min:5.5, max:7.5},
+  {match:/MASCOTA|\bPET\b/i, etiqueta:'Mascotas',       min:0.3, max:0.8},
+  {match:/GALLETA/i,       etiqueta:'Galletas',         min:17,  max:23},
+];
+function participacionIdealSector(sec){
+  const s=String(sec||'').toUpperCase();
+  return PARTICIPACION_IDEAL_SECTOR.find(b=>b.match.test(s))||null;
+}
 function dibujarMargenGlobal(m){
   const cont=document.getElementById('margenGlobalCard');
   if(!cont) return;
@@ -2329,10 +2352,14 @@ function dibujarMargenGlobal(m){
     <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
       ${filas.map(([sec,v])=>{
         const costoSector=v.venta-v.utilidad;
-        return `<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%</td><td>${clp(costoSector)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
+        const ref=participacionIdealSector(sec);
+        const dentroRef=ref&&v.participacionPct>=ref.min&&v.participacionPct<=ref.max;
+        const rangoTxt=ref?(ref.min===ref.max?ref.min+'%':ref.min+'–'+ref.max+'%'):'';
+        const repHTML=ref?`<div style="font-weight:400;font-size:11px;color:${dentroRef?'var(--verde)':'#b8860b'}">${dentroRef?'✓':'△'} ideal ${rangoTxt}</div>`:'';
+        return `<tr><td style="text-align:left">${sec}</td><td>${v.participacionPct.toFixed(1)}%${repHTML}</td><td>${clp(costoSector)}</td><td style="color:${v.margenPct>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${v.margenPct.toFixed(1)}%<div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(v.utilidad)}</div></td></tr>`;
       }).join('')}
     </tbody></table>
-    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.</div>
+    <div class="cap" style="margin-top:8px">💡 Participación × margen de cada sector, sumado, da el margen global de arriba — así ves cuáles sectores suben o bajan tu margen promedio. Margen global menos gasto operacional (ambos % sobre la venta del mes) da tu utilidad neta real.<br>✓/△ bajo la participación: representatividad del sector vs. el mix ideal de referencia (Amorín) — △ no es un error, solo indica que ese sector pesa más o menos de lo típico en un supermercado rentable.</div>
     ${dibujarMargenProveedorHTML(m)}`;
 }
 // Misma metodología Amorín que dibujarMargenGlobal, pero cortada por proveedor en vez de por
