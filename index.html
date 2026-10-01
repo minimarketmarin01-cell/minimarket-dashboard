@@ -3493,6 +3493,7 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
     const filasRaw = XLSX.utils.sheet_to_json(hojaMov, {header:1, raw:true});
 
     let anio = new Date().getFullYear();
+    let rutEncontrado = '';
     const hojaResumen = wb.Sheets['Resumen'];
     if(hojaResumen){
       const filasResumen = XLSX.utils.sheet_to_json(hojaResumen, {header:1, raw:false});
@@ -3501,7 +3502,22 @@ document.getElementById('fileCartola').addEventListener('change', async (e)=>{
           const m = String(r[4]||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
           if(m) anio = parseInt(m[3],10);
         }
+        if(r[0] && String(r[0]).trim()==='Rut Empresa'){
+          rutEncontrado = String(r[4]||'').trim();
+        }
       }
+    }
+
+    // Filtro: BancoEstado permite exportar cartolas de cualquier cuenta a la que el
+    // usuario tenga acceso. Si se sube por error la cartola de otra empresa (otro RUT),
+    // se bloquea aquí mismo antes de clasificar o guardar nada.
+    const RUT_EMPRESA_ESPERADO = '77.493.967-9';
+    if(rutEncontrado && rutEncontrado !== RUT_EMPRESA_ESPERADO){
+      estado.innerHTML = `<div class="alerta ver"><span>⚠️</span><div>
+        Este archivo NO es de Inversiones Salazar Requejo SpA (RUT ${RUT_EMPRESA_ESPERADO}).<br>
+        El RUT de la cartola subida es <b>${rutEncontrado}</b>. No se procesó nada — revisa que sea la cuenta correcta.
+      </div></div>`;
+      return;
     }
 
     // Las distintas exportaciones de BancoEstado ("Cartola en línea" vs "Chequera
