@@ -2493,11 +2493,21 @@ function dibujarMargenGlobal(m){
   // (lo pagado ese mes, no lo efectivamente vendido).
   const gastoOpePct=m.ingreso?(m.gastoOpe||0)/m.ingreso*100:0;
   const utilidadNetaAmorin=mg.pct-gastoOpePct;
+  // Referencia Amorín al lado de cada KPI, igual que ya se hace con la
+  // participación por sector más abajo: sin la meta al lado, un % solo no
+  // dice si está bien o mal. Rangos ya usados en el resto del dashboard:
+  // margen bruto 25–40% (auto-análisis), Gasto ope. ≤META_GASTO_OPE%
+  // (misma constante que "Gastos operacionales"), Utilidad ≥5% (piso del
+  // 5–12% del video de Amorín, usado en "Estructura de costos").
+  const refMargen=mg.pct>=25&&mg.pct<=40;
+  const refGasto=gastoOpePct<=META_GASTO_OPE;
+  const refUtil=utilidadNetaAmorin>=5;
+  const lblRef=(ok,txt)=>`<div style="font-weight:600;font-size:11px;text-transform:none;letter-spacing:normal;margin-top:2px;color:${ok?'var(--verde)':'#b8860b'}">${ok?'✓':'△'} ${txt}</div>`;
   cont.innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px">
-      <div class="kpi"><div class="lbl">Margen global ponderado</div><div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div><div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div></div>
-      <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${gastoOpePct.toFixed(1)}%</div><div class="sub">${clp(m.gastoOpe||0)} sobre la venta del mes</div></div>
-      <div class="kpi"><div class="lbl">Utilidad neta (Amorín)</div><div class="val" style="color:${utilidadNetaAmorin>=0?'var(--verde)':'var(--rojo)'}">${utilidadNetaAmorin.toFixed(1)}%</div><div class="sub">margen global − gasto operacional</div></div>
+      <div class="kpi"><div class="lbl">Margen global ponderado</div><div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div><div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div>${lblRef(refMargen,'ideal 25–40%')}</div>
+      <div class="kpi"><div class="lbl">Gasto operacional</div><div class="val">${gastoOpePct.toFixed(1)}%</div><div class="sub">${clp(m.gastoOpe||0)} sobre la venta del mes</div>${lblRef(refGasto,'meta ≤'+META_GASTO_OPE+'%')}</div>
+      <div class="kpi"><div class="lbl">Utilidad neta (Amorín)</div><div class="val" style="color:${utilidadNetaAmorin>=0?'var(--verde)':'var(--rojo)'}">${utilidadNetaAmorin.toFixed(1)}%</div><div class="sub">margen global − gasto operacional</div>${lblRef(refUtil,'meta ≥5%')}</div>
     </div>
     <table><thead><tr><th style="text-align:left">Sector</th><th>Participación</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
       ${filas.map(([sec,v])=>{
