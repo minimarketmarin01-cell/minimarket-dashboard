@@ -221,7 +221,7 @@
      dos columnas (ver media query más abajo), sin estirar los componentes de
      celular — solo cambia el grid contenedor. */
   #resumenPrincipal{display:grid; grid-template-columns:1fr; gap:clamp(10px,1.8vw,16px)}
-  .resumen-kpi3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(7px,1.4vw,14px)}
+  .resumen-kpi3{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(7px,1.4vw,14px)}
   .resumen-kpi3 .kpi .lbl{display:flex; align-items:center; gap:6px}
   .resumen-total{font-family:'Manrope',sans-serif; font-size:clamp(1.3rem,1rem + 1.6vw,1.9rem); font-weight:800; letter-spacing:-.02em; margin:4px 0 2px}
   .resumen-total .sub{display:block; font-family:'Inter',sans-serif; font-size:var(--fs-sm); font-weight:600; color:var(--gris); margin-top:2px}
@@ -675,6 +675,7 @@
 
     /* --- Densidad de contenido en celular --- */
     .hero{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px}
+    .resumen-kpi3{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
     .kpi.hero-util{grid-column:1 / -1}
     .mini{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
     .kpi{padding:12px 13px 11px}
@@ -1835,6 +1836,7 @@ function dibujarResumenKpis(m,delta,prev){
   document.getElementById('resumenKpis').innerHTML=`
     <div class="kpi"><div class="lbl">Ingresos</div><div class="val">${clp(m.ingreso)}</div><div class="sub">100%${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
     <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${gastoOpePct.toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div>${refAmorin(gastoOpePct<=META_GASTO_OPE,'meta ≤'+META_GASTO_OPE+'%')}</div>
+    <div class="kpi"><div class="lbl">Total abonado POS</div><div class="val">${clp(m.abonadoPOS||0)}</div><div class="sub">neto al banco (venta − comisión)${prev?delta(m.abonadoPOS,prev.abonadoPOS):''}</div></div>
     <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div>${refAmorin(m.rentabilidad>=5,'meta ≥5%')}</div>`;
 }
 // Los KPI que no encajan en las 4 secciones del mockup (Punto de equilibrio,
