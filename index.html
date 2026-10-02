@@ -1362,6 +1362,11 @@ const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
 // número plano que espera el resto del código (dirty, guardarCambios, etc.).
 const limpiarMonto=v=>Number(String(v).replace(/[^\d]/g,''))||0;
 const pct=n=>(n>=0?'+':'')+(n||0).toFixed(1)+'%';
+// Referencia Amorín al lado de un KPI (✓ dentro de meta, △ fuera) — mismo
+// criterio visual que ya usa la participación por sector en Margen global.
+// Solo se usa con metas que ya existen en el código (META_GASTO_OPE, rangos
+// ya documentados en comentarios/auto-análisis); no inventar metas nuevas acá.
+const refAmorin=(ok,txt)=>`<div style="font-weight:600;font-size:11px;text-transform:none;letter-spacing:normal;margin-top:2px;color:${ok?'var(--verde)':'#b8860b'}">${ok?'✓':'△'} ${txt}</div>`;
 // dd/mm/aaaa a partir de la fecha ISO (aaaa-mm-dd) que entrega el backend
 const fechaEs=iso=>{ const p=String(iso||'').split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : (iso||''); };
 // Misma regla que usa el backend (construirJSON) para clasificar una fila
@@ -1819,10 +1824,11 @@ function render(){
 // DATA.filas (ya existentes) — ningún cálculo nuevo, solo presentación.
 function dibujarResumenKpis(m,delta,prev){
   const uc=m.utilidad>=0?'pos':'neg';
+  const gastoOpePct=(m.gastoOpe/m.ingreso*100)||0;
   document.getElementById('resumenKpis').innerHTML=`
     <div class="kpi"><div class="lbl">Ingresos</div><div class="val">${clp(m.ingreso)}</div><div class="sub">100%${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
-    <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${((m.gastoOpe/m.ingreso*100)||0).toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div></div>
-    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div></div>`;
+    <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${gastoOpePct.toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div>${refAmorin(gastoOpePct<=META_GASTO_OPE,'meta ≤'+META_GASTO_OPE+'%')}</div>
+    <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div>${refAmorin(m.rentabilidad>=5,'meta ≥5%')}</div>`;
 }
 // Los KPI que no encajan en las 4 secciones del mockup (Punto de equilibrio,
 // Ticket promedio, Comisión POS, Depositado real en banco, Días con ventas) se
@@ -2502,7 +2508,7 @@ function dibujarMargenGlobal(m){
   const refMargen=mg.pct>=25&&mg.pct<=40;
   const refGasto=gastoOpePct<=META_GASTO_OPE;
   const refUtil=utilidadNetaAmorin>=5;
-  const lblRef=(ok,txt)=>`<div style="font-weight:600;font-size:11px;text-transform:none;letter-spacing:normal;margin-top:2px;color:${ok?'var(--verde)':'#b8860b'}">${ok?'✓':'△'} ${txt}</div>`;
+  const lblRef=refAmorin;
   cont.innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px">
       <div class="kpi"><div class="lbl">Margen global ponderado</div><div class="val" style="color:${mg.pct>=0?'var(--verde)':'var(--rojo)'}">${mg.pct.toFixed(1)}%</div><div class="sub">${clp(mg.utilidadTotal)} sobre ${clp(mg.ventaTotal)} vendidos</div>${lblRef(refMargen,'ideal 25–40%')}</div>
@@ -2582,7 +2588,7 @@ function dibujarMermas(m){
   }).filter(Boolean);
   cont.innerHTML=`
     <div class="mini" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px">
-      <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso · meta Amorín ≤3%</div></div>
+      <div class="kpi ${sobreMeta?'':'acc-verde'}"><div class="lbl">Merma real ${sobreMeta?'<span class="badge">sobre meta</span>':''}</div><div class="val" style="color:${sobreMeta?'var(--rojo)':'inherit'}">${clp(d.real)}</div><div class="sub">${d.tasaPerdida.toFixed(2)}% del ingreso</div>${refAmorin(!sobreMeta,'meta ≤'+META_PERDIDA+'%')}</div>
       <div class="kpi"><div class="lbl">Casos de merma real</div><div class="val">${d.nReal}</div><div class="sub">vencido/dañado/robo/liquidado</div></div>
       <div class="kpi"><div class="lbl">Consumo interno</div><div class="val">${clp(d.consumoInterno)}</div><div class="sub">retiro para uso propio — no es pérdida de gestión</div></div>
       <div class="kpi"><div class="lbl">En gestión con proveedor</div><div class="val">${clp(d.cambioProveedor)}</div><div class="sub">pendiente de cambio/abono — no se cuenta como pérdida aún</div></div>
@@ -2925,11 +2931,23 @@ function dona(id,obj,lecturaId,tipoTexto,basePct){
 }
 function tablaMes(m){
   document.getElementById('capTabla').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];
-  const rows=[['Ingresos',m.ingreso,''],['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%'],['Margen bruto',m.ingreso-m.costos,m.margenBruto.toFixed(1)+'%','pos'],['Gasto operacional',m.gastoOpe,((m.gastoOpe/m.ingreso*100)||0).toFixed(1)+'%'],['Retiro de utilidad',m.retiroUtilidad,''],['Merma',m.merma,''],['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%']];
+  const gastoOpePct=(m.gastoOpe/m.ingreso*100)||0;
+  // Ícono compacto (sin el bloque completo de refAmorin, que no cabe en una celda de tabla
+  // de una sola línea) con la misma meta ya usada en las tarjetas de KPI de arriba.
+  const refIcono=ok=>`<span style="color:${ok?'var(--verde)':'#b8860b'}">${ok?'✓':'△'}</span> `;
+  const rows=[
+    ['Ingresos',m.ingreso,''],
+    ['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%'],
+    ['Margen bruto',m.ingreso-m.costos,refIcono(m.margenBruto>=25&&m.margenBruto<=40)+m.margenBruto.toFixed(1)+'%','pos'],
+    ['Gasto operacional',m.gastoOpe,refIcono(gastoOpePct<=META_GASTO_OPE)+gastoOpePct.toFixed(1)+'%'],
+    ['Retiro de utilidad',m.retiroUtilidad,''],
+    ['Merma',m.merma,''],
+    ['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%']
+  ];
   let html='<tr><th>Concepto</th><th>Monto</th><th>% s/ingreso</th></tr>';
   rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td class="${r[3]||''}">${clp(r[1])}</td><td>${r[2]}</td></tr>`);
   const uc=m.utilidad>=0?'pos':'neg';
-  html+=`<tr class="foco"><td><b>Utilidad neta</b></td><td class="${uc}"><b>${clp(m.utilidad)}</b></td><td class="${uc}"><b>${pct(m.rentabilidad)}</b></td></tr>`;
+  html+=`<tr class="foco"><td><b>Utilidad neta</b></td><td class="${uc}"><b>${clp(m.utilidad)}</b></td><td class="${uc}"><b>${refIcono(m.rentabilidad>=5)}${pct(m.rentabilidad)}</b></td></tr>`;
   document.querySelector('#tabla tbody').innerHTML=html;
 }
 function autoAnalisis(m){
