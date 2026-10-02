@@ -55,7 +55,14 @@
   body{font-family:'Inter',system-ui,sans-serif; background:var(--papel); color:var(--tinta); -webkit-font-smoothing:antialiased; line-height:1.45; font-variant-numeric:tabular-nums}
   .wrap{max-width:1180px; margin:0 auto; padding:0 16px 60px; --sidebar-w:190px}
   .wrap.sidebar-oculto{--sidebar-w:56px}
-  .masthead{height:22px; margin:0 -16px 14px; overflow:hidden}
+  /* Ancho completo de pantalla sin depender del padding de .wrap: antes usaba
+     margin:0 -16px, calzado a mano con el padding de .wrap en ese momento (16px).
+     Al cambiar .wrap su padding en otros anchos (12px en celular, 32px en
+     escritorio) sin actualizar este margen a la par, la barra quedaba más
+     angosta o más ancha que la pantalla real. width:100vw + este margen
+     calculado siempre alinea los bordes con el viewport, sin importar cuánto
+     padding tenga .wrap en cada breakpoint. */
+  .masthead{height:22px; width:100vw; margin:0 calc(50% - 50vw) 14px; overflow:hidden}
   header.top{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:14px}
   header.top h1{font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800; letter-spacing:-.015em}
   header.top h1 span{color:var(--gris); font-weight:500; font-family:'Inter',sans-serif; font-size:var(--fs-lg)}
@@ -673,7 +680,7 @@
     .kpi{padding:12px 13px 11px}
     .kpi .val{font-size:clamp(1rem,4.6vw,1.35rem)}
     .card{padding:14px}
-    .masthead{margin:0 -12px 10px}
+    .masthead{margin-bottom:10px}
     /* Selector de mes: carrusel horizontal en vez de envolver en 3 líneas */
     .selector{flex-wrap:nowrap; overflow-x:auto; margin:12px 0;
       scrollbar-width:none; -webkit-overflow-scrolling:touch}
