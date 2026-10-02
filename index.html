@@ -1842,7 +1842,7 @@ function dibujarResumenKpis(m,delta,prev){
   document.getElementById('resumenKpis').innerHTML=`
     <div class="kpi"><div class="lbl">Ingresos</div><div class="val">${clp(m.ingreso)}</div><div class="sub">100%${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
     <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${gastoOpePct.toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div>${refAmorin(gastoOpePct<=META_GASTO_OPE,'meta ≤'+META_GASTO_OPE+'%')}</div>
-    <div class="kpi"><div class="lbl">Total recibido</div><div class="val">${clp(totalRecibido)}</div><div class="sub">POS neto + efectivo + transferencia${prev?delta(totalRecibido,calcTotalRecibido(prev)):''}</div></div>
+    <div class="kpi"><div class="lbl">Total recibido</div><div class="val">${clp(totalRecibido)}</div><div class="sub">POS ${clpK(m.abonadoPOS||0)} + efectivo ${clpK(m.ingresoEfectivo||0)} + transf. ${clpK(m.ingresoTransferencia||0)}${m.ingresoOtro?' + otro '+clpK(m.ingresoOtro):''}${prev?delta(totalRecibido,calcTotalRecibido(prev)):''}</div></div>
     <div class="kpi"><div class="lbl">Comisión POS del mes</div><div class="val">${clp(m.comisionPOSmensual||0)}</div><div class="sub">SuperCompraQuí 1,29% + IVA${prev?delta(m.comisionPOSmensual,prev.comisionPOSmensual,false):''}</div></div>
     <div class="kpi hero-util"><div class="lbl">Utilidad neta ${m.incompleto?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div>${refAmorin(m.rentabilidad>=5,'meta ≥5%')}</div>`;
 }
