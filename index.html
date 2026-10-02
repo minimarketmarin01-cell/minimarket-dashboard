@@ -1407,12 +1407,24 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getEle
 // todo lo que no es INGRESO (COSTOS, GASTO OPE, MERMA, PLÁSTICOS, IMPUESTOS,
 // INVERSIÓN, retiros, préstamos) — así el total de la lista cuadra con la barra.
 function abrirDetalleDia(fecha){
-  const filas=DATA.filas.filter(f=>f.fecha===fecha && f.tipo!=='INGRESO').sort((a,b)=>b.monto-a.monto);
+  const filas=DATA.filas.filter(f=>f.fecha===fecha && f.tipo!=='INGRESO');
   const total=filas.reduce((s,f)=>s+(Number(f.monto)||0),0);
+  // Agrupa por nombre+rubro antes de listar: días con muchas ventas con
+  // tarjeta generan una fila de "Comision SCQ" por cada una (a veces decenas),
+  // y listarlas una por una no es un detalle simplificado — se suman en una
+  // sola línea con el total y la cantidad de movimientos agrupados.
+  const grupos=new Map();
+  filas.forEach(f=>{
+    const clave=(f.nombre||f.categoria)+'|'+f.categoria;
+    const g=grupos.get(clave)||{nombre:f.nombre||f.categoria,categoria:f.categoria,monto:0,n:0};
+    g.monto+=Number(f.monto)||0; g.n++;
+    grupos.set(clave,g);
+  });
+  const agrupadas=[...grupos.values()].sort((a,b)=>b.monto-a.monto);
   document.getElementById('modalDetalleDiaTitulo').textContent=`Gastos y costos — ${fechaEs(fecha)}`;
   document.getElementById('capDetalleDia').textContent=`${filas.length} registro${filas.length!==1?'s':''} · ${clp(total)}`;
-  document.getElementById('cuerpoDetalleDia').innerHTML = filas.length ? `<div class="lista-plana">${filas.map(f=>
-    `<div class="fila"><span class="f-nom">${f.nombre||f.categoria}<span class="f-sub">${f.categoria}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`
+  document.getElementById('cuerpoDetalleDia').innerHTML = agrupadas.length ? `<div class="lista-plana">${agrupadas.map(g=>
+    `<div class="fila"><span class="f-nom">${g.nombre}${g.n>1?' ×'+g.n:''}<span class="f-sub">${g.categoria}</span></span><span class="f-cifra">${clp(g.monto)}</span></div>`
   ).join('')}</div>` : '<p class="cap">Sin gastos ni costos registrados este día.</p>';
   const modal=document.getElementById('modalDetalleDia');
   modal.classList.remove('hidden');
