@@ -376,16 +376,18 @@
   .hidden{display:none!important}
   .modal-overlay{position:fixed;inset:0;background:rgba(15,27,48,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
   /* Slider de rango doble (dos <input type=range> superpuestos) para
-     filtrar el rango de días del gráfico Ingresos vs. costos y gastos. */
-  #diaDesde,#diaHasta{height:26px;margin:0}
-  #diaDesde::-webkit-slider-thumb,#diaHasta::-webkit-slider-thumb{
+     filtrar el rango de días de un gráfico de ingresos vs. costos y gastos.
+     Clase compartida: la usan tanto "Flujo diario" (#diaDesde/#diaHasta)
+     como "Ingresos vs Gastos" (#resumenDiaDesde/#resumenDiaHasta). */
+  .rango-doble{height:26px;margin:0}
+  .rango-doble::-webkit-slider-thumb{
     -webkit-appearance:none;appearance:none;pointer-events:all;width:18px;height:18px;border-radius:50%;
     background:var(--acento);border:2px solid #fff;box-shadow:0 1px 4px rgba(15,27,48,.35);cursor:pointer;margin-top:-8px}
-  #diaDesde::-moz-range-thumb,#diaHasta::-moz-range-thumb{
+  .rango-doble::-moz-range-thumb{
     pointer-events:all;width:18px;height:18px;border-radius:50%;background:var(--acento);border:2px solid #fff;
     box-shadow:0 1px 4px rgba(15,27,48,.35);cursor:pointer}
-  #diaDesde::-webkit-slider-runnable-track,#diaHasta::-webkit-slider-runnable-track{height:4px;background:transparent}
-  #diaDesde::-moz-range-track,#diaHasta::-moz-range-track{height:4px;background:transparent}
+  .rango-doble::-webkit-slider-runnable-track{height:4px;background:transparent}
+  .rango-doble::-moz-range-track{height:4px;background:transparent}
   .rango-pista{position:absolute;left:0;right:0;top:15px;height:4px;border-radius:999px;background:var(--linea)}
   .rango-fill{position:absolute;top:15px;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--acento),var(--acento2))}
   .spin{display:inline-block; width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--tinta);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
@@ -979,7 +981,18 @@
         <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
         <div class="card" id="seccionAutoAnalisis"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
 
-        <div class="card" id="seccionResumenDia"><h2>Ingresos vs Gastos</h2><div class="cap" id="capResumenDia">Comparación diaria del mes.</div><div class="graf-mini" style="height:190px;position:relative"><canvas id="chResumenDia"></canvas></div></div>
+        <div class="card" id="seccionResumenDia"><h2>Ingresos vs Gastos</h2><div class="cap" id="capResumenDia">Comparación diaria del mes.</div><div class="graf-mini" style="height:190px;position:relative"><canvas id="chResumenDia"></canvas></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+            <span style="font-size:var(--fs-sm);color:var(--gris);white-space:nowrap">Días <b id="rangoResumenDiasTxt"></b></span>
+            <div style="position:relative;flex:1;height:26px">
+              <div class="rango-pista"></div>
+              <div class="rango-fill" id="rangoResumenFill"></div>
+              <input type="range" id="resumenDiaDesde" class="rango-doble" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+              <input type="range" id="resumenDiaHasta" class="rango-doble" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+            </div>
+          </div>
+          <div class="cap" style="margin-top:6px">Toca la barra roja de un día para ver el detalle de sus gastos y costos.</div>
+        </div>
 
         <div class="card" id="seccionGastoOpe">
           <h2>Gastos operacionales</h2>
@@ -1042,8 +1055,8 @@
             <div style="position:relative;flex:1;height:26px">
               <div class="rango-pista"></div>
               <div class="rango-fill" id="rangoFill"></div>
-              <input type="range" id="diaDesde" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
-              <input type="range" id="diaHasta" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+              <input type="range" id="diaDesde" class="rango-doble" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
+              <input type="range" id="diaHasta" class="rango-doble" style="position:absolute;width:100%;top:6px;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent">
             </div>
           </div>
           <div class="cap" id="lecturaDia" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)"></div>
@@ -1261,6 +1274,16 @@
       </div>
     </div>
   </div>
+  <div id="modalDetalleDia" class="hidden modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalDetalleDiaTitulo">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalDetalleDiaTitulo">Gastos y costos del día</h3>
+        <button class="modal-x" id="btnCerrarDetalleDia" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="cap" id="capDetalleDia"></div>
+      <div class="modal-body-scroll" id="cuerpoDetalleDia"></div>
+    </div>
+  </div>
   </div>
 
   <div class="pie" id="pie"></div>
@@ -1379,6 +1402,28 @@ function cerrarDetalleOtroIngreso(){
 document.getElementById('btnCerrarOtroIngreso').onclick=cerrarDetalleOtroIngreso;
 document.getElementById('modalOtroIngreso').addEventListener('click',e=>{ if(e.target.id==='modalOtroIngreso') cerrarDetalleOtroIngreso(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalOtroIngreso').classList.contains('hidden')) cerrarDetalleOtroIngreso(); });
+// Detalle al tocar la barra roja (egreso) de un día en "Ingresos vs Gastos" o
+// "Flujo diario": mismo criterio que usa el backend para esa barra —
+// todo lo que no es INGRESO (COSTOS, GASTO OPE, MERMA, PLÁSTICOS, IMPUESTOS,
+// INVERSIÓN, retiros, préstamos) — así el total de la lista cuadra con la barra.
+function abrirDetalleDia(fecha){
+  const filas=DATA.filas.filter(f=>f.fecha===fecha && f.tipo!=='INGRESO').sort((a,b)=>b.monto-a.monto);
+  const total=filas.reduce((s,f)=>s+(Number(f.monto)||0),0);
+  document.getElementById('modalDetalleDiaTitulo').textContent=`Gastos y costos — ${fechaEs(fecha)}`;
+  document.getElementById('capDetalleDia').textContent=`${filas.length} registro${filas.length!==1?'s':''} · ${clp(total)}`;
+  document.getElementById('cuerpoDetalleDia').innerHTML = filas.length ? `<div class="lista-plana">${filas.map(f=>
+    `<div class="fila"><span class="f-nom">${f.nombre||f.categoria}<span class="f-sub">${f.categoria}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`
+  ).join('')}</div>` : '<p class="cap">Sin gastos ni costos registrados este día.</p>';
+  const modal=document.getElementById('modalDetalleDia');
+  modal.classList.remove('hidden');
+  document.getElementById('btnCerrarDetalleDia').focus();
+}
+function cerrarDetalleDia(){
+  document.getElementById('modalDetalleDia').classList.add('hidden');
+}
+document.getElementById('btnCerrarDetalleDia').onclick=cerrarDetalleDia;
+document.getElementById('modalDetalleDia').addEventListener('click',e=>{ if(e.target.id==='modalDetalleDia') cerrarDetalleDia(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalDetalleDia').classList.contains('hidden')) cerrarDetalleDia(); });
 let DATA=null, mesActual=null, charts={}, dirty={};
 let sortState={col:null, dir:null}; // dir: 'asc' | 'desc' | null(=orden original)
 // ===== MENÚ LATERAL RESPONSIVO (Tablet/Desktop) =====
@@ -1812,21 +1857,53 @@ function dibujarIngresosResumenCard(m){
   ).join('')}</div>` : '<p class="cap">Sin ingresos registrados este mes.</p>';
 }
 // Gráfico simple de ingresos vs gastos por día — misma fuente (m.dias) que ya
-// usa dibujarDia()/chDia en la pestaña Rentabilidad, pero sin el slider ni el
-// plugin de etiquetas: acá es solo una vista rápida del mes completo.
+// usa dibujarDia()/chDia en la pestaña Rentabilidad. Comparte el mismo patrón
+// de slider de rango (dos <input type=range> superpuestos) para poder ver un
+// tramo del mes sin los 30 días apretados, y permite tocar la barra roja
+// (egreso) de un día para ver el detalle de sus gastos y costos.
+let rangoResumenDiaActual={desde:1,hasta:31,ymActual:null};
 function dibujarResumenDia(m){
-  document.getElementById('capResumenDia').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · barra azul=ingresos, barra roja=costos+gastos';
   const dias=Object.keys(m.dias).sort();
-  nuevoChart('chResumenDia',{type:'bar',data:{labels:dias.map(d=>d.slice(-2)),datasets:[
-    {label:'Ingresos',data:dias.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:4,barPercentage:.85,categoryPercentage:.7},
-    {label:'Gastos',data:dias.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:4,barPercentage:.85,categoryPercentage:.7}
-  ]},options:{
-    plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
-      tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
-    scales:{
-      y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
-      x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f',maxRotation:0,autoSkip:true,maxTicksLimit:7}}}
-  }});
+  const nDias=dias.length;
+  document.getElementById('capResumenDia').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0]+' · barra azul=ingresos, barra roja=costos+gastos';
+
+  if(rangoResumenDiaActual.ymActual!==m.ym){ rangoResumenDiaActual={desde:1,hasta:nDias,ymActual:m.ym}; }
+  const rDesde=document.getElementById('resumenDiaDesde'), rHasta=document.getElementById('resumenDiaHasta');
+  rDesde.min=1; rDesde.max=nDias; rHasta.min=1; rHasta.max=nDias;
+  rDesde.value=Math.min(rangoResumenDiaActual.desde,nDias); rHasta.value=Math.min(rangoResumenDiaActual.hasta,nDias);
+
+  function actualizarPista(){
+    const a=Number(rDesde.value), b=Number(rHasta.value);
+    const lo=Math.min(a,b), hi=Math.max(a,b);
+    const pIni=(lo-1)/(nDias-1||1)*100, pFin=(hi-1)/(nDias-1||1)*100;
+    document.getElementById('rangoResumenFill').style.left=pIni+'%';
+    document.getElementById('rangoResumenFill').style.width=(pFin-pIni)+'%';
+    document.getElementById('rangoResumenDiasTxt').textContent=lo+' – '+hi+' de '+nDias;
+    rangoResumenDiaActual={desde:lo,hasta:hi,ymActual:m.ym};
+    return {lo,hi};
+  }
+  const redibujar=()=>{
+    const {lo,hi}=actualizarPista();
+    const diasVista=dias.slice(lo-1,hi);
+    nuevoChart('chResumenDia',{type:'bar',data:{labels:diasVista.map(d=>d.slice(-2)),datasets:[
+      {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:4,barPercentage:.85,categoryPercentage:.7},
+      {label:'Gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:4,barPercentage:.85,categoryPercentage:.7}
+    ]},options:{
+      onClick:(evt,elementos)=>{
+        const el=elementos.find(e=>e.datasetIndex===1);
+        if(!el) return;
+        abrirDetalleDia(m.ym+'-'+diasVista[el.index]);
+      },
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:10,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
+      scales:{
+        y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
+        x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f',maxRotation:0,autoSkip:true,maxTicksLimit:7}}}
+    }});
+  };
+  rDesde.oninput=()=>{ if(Number(rDesde.value)>Number(rHasta.value)) rHasta.value=rDesde.value; redibujar(); };
+  rHasta.oninput=()=>{ if(Number(rHasta.value)<Number(rDesde.value)) rDesde.value=rHasta.value; redibujar(); };
+  redibujar();
 }
 // Gastos operacionales: total/% ya existentes (m.gastoOpe, m.ingreso) + m.gastoCats
 // para la lista COMPLETA (nunca agrupada) y para un donut chico solo decorativo — sin
@@ -2691,6 +2768,11 @@ function dibujarDia(m){
       {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:6,barPercentage:.9,categoryPercentage:.7},
       {label:'Costos+gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:6,barPercentage:.9,categoryPercentage:.7}
     ]},options:{layout:{padding:{top:mostrarEtiquetas?Math.round(FS_DIA*2.6):6}},
+      onClick:(evt,elementos)=>{
+        const el=elementos.find(e=>e.datasetIndex===1);
+        if(!el) return;
+        abrirDetalleDia(m.ym+'-'+diasVista[el.index]);
+      },
       plugins:{legend:{position:'bottom',labels:{boxWidth:14,padding:12,font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
       scales:{
