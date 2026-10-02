@@ -1856,11 +1856,67 @@ function dibujarIngresosResumenCard(m){
     `<div class="fila"><span class="f-nom">${f.nombre||f.categoria}<span class="f-sub">${f.fecha} · ${f.categoria}</span></span><span class="f-cifra">${clp(f.monto)}</span></div>`
   ).join('')}</div>` : '<p class="cap">Sin ingresos registrados este mes.</p>';
 }
+// Plugin de etiquetas de monto sobre cada barra de un día, con resolución de
+// colisiones entre la etiqueta de ingreso y la de egreso del mismo día —
+// compartido por dibujarResumenDia() y dibujarDia(), que grafican la misma
+// estructura (m.dias) a distinta escala.
+function crearPluginEtiquetasDia(m, diasVista, mostrarEtiquetas){
+  const clpCompacto=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
+  const FS_DIA=fsChart('--fs-chart-barra',14);
+  return {id:'etiquetasDia',afterDatasetsDraw(ch){
+    if(!mostrarEtiquetas)return;
+    if(!ch.chartArea) return;
+    const {ctx}=ch; ctx.save(); ctx.textAlign='center';
+    ctx.font=fuenteChart('--fs-chart-barra',14,'700');
+    const LH=FS_DIA+3;
+    // Se recolectan las etiquetas de ambas series antes de pintar, para
+    // poder resolver colisiones: las barras de ingreso y egreso del mismo
+    // día quedan pegadas y, cuando tienen alturas parecidas (ej. $607K y
+    // $592K), a 8px ya casi se tocaban — con la fuente nueva se montarían.
+    const et=[];
+    [0,1].forEach(di=>{
+      ch.getDatasetMeta(di).data.forEach((bar,i)=>{
+        const dd=m.dias[diasVista[i]];
+        const txt=clpCompacto(di===0?dd.ingreso:dd.egreso);
+        et.push({x:bar.x, y:bar.y-7, txt, w:ctx.measureText(txt).width,
+                 color:di===0?'#2f6df0':'#b6402f'});
+      });
+    });
+    et.sort((a,b)=>a.x-b.x);
+    // Escalonado vertical: si dos etiquetas se pisan en horizontal y están
+    // a alturas similares, la segunda sube una línea. Varias pasadas porque
+    // al subir una puede chocar con otra ya colocada más arriba.
+    for(let pasada=0; pasada<3; pasada++){
+      for(let i=1;i<et.length;i++){
+        for(let j=0;j<i;j++){
+          const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
+          if(pisaX && Math.abs(et[i].y-et[j].y) < LH) et[i].y = et[j].y - LH;
+        }
+      }
+    }
+    const techo=ch.chartArea.top + FS_DIA*0.25;
+    et.forEach(e=>{ if(e.y<techo) e.y=techo; });
+    // Red de seguridad: si al toparse con el techo dos etiquetas vuelven a
+    // quedar encimadas (contenedor muy bajo), se descarta la de menor monto
+    // en vez de dibujar texto sobre texto.
+    for(let i=0;i<et.length;i++){
+      if(et[i].omitir) continue;
+      for(let j=0;j<i;j++){
+        if(et[j].omitir) continue;
+        const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
+        if(pisaX && Math.abs(et[i].y-et[j].y) < LH){ et[i].omitir=true; break; }
+      }
+    }
+    et.filter(e=>!e.omitir).forEach(e=>{ ctx.fillStyle=e.color; ctx.fillText(e.txt, e.x, e.y); });
+    ctx.restore();
+  }};
+}
 // Gráfico simple de ingresos vs gastos por día — misma fuente (m.dias) que ya
 // usa dibujarDia()/chDia en la pestaña Rentabilidad. Comparte el mismo patrón
 // de slider de rango (dos <input type=range> superpuestos) para poder ver un
-// tramo del mes sin los 30 días apretados, y permite tocar la barra roja
-// (egreso) de un día para ver el detalle de sus gastos y costos.
+// tramo del mes sin los 30 días apretados, muestra el monto sobre cada barra
+// cuando el rango visible es corto, y permite tocar la barra roja (egreso) de
+// un día para ver el detalle de sus gastos y costos.
 let rangoResumenDiaActual={desde:1,hasta:31,ymActual:null};
 function dibujarResumenDia(m){
   const dias=Object.keys(m.dias).sort();
@@ -1885,10 +1941,13 @@ function dibujarResumenDia(m){
   const redibujar=()=>{
     const {lo,hi}=actualizarPista();
     const diasVista=dias.slice(lo-1,hi);
+    const mostrarEtiquetas=diasVista.length<=10; // con pocos días caben las etiquetas de $ sobre cada barra
+    const FS_DIA=fsChart('--fs-chart-barra',14);
+    const etiquetas=crearPluginEtiquetasDia(m, diasVista, mostrarEtiquetas);
     nuevoChart('chResumenDia',{type:'bar',data:{labels:diasVista.map(d=>d.slice(-2)),datasets:[
       {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:4,barPercentage:.85,categoryPercentage:.7},
       {label:'Gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:4,barPercentage:.85,categoryPercentage:.7}
-    ]},options:{
+    ]},options:{layout:{padding:{top:mostrarEtiquetas?Math.round(FS_DIA*2.6):6}},
       onClick:(evt,elementos)=>{
         const el=elementos.find(e=>e.datasetIndex===1);
         if(!el) return;
@@ -1898,8 +1957,8 @@ function dibujarResumenDia(m){
         tooltip:{callbacks:{label:c=>c.dataset.label+': '+clp(c.raw)}}},
       scales:{
         y:{ticks:{callback:v=>'$'+(v/1000)+'k',font:{size:fsChart('--fs-chart-eje',14),family:'Inter'},color:'#7b8496'},grid:{color:'#f0f0f0'}},
-        x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f',maxRotation:0,autoSkip:true,maxTicksLimit:7}}}
-    }});
+        x:{grid:{display:false},ticks:{font:{size:fsChart('--fs-chart-eje',14),family:'Inter',weight:'600'},color:'#28313f',maxRotation:0,autoSkip:true,maxTicksLimit:7}}}},
+      plugins:[etiquetas]});
   };
   rDesde.oninput=()=>{ if(Number(rDesde.value)>Number(rHasta.value)) rHasta.value=rDesde.value; redibujar(); };
   rHasta.oninput=()=>{ if(Number(rHasta.value)<Number(rDesde.value)) rDesde.value=rHasta.value; redibujar(); };
@@ -2714,56 +2773,9 @@ function dibujarDia(m){
   const redibujar=()=>{
     const {lo,hi}=actualizarPista();
     const diasVista=dias.slice(lo-1,hi);
-    const clpCompacto=n=>{n=Math.round(n||0);if(n>=1000000)return'$'+(n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return'$'+Math.round(n/1000)+'K';return'$'+n;};
     const mostrarEtiquetas=diasVista.length<=10; // con pocos días caben las etiquetas de $ sobre cada barra
     const FS_DIA=fsChart('--fs-chart-barra',14);
-    const etiquetas={id:'etiquetasDia',afterDatasetsDraw(ch){
-      if(!mostrarEtiquetas)return;
-      if(!ch.chartArea) return;
-      const {ctx}=ch; ctx.save(); ctx.textAlign='center';
-      ctx.font=fuenteChart('--fs-chart-barra',14,'700');
-      const LH=FS_DIA+3;
-      // Se recolectan las etiquetas de ambas series antes de pintar, para
-      // poder resolver colisiones: las barras de ingreso y egreso del mismo
-      // día quedan pegadas y, cuando tienen alturas parecidas (ej. $607K y
-      // $592K), a 8px ya casi se tocaban — con la fuente nueva se montarían.
-      const et=[];
-      [0,1].forEach(di=>{
-        ch.getDatasetMeta(di).data.forEach((bar,i)=>{
-          const dd=m.dias[diasVista[i]];
-          const txt=clpCompacto(di===0?dd.ingreso:dd.egreso);
-          et.push({x:bar.x, y:bar.y-7, txt, w:ctx.measureText(txt).width,
-                   color:di===0?'#2f6df0':'#b6402f'});
-        });
-      });
-      et.sort((a,b)=>a.x-b.x);
-      // Escalonado vertical: si dos etiquetas se pisan en horizontal y están
-      // a alturas similares, la segunda sube una línea. Varias pasadas porque
-      // al subir una puede chocar con otra ya colocada más arriba.
-      for(let pasada=0; pasada<3; pasada++){
-        for(let i=1;i<et.length;i++){
-          for(let j=0;j<i;j++){
-            const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
-            if(pisaX && Math.abs(et[i].y-et[j].y) < LH) et[i].y = et[j].y - LH;
-          }
-        }
-      }
-      const techo=ch.chartArea.top + FS_DIA*0.25;
-      et.forEach(e=>{ if(e.y<techo) e.y=techo; });
-      // Red de seguridad: si al toparse con el techo dos etiquetas vuelven a
-      // quedar encimadas (contenedor muy bajo), se descarta la de menor monto
-      // en vez de dibujar texto sobre texto.
-      for(let i=0;i<et.length;i++){
-        if(et[i].omitir) continue;
-        for(let j=0;j<i;j++){
-          if(et[j].omitir) continue;
-          const pisaX=Math.abs(et[i].x-et[j].x) < (et[i].w+et[j].w)/2 + 4;
-          if(pisaX && Math.abs(et[i].y-et[j].y) < LH){ et[i].omitir=true; break; }
-        }
-      }
-      et.filter(e=>!e.omitir).forEach(e=>{ ctx.fillStyle=e.color; ctx.fillText(e.txt, e.x, e.y); });
-      ctx.restore();
-    }};
+    const etiquetas=crearPluginEtiquetasDia(m, diasVista, mostrarEtiquetas);
     nuevoChart('chDia',{type:'bar',data:{labels:diasVista.map(d=>d.slice(-2)),datasets:[
       {label:'Ingresos',data:diasVista.map(d=>m.dias[d].ingreso),backgroundColor:'#2f6df0',borderRadius:6,barPercentage:.9,categoryPercentage:.7},
       {label:'Costos+gastos',data:diasVista.map(d=>m.dias[d].egreso),backgroundColor:'#b6402f',borderRadius:6,barPercentage:.9,categoryPercentage:.7}
