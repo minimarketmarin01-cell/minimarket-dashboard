@@ -2206,11 +2206,11 @@ document.addEventListener('click', e=>{
 function dibujarControl(m){
   const ing=m.ingreso||0;
   const p=v=>ing? v/ing*100 : 0;
-  // "Almuerzo personal"/Edwin se clasifican como GASTO OPE, pero la categoría real que usa el
-  // diccionario aprendido es "ALMUERZO" (no "ADMINISTRATIVO" del diccionario estático original)
-  // — sin sumar ambas, esta barra siempre daba $0 aunque sí hubiera gasto administrativo real.
-  const adm=((m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0)+((m.gastoCats&&m.gastoCats['ALMUERZO'])||0);
-  const sueldo=(m.gastoCats&&m.gastoCats['SUELDO'])||0;
+  const adm=(m.gastoCats&&m.gastoCats['ADMINISTRATIVO'])||0;
+  // ALMUERZO (comida de personal, confirmado con el dueño) es RRHH, no Administrativo — Amorín
+  // separa ambos conceptos (Administrativo = papeleo/software/oficina). Antes se sumaba acá por
+  // error, inflando "Administr." con un gasto que en realidad es de personal.
+  const sueldo=((m.gastoCats&&m.gastoCats['SUELDO'])||0)+((m.gastoCats&&m.gastoCats['ALMUERZO'])||0);
   const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
   // La categoría real que usa el diccionario de clasificación es "SERVICIOS BÁSICOS" (agua+luz),
   // no "ENEL" — esa clave nunca existe en gastoCats, así que esta barra siempre daba $0.
@@ -2242,8 +2242,8 @@ function dibujarControl(m){
     ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'},
-    {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto',
-     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='SUELDO'},
+    {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='SUELDO'||f.categoria==='ALMUERZO')},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ARRIENDO'},
     {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto',
@@ -2257,7 +2257,7 @@ function dibujarControl(m){
     {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='PLASTICOS'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto',
-     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='ADMINISTRATIVO'||f.categoria==='ALMUERZO')},
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ADMINISTRATIVO'},
     // Meta Amorín para Utilidad: piso recomendado, no techo. El mismo autor da valores
     // distintos según la fuente — la estructura de costos de este archivo (100% − 70% costo
     // merc. − 15% gasto ope.) da 15%, pero su curso "Escuela de Supermercados" da un rango de
