@@ -986,6 +986,7 @@
 
       <div id="resumenPrincipal">
         <section class="resumen-kpi3" id="resumenKpis"><div class="cargando">Conectando…</div></section>
+        <div class="card full"><h2>Estado de resultados</h2><div class="cap" id="capTabla"></div><div class="tabla-scroll-x"><table id="tabla" class="tabla-compacta"><tbody></tbody></table></div></div>
         <div class="card full" id="graf-estructura-costos"><h2>Estructura de costos vs. benchmark</h2><div class="cap" id="capControl">Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa. Guía para no gastar de más.</div><div class="graf-control" style="height:285px;position:relative"><canvas id="chControl"></canvas></div></div>
         <div class="card" id="seccionAutoAnalisis"><h2>Auto-análisis</h2><div class="cap">Lectura rápida de la salud del mes.</div><ul class="notas" id="notas"></ul></div>
 
@@ -1022,8 +1023,6 @@
           <div id="cuerpoPrestamos"></div>
           <button type="button" class="btn-ver-detalle" id="btnVerDetallePrestamos" data-abrir-vista="detallePrestamos" style="display:none">Ver detalle →</button>
         </div>
-
-        <div class="card full"><h2>Estado de resultados</h2><div class="cap" id="capTabla"></div><div class="tabla-scroll-x"><table id="tabla" class="tabla-compacta"><tbody></tbody></table></div></div>
 
         <div class="card"><h2>Otros indicadores</h2><div class="cap">Detalle operativo del mes.</div><div class="mini" id="otrosIndicadores"></div></div>
 
@@ -2946,21 +2945,23 @@ function tablaMes(m){
   document.getElementById('capTabla').textContent=MESES_ES[m.ym.split('-')[1]]+' '+m.ym.split('-')[0];
   const gastoOpePct=(m.gastoOpe/m.ingreso*100)||0;
   // Ícono compacto (sin el bloque completo de refAmorin, que no cabe en una celda de tabla
-  // de una sola línea) con la misma meta ya usada en las tarjetas de KPI de arriba.
+  // de una sola línea) con la misma meta ya usada en las tarjetas de KPI de arriba. Se agrega
+  // además una columna "Meta" con el número de referencia — el ✓/△ solo dice si pasa o no,
+  // no cuánto debería ser.
   const refIcono=ok=>`<span style="color:${ok?'var(--verde)':'#b8860b'}">${ok?'✓':'△'}</span> `;
   const rows=[
-    ['Ingresos',m.ingreso,''],
-    ['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%'],
-    ['Margen bruto',m.ingreso-m.costos,refIcono(m.margenBruto>=25&&m.margenBruto<=40)+m.margenBruto.toFixed(1)+'%','pos'],
-    ['Gasto operacional',m.gastoOpe,refIcono(gastoOpePct<=META_GASTO_OPE)+gastoOpePct.toFixed(1)+'%'],
-    ['Retiro de utilidad',m.retiroUtilidad,''],
-    ['Merma',m.merma,''],
-    ['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%']
+    ['Ingresos',m.ingreso,'',null,''],
+    ['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%',null,'≤70%'],
+    ['Margen bruto',m.ingreso-m.costos,refIcono(m.margenBruto>=25&&m.margenBruto<=40)+m.margenBruto.toFixed(1)+'%','pos','25–40%'],
+    ['Gasto operacional',m.gastoOpe,refIcono(gastoOpePct<=META_GASTO_OPE)+gastoOpePct.toFixed(1)+'%',null,'≤'+META_GASTO_OPE+'%'],
+    ['Retiro de utilidad',m.retiroUtilidad,'',null,''],
+    ['Merma',m.merma,'',null,''],
+    ['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%',null,'']
   ];
-  let html='<tr><th>Concepto</th><th>Monto</th><th>% s/ingreso</th></tr>';
-  rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td class="${r[3]||''}">${clp(r[1])}</td><td>${r[2]}</td></tr>`);
+  let html='<tr><th>Concepto</th><th>Monto</th><th>% s/ingreso</th><th>Meta</th></tr>';
+  rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td class="${r[3]||''}">${clp(r[1])}</td><td>${r[2]}</td><td style="color:var(--gris)">${r[4]||''}</td></tr>`);
   const uc=m.utilidad>=0?'pos':'neg';
-  html+=`<tr class="foco"><td><b>Utilidad neta</b></td><td class="${uc}"><b>${clp(m.utilidad)}</b></td><td class="${uc}"><b>${refIcono(m.rentabilidad>=5)}${pct(m.rentabilidad)}</b></td></tr>`;
+  html+=`<tr class="foco"><td><b>Utilidad neta</b></td><td class="${uc}"><b>${clp(m.utilidad)}</b></td><td class="${uc}"><b>${refIcono(m.rentabilidad>=5)}${pct(m.rentabilidad)}</b></td><td style="color:var(--gris)">≥5%</td></tr>`;
   document.querySelector('#tabla tbody').innerHTML=html;
 }
 function autoAnalisis(m){
