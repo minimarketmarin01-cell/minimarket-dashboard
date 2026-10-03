@@ -215,6 +215,7 @@
   .mini{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(6px,1.2vw,12px); margin-bottom:clamp(8px,1.4vw,14px)}
   .mini .kpi{box-shadow:none} .mini .kpi::before{display:none}
   .mini .kpi .val{font-size:var(--fs-xl); font-weight:700}
+  #otrosIndicadores{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:clamp(8px,1.6vw,16px); margin-top:clamp(8px,1.6vw,16px)}
   /* ==== Resumen (Control Financiero) — pantalla RESUMEN → CATEGORÍA → DETALLE ====
      Celular: una columna, todo apilado. Tablet/desktop: algunas tarjetas pasan a
@@ -1855,12 +1856,11 @@ function dibujarResumenKpis(m,delta,prev){
 // conservan tal cual — solo se movieron a "Otros indicadores", al final.
 function dibujarOtrosIndicadores(m){
   document.getElementById('otrosIndicadores').innerHTML=`
-    <div class="kpi"><div class="lbl">Punto de equilibrio</div><div class="val">${clp(m.puntoEquilibrio)}</div><div class="sub">ventas p/ cubrir gasto ope</div></div>
+    <div class="kpi"><div class="lbl">Días con ventas</div><div class="val">${Object.keys(m.dias).length}</div><div class="sub">este mes</div></div>
     <div class="kpi"><div class="lbl">Ticket promedio</div><div class="val">${clp(m.ticketPromedio)}</div><div class="sub">por transacción</div></div>
-    <div class="kpi"><div class="lbl">Comisión POS del mes</div><div class="val">${clp(m.comisionPOSmensual||0)}</div><div class="sub">SuperCompraQuí 1,29% + IVA</div></div>
+    <div class="kpi"><div class="lbl">Punto de equilibrio</div><div class="val">${clp(m.puntoEquilibrio)}</div><div class="sub">ventas p/ cubrir gasto ope</div></div>
     <div class="kpi"><div class="lbl">Total abonado POS</div><div class="val">${clp(m.abonadoPOS||0)}</div><div class="sub">neto al banco (venta − comisión)</div></div>
-    <div class="kpi acc-verde"><div class="lbl">Depositado real en banco</div><div class="val">${clp((m.abonadoPOS||0)+(m.ingresoTransferencia||0))}</div><div class="sub">POS neto + transferencias — lo que de verdad entra a BancoEstado</div></div>
-    <div class="kpi"><div class="lbl">Días con ventas</div><div class="val">${Object.keys(m.dias).length}</div><div class="sub">este mes</div></div>`;
+    <div class="kpi acc-verde"><div class="lbl">Depositado real en banco</div><div class="val">${clp((m.abonadoPOS||0)+(m.ingresoTransferencia||0))}</div><div class="sub">POS neto + transferencias — lo que de verdad entra a BancoEstado</div></div>`;
 }
 // Ingresos: mismos 3 campos que antes vivían en #miniPago, mostrados como
 // barras horizontales (mismo componente .barra-h-* ya usado por dona()) en vez
