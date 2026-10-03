@@ -2242,7 +2242,7 @@ function dibujarControl(m){
     ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'},
-    {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto',
+    {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:8,  tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='SUELDO'||f.categoria==='ALMUERZO')},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ARRIENDO'},
