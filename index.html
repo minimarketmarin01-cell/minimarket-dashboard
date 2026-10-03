@@ -2234,6 +2234,13 @@ function dibujarControl(m){
   // Filtro de detalle por barra: qué filas de DATA.filas explican ese monto —
   // así "qué está incluido ahí" se responde tocando la barra en vez de adivinar.
   const esMes=f=>f.ym===m.ym;
+  // sub:true marca una barra que es un DESGLOSE de "Gasto ope." (RRHH, Arriendo, Luz,
+  // Plásticos, Administr. son categorías DENTRO de tipo='GASTO OPE', no gasto aparte — Amorín
+  // define el 15% de Gasto Ope justo como RRHH+Operacionales+Administrativo+Marketing+
+  // Financieros). Sin sub, es un tipo independiente en el schema (ej. Merma, que vive en su
+  // propia tabla y no se suma al techo de Gasto Ope). No hace falta crear tipos nuevos: la
+  // separación de Amorín ya existe en `registros.tipo` — lo que faltaba era que el gráfico lo
+  // mostrara así en vez de listar todo al mismo nivel.
   const items=[
     {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing',
      detalle:f=>esMes(f)&&f.tipo==='INGRESO'},
@@ -2242,22 +2249,24 @@ function dibujarControl(m){
     ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'},
-    {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:8,  tipo:'gasto',
+    {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:8,  tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='SUELDO'||f.categoria==='ALMUERZO')},
-    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto',
+    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ARRIENDO'},
-    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto',
+    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='SERVICIOS BÁSICOS'},
-    // m.merma es tipo='MERMA' en `registros`, tabla que nunca se usa para esto — la merma real
-    // vive en la tabla `mermas` (compartida con Pedidos Marín 376) y ya llega en mermaDetalle.real.
-    // Esa tabla no viaja a DATA.filas, así que esta barra no tiene detalle por transacción acá.
-    {n:'Merma',      v:mermaReal,  pc:p(mermaReal), meta:2, tipo:'gasto'},
-    // m.plasticos es tipo='PLASTICOS' en `registros`, pero el diccionario clasifica esas compras
-    // como GASTO OPE / categoría PLASTICOS — por eso esta barra siempre daba $0.
-    {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto',
+    // m.plasticos es tipo='PLASTICOS' en `registros` (independiente, casi sin uso), pero el
+    // diccionario clasifica las compras de bolsas como GASTO OPE / categoría PLASTICOS — esta
+    // barra usa esa segunda fuente, así que SÍ es un desglose de Gasto Ope, no un tipo aparte.
+    {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='PLASTICOS'},
-    {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto',
+    {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ADMINISTRATIVO'},
+    // Merma SÍ es un tipo aparte de verdad: vive en la tabla `mermas` (compartida con Pedidos
+    // Marín 376), no se suma a m.gastoOpe, y Amorín la trata como "Pérdida global" — una
+    // categoría separada del 15% de Gasto Ope, no una parte de él. Por eso no lleva sub:true.
+    // Esa tabla tampoco viaja a DATA.filas, así que esta barra no tiene detalle por transacción.
+    {n:'Merma',      v:mermaReal,  pc:p(mermaReal), meta:2, tipo:'gasto'},
     // Meta Amorín para Utilidad: piso recomendado, no techo. El mismo autor da valores
     // distintos según la fuente — la estructura de costos de este archivo (100% − 70% costo
     // merc. − 15% gasto ope.) da 15%, pero su curso "Escuela de Supermercados" da un rango de
@@ -2276,7 +2285,7 @@ function dibujarControl(m){
   // Meta junto al nombre en el eje, para verla de un vistazo sin tener que leer el texto de
   // abajo o pasar el dedo por la barra — versión corta (sin la palabra "meta") porque el eje Y
   // tiene poco ancho en celular.
-  const nombreConMeta=it=>it.meta===null?it.n:it.n+' '+(it.tipo==='util'?'≥':'≤')+it.meta+'%';
+  const nombreConMeta=it=>(it.sub?'↳ ':'')+(it.meta===null?it.n:it.n+' '+(it.tipo==='util'?'≥':'≤')+it.meta+'%');
   // plugin inline: dibuja "$monto · %" al final de cada barra
   // En celular se acorta la etiqueta ($ compacto) y se reduce el padding
   // derecho: con right:120 en una pantalla de 360px la barra quedaba en 240px.
@@ -2358,6 +2367,7 @@ function dibujarControl(m){
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
     'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa (o, en Utilidad, no llega al piso). La marca | es la meta Amorín.'
+    + '<br><small style="color:var(--gris)">↳ RRHH, Arriendo, Luz, Plásticos y Administr. son el desglose de "Gasto ope." (ya están contados ahí, no se suman aparte) — Amorín define el 15% de Gasto Ope como RRHH+Operacionales+Administrativo+Marketing+Financieros. Merma es la única categoría realmente aparte (Amorín la llama "pérdida global"), con su propio techo, fuera del 15%.</small>'
     + (nMesesVent>1
         ? '<br><small style="color:var(--gris)">"Costos merc. ('+nMesesVent+'m)" = compras acumuladas de los últimos '+nMesesVent+' meses ÷ ingreso de esos mismos meses. Suaviza compras grandes pagadas en un solo mes pero vendidas en varios — preocúpate si este promedio se mantiene sobre 70%, no por un mes puntual.</small>'
         : '')
