@@ -2307,13 +2307,10 @@ function dibujarControl(m){
   const anchoEjeY = Math.ceil(Math.max(...items.map(it=>medirTexto(nombreConMeta(it), FUENTE_EJE)))) + 8;
   nuevoChart('chControl',{type:'bar',data:{labels:items.map(nombreConMeta),datasets:[{data:items.map(i=>Math.max(i.pc||0,0)),backgroundColor:items.map(color),borderRadius:5,barPercentage:.8}]},
     options:{indexAxis:'y',layout:{padding:{right:padDer}},
-      // Por defecto Chart.js solo muestra el detalle si el toque cae justo sobre el color de la
-      // barra — con Merma/Plásticos/Administr. tan cerca de 0% esa área es casi invisible en
-      // celular. Con intersect:false, tocar en cualquier punto de esa fila (aunque sea a la
-      // derecha, sobre el texto o el espacio vacío) muestra el detalle de esa barra.
-      interaction:{mode:'index', intersect:false, axis:'y'},
-      plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>{const it=items[c.dataIndex];return clp(it.v)+' · '+(it.pc||0).toFixed(1)+'% s/ingreso';}}}},
+      // El tooltip oscuro de Chart.js ya no hace falta: cada barra muestra su
+      // propio monto y % en texto (plugin "etiquetas" más abajo), así que
+      // tocar una barra no necesita abrir un cuadro flotante con lo mismo.
+      plugins:{legend:{display:false}, tooltip:{enabled:false}},
       scales:{
         x:{max:100,grid:{color:'#eee'},
            ticks:{callback:v=>v+'%', font:{size:fsChart('--fs-chart-eje',14), family:'Inter, system-ui', weight:'600'}, color:'#7b8496'}},
