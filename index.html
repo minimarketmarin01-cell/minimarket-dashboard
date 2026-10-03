@@ -1414,17 +1414,14 @@ function cerrarDetalleOtroIngreso(){
 document.getElementById('btnCerrarOtroIngreso').onclick=cerrarDetalleOtroIngreso;
 document.getElementById('modalOtroIngreso').addEventListener('click',e=>{ if(e.target.id==='modalOtroIngreso') cerrarDetalleOtroIngreso(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getElementById('modalOtroIngreso').classList.contains('hidden')) cerrarDetalleOtroIngreso(); });
-// Detalle al tocar la barra roja (egreso) de un día en "Ingresos vs Gastos" o
-// "Flujo diario": mismo criterio que usa el backend para esa barra —
-// todo lo que no es INGRESO (COSTOS, GASTO OPE, MERMA, PLÁSTICOS, IMPUESTOS,
-// INVERSIÓN, retiros, préstamos) — así el total de la lista cuadra con la barra.
-function abrirDetalleDia(fecha){
-  const filas=DATA.filas.filter(f=>f.fecha===fecha && f.tipo!=='INGRESO');
+// Modal genérico de detalle: agrupa una lista de filas de DATA.filas por
+// nombre+rubro (si no, días/categorías con muchas ventas con tarjeta generan
+// una fila de "Comision SCQ" por venta — a veces decenas — y listarlas una
+// por una no es un detalle simplificado) y las muestra en modalDetalleDia.
+// Usada tanto por el detalle de un día (abrirDetalleDia) como por el detalle
+// de cada barra de "Estructura de costos vs. benchmark" (dibujarControl).
+function abrirDetalleLista(titulo, filas, vacioTxt){
   const total=filas.reduce((s,f)=>s+(Number(f.monto)||0),0);
-  // Agrupa por nombre+rubro antes de listar: días con muchas ventas con
-  // tarjeta generan una fila de "Comision SCQ" por cada una (a veces decenas),
-  // y listarlas una por una no es un detalle simplificado — se suman en una
-  // sola línea con el total y la cantidad de movimientos agrupados.
   const grupos=new Map();
   filas.forEach(f=>{
     const clave=(f.nombre||f.categoria)+'|'+f.categoria;
@@ -1433,14 +1430,22 @@ function abrirDetalleDia(fecha){
     grupos.set(clave,g);
   });
   const agrupadas=[...grupos.values()].sort((a,b)=>b.monto-a.monto);
-  document.getElementById('modalDetalleDiaTitulo').textContent=`Gastos y costos — ${fechaEs(fecha)}`;
+  document.getElementById('modalDetalleDiaTitulo').textContent=titulo;
   document.getElementById('capDetalleDia').textContent=`${filas.length} registro${filas.length!==1?'s':''} · ${clp(total)}`;
   document.getElementById('cuerpoDetalleDia').innerHTML = agrupadas.length ? `<div class="lista-plana">${agrupadas.map(g=>
     `<div class="fila"><span class="f-nom">${g.nombre}${g.n>1?' ×'+g.n:''}<span class="f-sub">${g.categoria}</span></span><span class="f-cifra">${clp(g.monto)}</span></div>`
-  ).join('')}</div>` : '<p class="cap">Sin gastos ni costos registrados este día.</p>';
+  ).join('')}</div>` : `<p class="cap">${vacioTxt||'Sin registros.'}</p>`;
   const modal=document.getElementById('modalDetalleDia');
   modal.classList.remove('hidden');
   document.getElementById('btnCerrarDetalleDia').focus();
+}
+// Detalle al tocar la barra roja (egreso) de un día en "Ingresos vs Gastos" o
+// "Flujo diario": mismo criterio que usa el backend para esa barra —
+// todo lo que no es INGRESO (COSTOS, GASTO OPE, MERMA, PLÁSTICOS, IMPUESTOS,
+// INVERSIÓN, retiros, préstamos) — así el total de la lista cuadra con la barra.
+function abrirDetalleDia(fecha){
+  const filas=DATA.filas.filter(f=>f.fecha===fecha && f.tipo!=='INGRESO');
+  abrirDetalleLista(`Gastos y costos — ${fechaEs(fecha)}`, filas, 'Sin gastos ni costos registrados este día.');
 }
 function cerrarDetalleDia(){
   document.getElementById('modalDetalleDia').classList.add('hidden');
@@ -2226,27 +2231,40 @@ function dibujarControl(m){
   const nMesesVent=mesesVentana.length;
   // meta = % máximo recomendado sobre ingreso (guía para no sobrepasar) — Arriendo y Luz usan
   // la referencia de "Supermercado Lucrativo" (Amorín): arriendo ≤1,5%, luz ≤2% de la venta.
+  // Filtro de detalle por barra: qué filas de DATA.filas explican ese monto —
+  // así "qué está incluido ahí" se responde tocando la barra en vez de adivinar.
+  const esMes=f=>f.ym===m.ym;
   const items=[
-    {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing'},
-    {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto'},
+    {n:'Ingreso',    v:ing,        pc:100,        meta:null, tipo:'ing',
+     detalle:f=>esMes(f)&&f.tipo==='INGRESO'},
+    {n:'Costos merc.',v:m.costos,  pc:p(m.costos),meta:70, tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='COSTOS'},
     ...(nMesesVent>1?[{n:'Costos merc. ('+nMesesVent+'m)', v:sumCostosVent, pc:pctCostosVent, meta:70, tipo:'gasto'}]:[]),
-    {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto'},
-    {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto'},
-    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto'},
-    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto'},
+    {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'},
+    {n:'Sueldos',    v:sueldo,     pc:p(sueldo),  meta:10, tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='SUELDO'},
+    {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ARRIENDO'},
+    {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='SERVICIOS BÁSICOS'},
     // m.merma es tipo='MERMA' en `registros`, tabla que nunca se usa para esto — la merma real
     // vive en la tabla `mermas` (compartida con Pedidos Marín 376) y ya llega en mermaDetalle.real.
+    // Esa tabla no viaja a DATA.filas, así que esta barra no tiene detalle por transacción acá.
     {n:'Merma',      v:mermaReal,  pc:p(mermaReal), meta:2, tipo:'gasto'},
     // m.plasticos es tipo='PLASTICOS' en `registros`, pero el diccionario clasifica esas compras
     // como GASTO OPE / categoría PLASTICOS — por eso esta barra siempre daba $0.
-    {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto'},
-    {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto'},
+    {n:'Plásticos',  v:plasticosReal,pc:p(plasticosReal),meta:1,tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='PLASTICOS'},
+    {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='ADMINISTRATIVO'||f.categoria==='ALMUERZO')},
     // Meta Amorín para Utilidad: piso recomendado, no techo. El mismo autor da valores
     // distintos según la fuente — la estructura de costos de este archivo (100% − 70% costo
     // merc. − 15% gasto ope.) da 15%, pero su curso "Escuela de Supermercados" da un rango de
     // 5% a 12% de rentabilidad neta de referencia. Se usa el piso de ese rango (5%) como meta:
     // por encima también es bueno, así que "fuera de meta" sigue siendo solo quedar por debajo
     // del piso — por eso el orden de comparación se invierte en `color` y en `fueraDeMeta`.
+    // Sin detalle: es el resultado final, no una categoría de gasto que desglosar.
     {n:'Utilidad',   v:m.utilidad, pc:m.rentabilidad, meta:5, tipo:'util'}
   ];
   // "Fuera de meta": para gastos es pasarse del techo, para utilidad es no llegar al piso.
@@ -2308,7 +2326,25 @@ function dibujarControl(m){
     options:{indexAxis:'y',layout:{padding:{right:padDer}},
       // El tooltip oscuro de Chart.js ya no hace falta: cada barra muestra su
       // propio monto y % en texto (plugin "etiquetas" más abajo), así que
-      // tocar una barra no necesita abrir un cuadro flotante con lo mismo.
+      // tocar una barra no necesita abrir un cuadro flotante con lo mismo —
+      // en cambio abre el detalle de qué transacciones componen ese monto.
+      // intersect:false porque con Merma/Plásticos/Administr. tan cerca de 0%
+      // esa área de color es casi invisible para tocarla en celular.
+      interaction:{mode:'index', intersect:false, axis:'y'},
+      onClick:(evt,elementos)=>{
+        const el=elementos[0];
+        if(!el) return;
+        const it=items[el.index];
+        if(it.detalle){
+          abrirDetalleLista(it.n+' — qué incluye', DATA.filas.filter(it.detalle), 'Sin transacciones este mes en esta categoría.');
+        }else if(it.n==='Merma'){
+          abrirDetalleLista('Merma — qué incluye', [], 'El detalle por producto vive en la pestaña Mermas (tabla compartida con Pedidos Marín) — acá no se trackea transacción por transacción.');
+        }else if(it.tipo==='util'){
+          abrirDetalleLista('Utilidad — qué incluye', [], 'Es el resultado del mes (Ingreso − Costos − Gasto Ope − Impuestos − Inversión), no una categoría con transacciones propias.');
+        }else{
+          abrirDetalleLista(it.n+' — qué incluye', [], 'Promedio de varios meses — toca la barra "Costos merc." de más arriba para ver el detalle de este mes.');
+        }
+      },
       plugins:{legend:{display:false}, tooltip:{enabled:false}},
       scales:{
         x:{max:100,grid:{color:'#eee'},
