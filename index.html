@@ -1421,12 +1421,17 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !document.getEle
 // por una no es un detalle simplificado) y las muestra en modalDetalleDia.
 // Usada tanto por el detalle de un día (abrirDetalleDia) como por el detalle
 // de cada barra de "Estructura de costos vs. benchmark" (dibujarControl).
-function abrirDetalleLista(titulo, filas, vacioTxt){
+function abrirDetalleLista(titulo, filas, vacioTxt, agruparPorCategoria){
   const total=filas.reduce((s,f)=>s+(Number(f.monto)||0),0);
   const grupos=new Map();
   filas.forEach(f=>{
-    const clave=(f.nombre||f.categoria)+'|'+f.categoria;
-    const g=grupos.get(clave)||{nombre:f.nombre||f.categoria,categoria:f.categoria,monto:0,n:0};
+    // Por defecto se agrupa por nombre+categoría (cada proveedor/pago distinto
+    // es su propia línea). Con agruparPorCategoria=true (ej. "Costos merc.",
+    // donde Lo Valledor son 20 puesteros distintos bajo una sola categoría de
+    // compra) se agrupa solo por categoría para que se vea como un total, no
+    // como si cada puestero fuera un "duplicado".
+    const clave=agruparPorCategoria ? f.categoria : (f.nombre||f.categoria)+'|'+f.categoria;
+    const g=grupos.get(clave)||{nombre:agruparPorCategoria?f.categoria:(f.nombre||f.categoria),categoria:f.categoria,monto:0,n:0};
     g.monto+=Number(f.monto)||0; g.n++;
     grupos.set(clave,g);
   });
@@ -1434,7 +1439,7 @@ function abrirDetalleLista(titulo, filas, vacioTxt){
   document.getElementById('modalDetalleDiaTitulo').textContent=titulo;
   document.getElementById('capDetalleDia').textContent=`${filas.length} registro${filas.length!==1?'s':''} · ${clp(total)}`;
   document.getElementById('cuerpoDetalleDia').innerHTML = agrupadas.length ? `<div class="lista-plana">${agrupadas.map(g=>
-    `<div class="fila"><span class="f-nom">${g.nombre}${g.n>1?' ×'+g.n:''}<span class="f-sub">${g.categoria}</span></span><span class="f-cifra">${clp(g.monto)}</span></div>`
+    `<div class="fila"><span class="f-nom">${g.nombre}${g.n>1?' ×'+g.n:''}${g.nombre!==g.categoria?'<span class="f-sub">'+g.categoria+'</span>':''}</span><span class="f-cifra">${clp(g.monto)}</span></div>`
   ).join('')}</div>` : `<p class="cap">${vacioTxt||'Sin registros.'}</p>`;
   const modal=document.getElementById('modalDetalleDia');
   modal.classList.remove('hidden');
@@ -2345,7 +2350,7 @@ function dibujarControl(m){
         if(!el) return;
         const it=items[el.index];
         if(it.detalle){
-          abrirDetalleLista(it.n+' — qué incluye', DATA.filas.filter(it.detalle), 'Sin transacciones este mes en esta categoría.');
+          abrirDetalleLista(it.n+' — qué incluye', DATA.filas.filter(it.detalle), 'Sin transacciones este mes en esta categoría.', it.n==='Costos merc.');
         }else if(it.n==='Merma'){
           abrirDetalleLista('Merma — qué incluye', [], 'El detalle por producto vive en la pestaña Mermas (tabla compartida con Pedidos Marín) — acá no se trackea transacción por transacción.');
         }else if(it.tipo==='util'){
