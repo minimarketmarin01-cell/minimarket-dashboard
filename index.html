@@ -2515,18 +2515,25 @@ function dibujarRotacion(m){
         const margenTxt=f.tieneReal
           ? `<span style="color:${f.margenReal>=0?'var(--verde)':'var(--rojo)'};font-weight:700">${f.margenRealPct.toFixed(1)}%</span><div style="font-weight:400;font-size:11px;color:var(--gris)">${clp(f.margenReal)}</div>`
           : '<span class="cap">sin venta con proveedor asignado</span>';
-        return `<tr><td style="text-align:left">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${costoTxt}</td><td>${margenTxt}</td><td style="color:var(--gris)">${clp(f.pagado)}</td></tr>`;
+        return `<tr><td style="text-align:left;cursor:pointer;color:var(--acento)" data-prov="${String(f.prov).replace(/"/g,'&quot;')}">${f.prov}</td><td>${participacionPct.toFixed(1)}%</td><td>${costoTxt}</td><td>${margenTxt}</td><td style="color:var(--gris)">${clp(f.pagado)}</td></tr>`;
       }).join('')}
     </tbody></table>
     <div class="cap" style="margin-top:8px">💡 "Costo real" y "Margen real" usan lo efectivamente vendido según Loyverse — confiable aunque no hayas cargado la cartola ese mes o hayas comprado en bulto. "Pagado (cartola)" es solo referencia de caja: cuánto le transferiste/pagaste a ese proveedor este mes, y puede no coincidir con el costo real.</div>`;
   }
   cont.onclick=(e)=>{
     const th=e.target.closest('th[data-campo]');
-    if(!th) return;
-    const campo=th.dataset.campo;
-    if(sortRotacion.campo===campo) sortRotacion={campo, dir:sortRotacion.dir*-1};
-    else sortRotacion={campo, dir:COLUMNAS.find(c=>c.campo===campo).defaultDir};
-    render();
+    if(th){
+      const campo=th.dataset.campo;
+      if(sortRotacion.campo===campo) sortRotacion={campo, dir:sortRotacion.dir*-1};
+      else sortRotacion={campo, dir:COLUMNAS.find(c=>c.campo===campo).defaultDir};
+      render();
+      return;
+    }
+    const td=e.target.closest('td[data-prov]');
+    if(td){
+      const prov=td.dataset.prov;
+      abrirDetalleLista(prov+' — pagos del mes', DATA.filas.filter(f=>esMes(f)&&f.tipo==='COSTOS'&&f.categoria===prov), 'Sin pagos registrados este mes a este proveedor.');
+    }
   };
   render();
 }
