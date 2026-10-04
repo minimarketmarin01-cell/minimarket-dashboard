@@ -3005,7 +3005,8 @@ function tablaMes(m){
     ['Costos (mercadería)',m.costos,((m.costos/m.ingreso*100)||0).toFixed(1)+'%',null,'≤70%'],
     ['Margen bruto',m.ingreso-m.costos,refIcono(m.margenBruto>=25&&m.margenBruto<=40)+m.margenBruto.toFixed(1)+'%','pos','25–40%'],
     ['Gasto operacional',m.gastoOpe,refIcono(gastoOpePct<=META_GASTO_OPE)+gastoOpePct.toFixed(1)+'%',null,'≤'+META_GASTO_OPE+'%'],
-    ['Retiro de utilidad',m.retiroUtilidad,'',null,''],
+    ['Impuestos',m.impuestos,((m.impuestos/m.ingreso*100)||0).toFixed(1)+'%',null,'≤6%'],
+    ['Inversión',m.inversion,((m.inversion/m.ingreso*100)||0).toFixed(1)+'%',null,'~1.5%'],
     ['Merma',m.merma,'',null,''],
     ['Plásticos',m.plasticos,m.pctPlasticos.toFixed(2)+'%',null,'']
   ];
@@ -3013,6 +3014,11 @@ function tablaMes(m){
   rows.forEach(r=>html+=`<tr><td>${r[0]}</td><td class="${r[3]||''}">${clp(r[1])}</td><td>${r[2]}</td><td style="color:var(--gris)">${r[4]||''}</td></tr>`);
   const uc=m.utilidad>=0?'pos':'neg';
   html+=`<tr class="foco"><td><b>Utilidad neta</b></td><td class="${uc}"><b>${clp(m.utilidad)}</b></td><td class="${uc}"><b>${refIcono(m.rentabilidad>=5)}${pct(m.rentabilidad)}</b></td><td style="color:var(--gris)">≥5%</td></tr>`;
+  // Retiro de utilidad va DESPUÉS de Utilidad neta, no mezclado arriba: es plata que los socios
+  // ya sacaron de la utilidad una vez calculada, no un gasto que se resta para llegar a ella
+  // (antes estaba entre Gasto operacional y Merma, dando la falsa impresión de que también se
+  // restaba — por eso la suma de la tabla no cuadraba con la Utilidad neta mostrada).
+  html+=`<tr><td style="color:var(--gris)">↳ Retiro de utilidad (ya repartido, no se resta arriba)</td><td style="color:var(--gris)">${clp(m.retiroUtilidad)}</td><td></td><td></td></tr>`;
   document.querySelector('#tabla tbody').innerHTML=html;
 }
 function autoAnalisis(m){
