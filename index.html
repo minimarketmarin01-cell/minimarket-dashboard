@@ -1430,8 +1430,14 @@ function abrirDetalleLista(titulo, filas, vacioTxt, agruparPorCategoria){
     // donde Lo Valledor son 20 puesteros distintos bajo una sola categoría de
     // compra) se agrupa solo por categoría para que se vea como un total, no
     // como si cada puestero fuera un "duplicado".
-    const clave=agruparPorCategoria ? f.categoria : (f.nombre||f.categoria)+'|'+f.categoria;
-    const g=grupos.get(clave)||{nombre:agruparPorCategoria?f.categoria:(f.nombre||f.categoria),categoria:f.categoria,monto:0,n:0};
+    // subtipo_original (ej. ISABEL/ROSY en Imposiciones) es una etiqueta explícita de "quién"
+    // puesta a propósito en el registro — si está presente, nunca se agrupa junto con otro
+    // subtipo distinto aunque compartan nombre/categoría (antes "Diaz Martinez ×2" escondía que
+    // eran dos personas distintas).
+    const sub=(f.subtipo_original||'').trim();
+    const clave=(agruparPorCategoria ? f.categoria : (f.nombre||f.categoria)+'|'+f.categoria)+'|'+sub;
+    const nombreBase=agruparPorCategoria?f.categoria:(f.nombre||f.categoria);
+    const g=grupos.get(clave)||{nombre:sub?nombreBase+' ('+sub+')':nombreBase,categoria:f.categoria,monto:0,n:0};
     g.monto+=Number(f.monto)||0; g.n++;
     grupos.set(clave,g);
   });
