@@ -1430,11 +1430,13 @@ function abrirDetalleLista(titulo, filas, vacioTxt, agruparPorCategoria){
     // donde Lo Valledor son 20 puesteros distintos bajo una sola categoría de
     // compra) se agrupa solo por categoría para que se vea como un total, no
     // como si cada puestero fuera un "duplicado".
-    // subtipo_original (ej. ISABEL/ROSY en Imposiciones) es una etiqueta explícita de "quién"
-    // puesta a propósito en el registro — si está presente, nunca se agrupa junto con otro
-    // subtipo distinto aunque compartan nombre/categoría (antes "Diaz Martinez ×2" escondía que
-    // eran dos personas distintas).
-    const sub=(f.subtipo_original||'').trim();
+    // subtipo (ej. ISABEL/ROSY en Imposiciones) es una etiqueta explícita de "quién" puesta a
+    // propósito en el registro — si está presente, nunca se agrupa junto con otro subtipo
+    // distinto aunque compartan nombre/categoría (antes "Diaz Martinez ×2" escondía que eran dos
+    // personas distintas). OJO: la columna en D1 se llama subtipo_original, pero el backend
+    // (marin376-finanzas) la manda al frontend ya renombrada a "subtipo" en cada fila — por eso
+    // es f.subtipo acá, no f.subtipo_original (ese nombre nunca llega al navegador).
+    const sub=(f.subtipo||'').trim();
     const clave=(agruparPorCategoria ? f.categoria : (f.nombre||f.categoria)+'|'+f.categoria)+'|'+sub;
     const nombreBase=agruparPorCategoria?f.categoria:(f.nombre||f.categoria);
     const g=grupos.get(clave)||{nombre:sub?nombreBase+' ('+sub+')':nombreBase,categoria:f.categoria,monto:0,n:0};
