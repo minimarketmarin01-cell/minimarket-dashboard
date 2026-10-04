@@ -2267,6 +2267,13 @@ function dibujarControl(m){
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='PLASTICOS'},
     {n:'Administr.', v:adm,        pc:p(adm),     meta:2,  tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ADMINISTRATIVO'},
+    // Impuestos e Inversión son tipos aparte de verdad (igual que Merma más abajo): no se suman
+    // a m.gastoOpe, Amorín los trata como categorías propias fuera del 15% de Gasto Ope — por
+    // eso no llevan sub:true aunque se dibujen junto a sus barras.
+    {n:'Impuestos',  v:m.impuestos, pc:p(m.impuestos), meta:6,  tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='IMPUESTOS'},
+    {n:'Inversión',  v:m.inversion, pc:p(m.inversion), meta:1.5,tipo:'gasto',
+     detalle:f=>esMes(f)&&f.tipo==='INVERSION'},
     // Merma SÍ es un tipo aparte de verdad: vive en la tabla `mermas` (compartida con Pedidos
     // Marín 376), no se suma a m.gastoOpe, y Amorín la trata como "Pérdida global" — una
     // categoría separada del 15% de Gasto Ope, no una parte de él. Por eso no lleva sub:true.
@@ -2372,7 +2379,7 @@ function dibujarControl(m){
     : `✓ Todas las categorías están dentro de su meta este mes — buen control de gasto.`;
   document.getElementById('capControl').innerHTML =
     'Cada barra es su % del ingreso. Verde = dentro de la meta, rojo = la sobrepasa (o, en Utilidad, no llega al piso). La marca | es la meta Amorín.'
-    + '<br><small style="color:var(--gris)">↳ RRHH, Arriendo, Luz, Plásticos y Administr. son el desglose de "Gasto ope." (ya están contados ahí, no se suman aparte) — Amorín define el 15% de Gasto Ope como RRHH+Operacionales+Administrativo+Marketing+Financieros. Merma es la única categoría realmente aparte (Amorín la llama "pérdida global"), con su propio techo, fuera del 15%.</small>'
+    + '<br><small style="color:var(--gris)">↳ RRHH, Arriendo, Luz, Plásticos y Administr. son el desglose de "Gasto ope." (ya están contados ahí, no se suman aparte) — Amorín define el 15% de Gasto Ope como RRHH+Operacionales+Administrativo+Marketing+Financieros. Impuestos, Inversión y Merma son categorías aparte, fuera de ese 15% (Merma es la que Amorín llama "pérdida global"), cada una con su propio techo.</small>'
     + (nMesesVent>1
         ? '<br><small style="color:var(--gris)">"Costos merc. ('+nMesesVent+'m)" = compras acumuladas de los últimos '+nMesesVent+' meses ÷ ingreso de esos mismos meses. Suaviza compras grandes pagadas en un solo mes pero vendidas en varios — preocúpate si este promedio se mantiene sobre 70%, no por un mes puntual.</small>'
         : '')
