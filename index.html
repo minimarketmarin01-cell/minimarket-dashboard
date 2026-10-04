@@ -2532,7 +2532,9 @@ function dibujarRotacion(m){
     const td=e.target.closest('td[data-prov]');
     if(td){
       const prov=td.dataset.prov;
-      abrirDetalleLista(prov+' — pagos del mes', DATA.filas.filter(f=>esMes(f)&&f.tipo==='COSTOS'&&f.categoria===prov), 'Sin pagos registrados este mes a este proveedor.');
+      // esMes es local a dibujarControl(), no existe acá — por eso el click no hacía nada (el
+      // error quedaba silencioso). m.ym ya identifica el mes que se está mostrando en esta tabla.
+      abrirDetalleLista(prov+' — pagos del mes', DATA.filas.filter(f=>f.ym===m.ym&&f.tipo==='COSTOS'&&f.categoria===prov), 'Sin pagos registrados este mes a este proveedor.');
     }
   };
   render();
