@@ -3912,6 +3912,7 @@ document.getElementById('fileAbonoSCQ').addEventListener('change', async (e)=>{
         <div>
           <b>${r.nuevas && r.nuevas.n ? r.nuevas.n + ' filas nuevas guardadas' : 'No había filas nuevas'}</b>
           ${r.duplicadas && r.duplicadas.n ? ' · ' + r.duplicadas.n + ' ya existían' : ''}
+          ${(r.reversas_borradas||[]).length ? '<br>' + r.reversas_borradas.length + ' venta(s) reversada(s) en el POS quitada(s) de Registros: ' + r.reversas_borradas.map(x=>x.fecha+' $'+Number(x.monto).toLocaleString('es-CL')).join(', ') : ''}
         </div>
       </div>
       <div class="cap" style="margin-top:8px">
