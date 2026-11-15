@@ -1230,6 +1230,7 @@
     <div class="card" style="max-width:640px;margin:0 auto">
       <h2>Cierre de caja por foto</h2>
       <div class="cap">Toma o sube una foto del cuaderno de cierre. Claude lee la venta en efectivo y los costos pagados en efectivo; tú revisas y confirmas antes de guardar.</div>
+      <div id="cierreUltimo"></div>
       <div class="drop" id="drop">📷 Toca para tomar o subir la foto del cierre<input type="file" id="fileFoto" accept="image/*" class="hidden"></div>
       <button class="btn btn-g" id="btnManualCierre" style="margin-top:10px;width:100%">✏️ Ingresar manualmente (sin foto)</button>
       <img id="previewImg" class="hidden">
@@ -1884,7 +1885,26 @@ document.querySelectorAll('.submenu-link').forEach(a=>{
   });
 });
 
+// Texto verde fijo de la pestaña Cierre: hasta qué día llegó el último cierre guardado, para saber por dónde seguir
+// al abrir la app. Sale de los registros reales (los cierres de caja llevan n° de operación "CAJA-AAAA-MM-DD-…"),
+// no de lo último que se hizo en esta sesión, así que se ve igual en cualquier teléfono y después de recargar.
+function dibujarUltimoCierre(){
+  const el=document.getElementById('cierreUltimo'); if(!el)return;
+  const fechas=((DATA&&DATA.filas)||[]).filter(f=>String(f.nop||'').startsWith('CAJA-')&&f.fecha).map(f=>f.fecha).sort();
+  if(!fechas.length){el.innerHTML='<p style="color:var(--gris);margin:12px 0">Aún no hay cierres de caja guardados.</p>';return;}
+  const ult=fechas[fechas.length-1];
+  const d=new Date(ult+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+1);
+  const sig=d.toISOString().slice(0,10);
+  let hace='';
+  try{
+    const hoy=new Date().toLocaleDateString('en-CA',{timeZone:'America/Santiago'});
+    const dias=Math.round((new Date(hoy+'T12:00:00Z')-new Date(ult+'T12:00:00Z'))/86400000);
+    hace=dias<=0?' (hoy)':dias===1?' (ayer)':' (hace '+dias+' días)';
+  }catch(e){}
+  el.innerHTML='<p style="color:var(--verde);margin:12px 0;font-weight:600">✓ Último cierre guardado: '+fechaEs(ult)+hace+'. Sigue el '+fechaEs(sig)+'.</p>';
+}
 function render(){
+  try{dibujarUltimoCierre();}catch(e){}
   const m=mesData(mesActual);
   let botonMesActivo=null;
   document.querySelectorAll('#selMes button').forEach(b=>{
