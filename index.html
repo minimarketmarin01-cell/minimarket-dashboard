@@ -1207,9 +1207,9 @@
         <div class="campo-filtro">
           <label>Monto</label>
           <span class="filtro-rango" id="filtroMonto">
-            <input type="number" id="fMontoMin" placeholder="Mínimo" inputmode="numeric">
+            <input type="text" id="fMontoMin" placeholder="$ mínimo" inputmode="numeric" data-clp="signo">
             <span class="filtro-rango-sep">–</span>
-            <input type="number" id="fMontoMax" placeholder="Máximo" inputmode="numeric">
+            <input type="text" id="fMontoMax" placeholder="$ máximo" inputmode="numeric" data-clp="signo">
             <button type="button" id="fMontoLimpiar" title="Limpiar rango de monto">✕</button>
           </span>
         </div>
@@ -1236,7 +1236,7 @@
       <div id="cierreEstado"></div>
       <div id="cierreForm" class="hidden">
         <div class="campo"><label>Fecha del cierre</label><input type="text" id="cFecha" placeholder="DD/MM/AAAA"></div>
-        <div class="campo"><label>Venta en efectivo del día</label><input type="number" id="cVenta" placeholder="0"></div>
+        <div class="campo"><label>Venta en efectivo del día</label><input type="text" inputmode="numeric" id="cVenta" placeholder="$0" data-clp></div>
         <label style="font-size:var(--fs-sm);color:var(--gris);text-transform:uppercase;letter-spacing:.05em">Costos pagados en efectivo <span style="text-transform:none;font-weight:400">(categoría y tipo sugeridos por IA — revisa y corrige)</span></label>
         <datalist id="listaCategorias"></datalist>
         <div id="tablaCierre" style="display:flex;flex-direction:column;gap:10px;margin:10px 0 14px"></div>
@@ -1409,6 +1409,19 @@ const clp=n=>'$'+Math.round(n||0).toLocaleString('es-CL');
 // Vuelve un valor de un input de monto formateado (p.ej. "$11.850") al
 // número plano que espera el resto del código (dirty, guardarCambios, etc.).
 const limpiarMonto=v=>Number(String(v).replace(/[^\d]/g,''))||0;
+// Igual que limpiarMonto pero respeta un "-" inicial (filtros de monto, donde puede buscarse un egreso).
+// Valor inicial de un campo data-clp: número → "$30.000"; texto ("30.000", "$30000") se limpia antes; 0/vacío → "".
+const aMontoCLP=v=>{const n=typeof v==='number'?Math.round(v):limpiarMonto(v);return n?clp(n):'';};
+const montoConSigno=v=>{const n=limpiarMonto(v);return /^\s*-/.test(String(v))?-n:n;};
+// Todo <input data-clp> se muestra en pesos chilenos mientras se escribe ($108.080), igual que
+// "Nuevo registro". El valor se lee siempre con limpiarMonto/montoConSigno, nunca con Number().
+// data-clp="signo" deja escribir un "-" inicial.
+document.addEventListener('input',e=>{
+  const el=e.target;if(!el||!el.matches||!el.matches('input[data-clp]'))return;
+  const conSigno=el.getAttribute('data-clp')==='signo';
+  const raw=String(el.value);const neg=conSigno&&/^\s*-/.test(raw);const n=limpiarMonto(raw);
+  el.value=n?(neg?'-':'')+clp(n):(neg?'-':'');
+});
 const pct=n=>(n>=0?'+':'')+(n||0).toFixed(1)+'%';
 // Referencia Amorín al lado de un KPI (✓ dentro de meta, △ fuera) — mismo
 // criterio visual que ya usa la participación por sector en Margen global.
@@ -3332,7 +3345,7 @@ function filtrarFilas(){
   // Rango de monto: cualquiera de los dos extremos puede ir vacío.
   const vMin=document.getElementById('fMontoMin').value.trim();
   const vMax=document.getElementById('fMontoMax').value.trim();
-  const min=vMin===''?null:Number(vMin), max=vMax===''?null:Number(vMax);
+  const min=vMin===''?null:montoConSigno(vMin), max=vMax===''?null:montoConSigno(vMax);
   const hayRango=(min!==null&&isFinite(min))||(max!==null&&isFinite(max));
   document.getElementById('filtroMonto').classList.toggle('activo',hayRango);
   return DATA.filas.filter(f=>{
@@ -3613,7 +3626,7 @@ function leerFoto(file){
       const ex=r.extraido||{};
       document.getElementById('cierreForm').classList.remove('hidden');
       document.getElementById('cFecha').value=ex.fecha||'';
-      document.getElementById('cVenta').value=ex.venta_efectivo||0;
+      document.getElementById('cVenta').value=aMontoCLP(ex.venta_efectivo);
       document.querySelector('#tablaCierre').innerHTML='';
       (ex.costos_efectivo||[]).forEach(c=>agregarCostoUI(c.detalle,c.monto,c.categoria||'',c.tipo||'COSTOS'));
       if(!(ex.costos_efectivo||[]).length)agregarCostoUI();
@@ -3645,7 +3658,7 @@ function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
     ${campo('Detalle', `<input value="${detalle}" data-k="detalle" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg)">`)}
     ${campo(`<span data-lbl-categoria>${labelCategoria(tipo)}</span>`, `<input value="${(categoria||'').toUpperCase()}" data-k="categoria" list="listaCategorias" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg);text-transform:uppercase" placeholder="ej. BOLSAS">`)}
     ${campo('Tipo', selTipoCierre(tipo))}
-    ${campo('Monto', `<input type="number" value="${monto}" data-k="monto" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg)">`)}`;
+    ${campo('Monto', `<input type="text" inputmode="numeric" data-clp placeholder="$0" value="${aMontoCLP(monto)}" data-k="monto" style="width:100%;border:1px solid var(--linea);border-radius:8px;padding:9px;font-family:inherit;font-size:var(--fs-lg)">`)}`;
   card.querySelector('.btn-del').onclick=()=>card.remove();
   card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
   card.querySelector('[data-k=tipo]').addEventListener('change',e=>{
@@ -3665,7 +3678,7 @@ function fechaCierreAISO(s){
 }
 async function guardarCierreUI(){
   const fechaTexto=document.getElementById('cFecha').value.trim();
-  const venta=Number(document.getElementById('cVenta').value)||0;
+  const venta=limpiarMonto(document.getElementById('cVenta').value);
   if(!fechaTexto){alert('Pon la fecha del cierre');return;}
   const fecha=fechaCierreAISO(fechaTexto);
   if(!fecha){alert('Fecha inválida — usa el formato DD/MM/AAAA');return;}
@@ -3673,7 +3686,7 @@ async function guardarCierreUI(){
     detalle:card.querySelector('[data-k=detalle]').value,
     categoria:card.querySelector('[data-k=categoria]').value.trim().toUpperCase(),
     tipo:card.querySelector('[data-k=tipo]').value,
-    monto:Number(card.querySelector('[data-k=monto]').value)||0
+    monto:limpiarMonto(card.querySelector('[data-k=monto]').value)
   })).filter(c=>c.monto>0);
   document.getElementById('btnGuardarCierre').innerHTML='<span class="spin"></span> Guardando…';
   const r=await post({accion:'guardarCierre',token:TOKEN,datos:{fecha,venta_efectivo:venta,costos_efectivo:costos}});
