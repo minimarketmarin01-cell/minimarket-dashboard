@@ -1400,7 +1400,7 @@ const TOKEN_FINANZAS = obtenerTokenFinanzas();
 // Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
 const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero&token=" + encodeURIComponent(TOKEN_FINANZAS) + "&local=" + localActivo;
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
-const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO','IMPUESTOS','INVERSION'];
+const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO','IMPUESTOS','INVERSION',...(localActivo==='marin'?['PAGO DEUDA']:[])]; // PAGO DEUDA (abono a sueldo atrasado) solo existe en Marín: la base de Argomedo no lo acepta
 // Meta Amorín para gasto operacional: suma de RRHH (8%) + operacionales (5%) + administrativos
 // (1%) + marketing (1.2%) + financieros (1%) del ingreso — mismo techo usado en la barra
 // "Gasto ope." de "Estructura de costos vs. benchmark".
@@ -1936,6 +1936,7 @@ function dibujarResumenKpis(m,delta,prev){
     <div class="kpi"><div class="lbl">Ingresos</div><div class="val">${clp(m.ingreso)}</div><div class="sub">100%${prev?delta(m.ingreso,prev.ingreso):''}</div></div>
     <div class="kpi"><div class="lbl">Gastos operacionales</div><div class="val">${clp(m.gastoOpe)}</div><div class="sub">${gastoOpePct.toFixed(1)}% de los ingresos${prev?delta(m.gastoOpe,prev.gastoOpe,false):''}</div>${refAmorin(gastoOpePct<=META_GASTO_OPE,'meta ≤'+META_GASTO_OPE+'%')}</div>
     <div class="kpi"><div class="lbl">Total recibido</div><div class="val">${clp(totalRecibido)}</div><div class="sub">POS ${clpK(m.abonadoPOS||0)} + efectivo ${clpK(m.ingresoEfectivo||0)} + transf. ${clpK(m.ingresoTransferencia||0)}${m.ingresoOtro?' + otro '+clpK(m.ingresoOtro):''}${prev?delta(totalRecibido,calcTotalRecibido(prev)):''}</div></div>
+    ${(m.pagoDeuda||0)>0?`<div class="kpi"><div class="lbl">Abono a deuda de sueldo</div><div class="val">${clp(m.pagoDeuda)}</div><div class="sub">Sale de la caja, no resta de la utilidad${prev&&(prev.pagoDeuda||0)>0?delta(m.pagoDeuda,prev.pagoDeuda,false):''}${m.sueldoCompletadoDeuda?'<br>+ '+clp(m.sueldoCompletadoDeuda)+' contados como sueldo del mes (efectivo que completó la quincena)':''}</div></div>`:''}
     <div class="kpi"><div class="lbl">Comisión POS del mes</div><div class="val">${clp(m.comisionPOSmensual||0)}</div><div class="sub">SuperCompraQuí 1,29% + IVA${prev?delta(m.comisionPOSmensual,prev.comisionPOSmensual,false):''}</div></div>
     <div class="kpi hero-util"><div class="lbl">Utilidad neta ${(m.incompleto||faltaPOS(m))?'<span class="badge">provisional</span>':''}</div><div class="val ${uc}">${clp(m.utilidad)}</div><div class="sub">${pct(m.rentabilidad)} sobre ingresos${prev?delta(m.utilidad,prev.utilidad):''}</div>${refAmorin(m.rentabilidad>=5,'meta ≥5%')}</div>`;
 }
@@ -2298,7 +2299,9 @@ function dibujarControl(m){
   // ALMUERZO (comida de personal, confirmado con el dueño) es RRHH, no Administrativo — Amorín
   // separa ambos conceptos (Administrativo = papeleo/software/oficina). Antes se sumaba acá por
   // error, inflando "Administr." con un gasto que en realidad es de personal.
-  const sueldo=((m.gastoCats&&m.gastoCats['SUELDO'])||0)+((m.gastoCats&&m.gastoCats['ALMUERZO'])||0);
+  // Personal = sueldo + horas extras + aguinaldo + almuerzo. Antes solo sumaba SUELDO y ALMUERZO y dejaba fuera
+  // las horas extras y el aguinaldo (≈$400.000 al mes). El abono a sueldo atrasado (PAGO DEUDA) NO entra: no es costo del mes.
+  const sueldo=['SUELDO','HORAS EXTRAS','AGUINALDO','ALMUERZO'].reduce((a,c)=>a+((m.gastoCats&&m.gastoCats[c])||0),0);
   const arriendo=(m.gastoCats&&m.gastoCats['ARRIENDO'])||0;
   // La categoría real que usa el diccionario de clasificación es "SERVICIOS BÁSICOS" (agua+luz),
   // no "ENEL" — esa clave nunca existe en gastoCats, así que esta barra siempre daba $0.
@@ -2338,7 +2341,7 @@ function dibujarControl(m){
     {n:'Gasto ope.', v:m.gastoOpe, pc:p(m.gastoOpe),meta:META_GASTO_OPE, tipo:'gasto',
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'},
     {n:'RRHH',       v:sueldo,     pc:p(sueldo),  meta:8,  tipo:'gasto', sub:true,
-     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&(f.categoria==='SUELDO'||f.categoria==='ALMUERZO')},
+     detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&['SUELDO','HORAS EXTRAS','AGUINALDO','ALMUERZO'].includes(f.categoria)},
     {n:'Arriendo',   v:arriendo,   pc:p(arriendo),meta:1.5,tipo:'gasto', sub:true,
      detalle:f=>esMes(f)&&f.tipo==='GASTO OPE'&&f.categoria==='ARRIENDO'},
     {n:'Luz',        v:luz,        pc:p(luz),     meta:2,  tipo:'gasto', sub:true,
