@@ -1229,7 +1229,7 @@
   <div id="tab-cierre" class="hidden">
     <div class="card" style="max-width:640px;margin:0 auto">
       <h2>Cierre de caja por foto</h2>
-      <div class="cap">Toma o sube una foto del cuaderno de cierre. Claude lee la venta en efectivo y los costos pagados en efectivo; tú revisas y confirmas antes de guardar.</div>
+      <div class="cap">Toma o sube una foto del cuaderno de cierre. La IA lee la venta en efectivo y los costos pagados en efectivo; tú revisas y confirmas antes de guardar.</div>
       <div id="cierreUltimo"></div>
       <div class="drop" id="drop">📷 Toca para tomar o subir la foto del cierre<input type="file" id="fileFoto" accept="image/*" class="hidden"></div>
       <button class="btn btn-g" id="btnManualCierre" style="margin-top:10px;width:100%">✏️ Ingresar manualmente (sin foto)</button>
@@ -3630,32 +3630,63 @@ function initCierre(){
     fotoBase64=null;
   };
 }
-function leerFoto(file){
-  fotoMime=file.type||'image/jpeg';
-  const rd=new FileReader();
-  rd.onload=()=>{
-    const img=document.getElementById('previewImg'); img.src=rd.result; img.classList.remove('hidden');
-    fotoBase64=rd.result.split(',')[1];
-    document.getElementById('cierreEstado').innerHTML='<p style="margin:12px 0;color:var(--gris)"><span class="spin"></span> Leyendo la foto con Claude…</p>';
-    post({accion:'leerCierre',token:TOKEN,imagenBase64:fotoBase64,mediaType:fotoMime}).then(r=>{
-      if(!r.ok){
-        const detalleCrudo=r.crudo?'<pre style="white-space:pre-wrap;font-size:var(--fs-sm);color:var(--gris);margin-top:6px">'+String(r.crudo).slice(0,500)+'</pre>':'';
-        document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+'</p>'+detalleCrudo+
-          '<button class="btn btn-g" id="btnManualDesdeError" style="margin-top:8px">✏️ Ingresar este cierre manualmente</button>';
-        document.getElementById('btnManualDesdeError').onclick=()=>abrirCierreManual();
-        return;
-      }
-      document.getElementById('cierreEstado').innerHTML='<p style="color:var(--verde);margin:12px 0">✓ Leído. Revisa y corrige antes de guardar.</p>';
-      const ex=r.extraido||{};
-      document.getElementById('cierreForm').classList.remove('hidden');
-      document.getElementById('cFecha').value=ex.fecha||'';
-      document.getElementById('cVenta').value=aMontoCLP(ex.venta_efectivo);
-      document.querySelector('#tablaCierre').innerHTML='';
-      (ex.costos_efectivo||[]).forEach(c=>agregarCostoUI(c.detalle,c.monto,c.categoria||'',c.tipo||'COSTOS'));
-      if(!(ex.costos_efectivo||[]).length)agregarCostoUI();
-    });
-  };
-  rd.readAsDataURL(file);
+// La foto del celular pesa varios MB; se reduce a máx. 1600 px (JPEG) antes de enviarla: sube más rápido y la IA gratuita
+// la procesa sin pasarse de su límite. La letra manuscrita se sigue leyendo bien a ese tamaño.
+function reducirFoto(file, maxLado, calidad){
+  return new Promise(res=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{
+      try{
+        const k=Math.min(1, maxLado/Math.max(img.naturalWidth,img.naturalHeight));
+        const w=Math.round(img.naturalWidth*k), h=Math.round(img.naturalHeight*k);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url); res(cv.toDataURL('image/jpeg',calidad));
+      }catch(e){ URL.revokeObjectURL(url); res(null); }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); res(null); };
+    img.src=url;
+  });
+}
+// Fecha que devuelve la IA ("01-11-26", "1/11/2026", "01.11.26") → DD/MM/AAAA; si no se entiende, se deja tal cual.
+function normalizarFechaIA(t){
+  const iso=String(t||'').trim().match(/^(\d{4})\D(\d{1,2})\D(\d{1,2})$/);  // AAAA-MM-DD
+  if(iso) return iso[3].padStart(2,'0')+'/'+iso[2].padStart(2,'0')+'/'+iso[1];
+  const m=String(t||'').match(/(\d{1,2})\D+(\d{1,2})\D+(\d{2,4})/);
+  if(!m) return formatearFechaTecleada(t,true);
+  const anio=m[3].length===2?'20'+m[3]:m[3];
+  return m[1].padStart(2,'0')+'/'+m[2].padStart(2,'0')+'/'+anio;
+}
+async function leerFoto(file){
+  const prevImg=document.getElementById('previewImg');
+  let dataUrl=await reducirFoto(file,1600,0.85);
+  if(dataUrl){ fotoMime='image/jpeg'; }
+  else{ // si el navegador no pudo reducirla, se manda la original
+    fotoMime=file.type||'image/jpeg';
+    dataUrl=await new Promise(r=>{const rd=new FileReader(); rd.onload=()=>r(rd.result); rd.readAsDataURL(file);});
+  }
+  prevImg.src=dataUrl; prevImg.classList.remove('hidden');
+  fotoBase64=dataUrl.split(',')[1];
+  document.getElementById('cierreEstado').innerHTML='<p style="margin:12px 0;color:var(--gris)"><span class="spin"></span> Leyendo la foto con IA…</p>';
+  post({accion:'leerCierre',token:TOKEN,imagenBase64:fotoBase64,mediaType:fotoMime}).then(r=>{
+    if(!r.ok){
+      const detalleCrudo=r.crudo?'<pre style="white-space:pre-wrap;font-size:var(--fs-sm);color:var(--gris);margin-top:6px">'+String(r.crudo).slice(0,500)+'</pre>':'';
+      document.getElementById('cierreEstado').innerHTML='<p style="color:var(--rojo)">No se pudo leer: '+(r.error||'')+'</p>'+detalleCrudo+
+        '<button class="btn btn-g" id="btnManualDesdeError" style="margin-top:8px">✏️ Ingresar este cierre manualmente</button>';
+      document.getElementById('btnManualDesdeError').onclick=()=>abrirCierreManual();
+      return;
+    }
+    document.getElementById('cierreEstado').innerHTML=r.lector==='workers-ai'
+      ?'<p style="color:var(--verde);margin:12px 0">✓ Leído con IA gratuita. Revisa bien la fecha y todos los montos antes de guardar.</p>'
+      :'<p style="color:var(--verde);margin:12px 0">✓ Leído. Revisa y corrige antes de guardar.</p>';
+    const ex=r.extraido||{};
+    document.getElementById('cierreForm').classList.remove('hidden');
+    document.getElementById('cFecha').value=ex.fecha?normalizarFechaIA(ex.fecha):'';
+    document.getElementById('cVenta').value=aMontoCLP(ex.venta_efectivo);
+    document.querySelector('#tablaCierre').innerHTML='';
+    (ex.costos_efectivo||[]).forEach(c=>agregarCostoUI(c.detalle,c.monto,c.categoria||'',c.tipo||'COSTOS'));
+    if(!(ex.costos_efectivo||[]).length)agregarCostoUI();
+  });
 }
 // Mismo formulario que la revisión post-IA (Fecha/Venta efectivo/lista de costos),
 // pero vacío y sin depender de que la lectura por foto haya funcionado.
