@@ -3679,6 +3679,13 @@ async function leerFoto(file){
     document.getElementById('cierreEstado').innerHTML=r.lector==='workers-ai'
       ?'<p style="color:var(--verde);margin:12px 0">✓ Leído con IA gratuita. Revisa bien la fecha y todos los montos antes de guardar.</p>'
       :'<p style="color:var(--verde);margin:12px 0">✓ Leído. Revisa y corrige antes de guardar.</p>';
+    // Verificación de la cuenta del cuaderno (Efectivo − Caja + gastos = venta en efectivo), hecha por el servidor:
+    // verde si cuadra con lo leído; ámbar si no cuadra o la venta tuvo que calcularse. Es lo que cubre los errores de lectura.
+    const vf=r.verificacion;
+    if(vf&&vf.mensaje){
+      const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      document.getElementById('cierreEstado').innerHTML+='<p style="margin:6px 0 12px;font-weight:600;color:'+(vf.nivel==='ok'?'var(--verde)':'#b45309')+'">'+(vf.nivel==='ok'?'✓ ':'⚠️ ')+esc(vf.mensaje)+'</p>';
+    }
     const ex=r.extraido||{};
     document.getElementById('cierreForm').classList.remove('hidden');
     document.getElementById('cFecha').value=ex.fecha?normalizarFechaIA(ex.fecha):'';
