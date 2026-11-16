@@ -1236,7 +1236,7 @@
       <img id="previewImg" class="hidden">
       <div id="cierreEstado"></div>
       <div id="cierreForm" class="hidden">
-        <div class="campo"><label>Fecha del cierre</label><input type="text" id="cFecha" placeholder="DD/MM/AAAA"></div>
+        <div class="campo"><label>Fecha del cierre</label><input type="text" id="cFecha" placeholder="DD/MM/AAAA" inputmode="numeric" maxlength="10" autocomplete="off"></div>
         <div class="campo"><label>Venta en efectivo del día</label><input type="text" inputmode="numeric" id="cVenta" placeholder="$0" data-clp></div>
         <label style="font-size:var(--fs-sm);color:var(--gris);text-transform:uppercase;letter-spacing:.05em">Costos pagados en efectivo <span style="text-transform:none;font-weight:400">(categoría y tipo sugeridos por IA — revisa y corrige)</span></label>
         <datalist id="listaCategorias"></datalist>
@@ -3689,6 +3689,20 @@ function agregarCostoUI(detalle='',monto='',categoria='',tipo='COSTOS'){
   });
   cont.appendChild(card);
 }
+// Fecha escrita a mano: se escriben solo los números corridos (22102026) y el campo pone las barras solo
+// (22/10/2026). Con año de 2 cifras (221026) completa 2026 al salir del campo o al guardar.
+function formatearFechaTecleada(v, completarAnio){
+  let d=String(v||'').replace(/\D/g,'').slice(0,8);
+  if(completarAnio && d.length===6) d=d.slice(0,4)+'20'+d.slice(4);
+  if(d.length<=2) return d;
+  if(d.length<=4) return d.slice(0,2)+'/'+d.slice(2);
+  return d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4);
+}
+(function(){
+  const el=document.getElementById('cFecha'); if(!el)return;
+  el.addEventListener('input',()=>{ const f=formatearFechaTecleada(el.value,false); if(f!==el.value)el.value=f; });
+  el.addEventListener('blur',()=>{ el.value=formatearFechaTecleada(el.value,true); });
+})();
 // Convierte DD/MM/AAAA (o con guiones) a ISO AAAA-MM-DD — el resto del sistema (payloadFinanciero:
 // WHERE fecha >= ? y fecha.slice(0,7) por mes) asume ISO; una fecha en otro formato se guarda
 // pero queda invisible en Registros y en los gráficos, sin ningún error visible.
@@ -3700,7 +3714,8 @@ function fechaCierreAISO(s){
   return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
 }
 async function guardarCierreUI(){
-  const fechaTexto=document.getElementById('cFecha').value.trim();
+  const fechaTexto=formatearFechaTecleada(document.getElementById('cFecha').value.trim(),true);
+  document.getElementById('cFecha').value=fechaTexto;
   const venta=limpiarMonto(document.getElementById('cVenta').value);
   if(!fechaTexto){alert('Pon la fecha del cierre');return;}
   const fecha=fechaCierreAISO(fechaTexto);
