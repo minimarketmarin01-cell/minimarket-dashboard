@@ -3515,6 +3515,20 @@ document.addEventListener('change', e=>{
   const esProveedor=sel.dataset.tipoCtx==='COSTOS';
   const nombre=(prompt(esProveedor?'Nombre del nuevo proveedor:':'Nombre del nuevo rubro:')||'').trim().toUpperCase();
   if(!nombre){ sel.value=sel.dataset.valorActual||''; return; }
+  const est=estadoNombre(nombre);
+  if(est.estado==='existe' && est.nombre!==nombre){
+    // ya existe escrito de otra forma (mayúsculas, tildes, punto): se usa ese en vez de crear uno parecido
+    sel.value=Array.from(sel.options).some(o=>o.value===est.nombre)?est.nombre:sel.dataset.valorActual||'';
+    sel.dataset.valorActual=sel.value; sel.dispatchEvent(new Event('input',{bubbles:true})); return;
+  }
+  if(esProveedor && est.estado==='nuevo'){
+    crearNombreNuevo(nombre,true).then(n=>{
+      if(!n){ sel.value=sel.dataset.valorActual||''; return; }
+      if(!Array.from(sel.options).some(o=>o.value===n)){ const opt=document.createElement('option'); opt.value=n; opt.textContent=n; sel.insertBefore(opt, sel.querySelector('option[value="__nueva__"]')); }
+      sel.value=n; sel.dataset.valorActual=n; sel.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    return;
+  }
   if(!Array.from(sel.options).some(o=>o.value===nombre)){
     const opt=document.createElement('option'); opt.value=nombre; opt.textContent=nombre;
     sel.insertBefore(opt, sel.querySelector('option[value="__nueva__"]'));
@@ -3819,21 +3833,79 @@ function initRevisar(){
         <input placeholder="Quién retira" data-k="subtipo" list="listaSubtipos" style="flex:1;min-width:110px;padding:8px;border:1px solid var(--linea);border-radius:8px;display:none">
         <button class="btn btn-p" data-act="aprobar">Aprobar</button>
         <button class="btn-del" data-act="descartar">Descartar</button>
-      </div>`;
+      </div>
+      <div data-k="nuevoAviso" style="display:none;margin-top:8px"></div>`;
     card.querySelector('[data-act=aprobar]').onclick=()=>aprobarRev(r,card);
     card.querySelector('[data-act=descartar]').onclick=()=>descartarRev(r,card);
-    card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);});
+    card.querySelector('[data-k=categoria]').addEventListener('input',e=>{const p=e.target.selectionStart;e.target.value=e.target.value.toUpperCase();e.target.setSelectionRange(p,p);avisoNuevoNombre(card);});
+    card.querySelector('[data-k=categoria]').addEventListener('change',()=>avisoNuevoNombre(card));
     card.querySelector('[data-k=tipo]').addEventListener('change',e=>{
+      avisoNuevoNombre(card);
       card.querySelector('[data-k=categoria]').placeholder=labelCategoria(e.target.value);
       card.querySelector('[data-k=subtipo]').style.display=e.target.value==='RETIRO_UTILIDAD'?'':'none';
     });
     cont.appendChild(card);
   });
 }
+// ---- Crear proveedor/rubro nuevo en un toque (Revisar) ----
+// Compara sin mayúsculas, tildes ni signos, igual que el Worker, para no partir "SAN JORGE" en dos.
+const normNombre=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[.\-_,()]/g,' ').replace(/\s+/g,' ').trim();
+function nombresConocidos(){ return Array.from(new Set([...(DATA.categorias||[]), ...((DATA.filas||[]).map(f=>f.categoria).filter(Boolean))])); }
+function distLev(a,b){ const m=a.length,n=b.length; if(!m)return n; if(!n)return m; let prev=Array.from({length:n+1},(_,j)=>j); for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; } return prev[n]; }
+// Devuelve {estado:'vacio'|'existe'|'nuevo', nombre, parecidos:[...]}
+function estadoNombre(valor){
+  const v=String(valor||'').trim().toUpperCase().replace(/\s+/g,' ');
+  if(v.length<2) return {estado:'vacio',nombre:v,parecidos:[]};
+  const nv=normNombre(v), conocidos=nombresConocidos();
+  const igual=conocidos.find(c=>normNombre(c)===nv);
+  if(igual) return {estado:'existe',nombre:igual,parecidos:[]};
+  const parecidos=conocidos.filter(c=>{ const nc=normNombre(c); return nc.includes(nv)||nv.includes(nc)||distLev(nc,nv)<=Math.max(1,Math.floor(nv.length/5)); }).slice(0,3);
+  return {estado:'nuevo',nombre:v,parecidos};
+}
+function avisoNuevoNombre(card){
+  const caja=card.querySelector('[data-k=nuevoAviso]'); if(!caja)return;
+  const tipo=card.querySelector('[data-k=tipo]').value;
+  const inp=card.querySelector('[data-k=categoria]');
+  const est=estadoNombre(inp.value);
+  if(est.estado!=='nuevo'){ caja.style.display='none'; caja.innerHTML=''; return; }
+  const esProv=tipo==='COSTOS', que=esProv?'proveedor':'rubro';
+  const estilo='padding:8px 12px;border-radius:8px;border:1px solid var(--linea);background:var(--blanco,#fff);font-size:var(--fs-md);cursor:pointer;margin:0 6px 6px 0';
+  const sug=est.parecidos.map(p=>`<button type="button" data-usar="${p.replace(/"/g,'&quot;')}" style="${estilo}">¿Quisiste decir <b>${p}</b>?</button>`).join('');
+  caja.style.display='block';
+  caja.innerHTML=`<div style="font-size:var(--fs-md);color:var(--gris);margin-bottom:6px">«${est.nombre}» no existe todavía como ${que}.</div>${sug}<button type="button" data-crear="1" style="${estilo};background:var(--ambar-suave);font-weight:600">➕ Crear «${est.nombre}» como ${que}</button>`;
+  caja.querySelectorAll('[data-usar]').forEach(b=>b.onclick=()=>{ inp.value=b.dataset.usar; avisoNuevoNombre(card); });
+  caja.querySelector('[data-crear]').onclick=async()=>{
+    const btn=caja.querySelector('[data-crear]'); btn.disabled=true; btn.textContent='Creando…';
+    const nombre=await crearNombreNuevo(est.nombre,esProv);
+    if(!nombre){ btn.disabled=false; btn.textContent='No se pudo crear. Toca para reintentar'; return; }
+    inp.value=nombre; caja.innerHTML=`<div style="color:var(--verde);font-size:var(--fs-md)">✓ ${esProv?'Proveedor':'Rubro'} «${nombre}» creado${esProv?' (también queda en Pedidos)':''}</div>`;
+  };
+}
+// Crea el proveedor en el Worker (queda en la misma tabla que usa Pedidos) o, si es un rubro de gasto,
+// solo lo suma a la lista local: un rubro existe en cuanto se usa en un registro. Devuelve el nombre final o null.
+async function crearNombreNuevo(nombre,esProveedor){
+  let final=String(nombre||'').trim().toUpperCase();
+  if(esProveedor){
+    try{ const r=await post({accion:'crearProveedor',nombre:final}); if(!r||!r.ok){ alert((r&&r.error)||'No se pudo crear el proveedor'); return null; } final=r.nombre; }
+    catch(e){ alert('No se pudo crear el proveedor: '+e); return null; }
+  }
+  DATA.categorias=Array.from(new Set([...(DATA.categorias||[]),final])).sort();
+  poblarCategorias();
+  return final;
+}
 async function aprobarRev(r,card){
   const g=k=>card.querySelector(`[data-k=${k}]`).value;
-  const nombre=g('nombre'),categoria=g('categoria'),tipo=g('tipo'),cuenta=g('cuenta');
+  const nombre=g('nombre'),tipo=g('tipo'),cuenta=g('cuenta');
+  let categoria=g('categoria');
   if(!categoria){alert('Pon un '+labelCategoria(tipo).toLowerCase());return;}
+  // Si ya existe escrito distinto (mayúsculas, tildes, punto), se guarda con el nombre que ya existe.
+  { const e0=estadoNombre(categoria); if(e0.estado==='existe') categoria=e0.nombre; }
+  // Un costo debe ir a un proveedor que exista: si es nuevo, primero se crea con el botón ➕ de la tarjeta.
+  if(tipo==='COSTOS' && estadoNombre(categoria).estado==='nuevo'){
+    avisoNuevoNombre(card);
+    card.querySelector('[data-k=nuevoAviso]').scrollIntoView({block:'center',behavior:'smooth'});
+    return;
+  }
   card.querySelector('[data-act=aprobar]').innerHTML='<span class="spin"></span>';
   const valores={nombre,fecha:r.fecha,categoria,tipo,cuenta,monto:r.monto,nop:r.nop,patron:r.descripcion};
   if(tipo==='RETIRO_UTILIDAD') valores.subtipo=g('subtipo').trim();
@@ -3852,7 +3924,7 @@ async function post(body){
   // Puente entre las llamadas antiguas (accion:'editar'/'eliminar'/'agregar'/'quitarRevisar',
   // ya usadas en el resto del dashboard) y las acciones nuevas del Worker sobre D1.
   // Cierre de caja (leerCierre/guardarCierre) sigue pendiente de portar.
-  const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar', leerCierre:'financiero_leer_cierre', guardarCierre:'financiero_guardar_cierre' };
+  const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar', leerCierre:'financiero_leer_cierre', guardarCierre:'financiero_guardar_cierre', crearProveedor:'financiero_crear_proveedor' };
   const accionNueva = mapa[body.accion];
   if(!accionNueva){
     return { ok:false, error:'Edición aún no conectada a la base nueva (D1) para "'+body.accion+'". Pendiente de portar.' };
