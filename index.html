@@ -1356,6 +1356,11 @@
 </div>
 
 <script>
+// Las funciones de Supabase corren junto a la base de datos (São Paulo). Sin esto, desde algunos lugares la petición cae en una
+// región de EE. UU. y el catálogo tarda 5-10 s en vez de ~1 s. Se agrega a toda llamada hacia Supabase, sin tocar el resto del código.
+(function(){var o=window.fetch;window.fetch=function(u,i){try{if(typeof u==='string'&&u.indexOf('znywepjclzhgkctzrjxb.supabase.co/functions/v1/')>-1&&u.indexOf('forceFunctionRegion')<0)u+=(u.indexOf('?')<0?'?':'&')+'forceFunctionRegion=sa-east-1';}catch(e){}return o.call(this,u,i);};})();
+</script>
+<script>
 const TOKEN = ""; // Apps Script ya no se usa; post() manda TOKEN_FINANZAS (ver más abajo). Se deja vacío para no publicar claves.
 const WORKER_FINANZAS_URL = "https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/finanzas-api/"; // corre en Supabase
 // Locales que atiende el mismo Worker. Cada uno tiene su propia base D1 (registros,
