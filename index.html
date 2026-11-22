@@ -1363,8 +1363,9 @@
 <script>
 const TOKEN = ""; // Apps Script ya no se usa; post() manda TOKEN_FINANZAS (ver más abajo). Se deja vacío para no publicar claves.
 const WORKER_FINANZAS_URL = "https://znywepjclzhgkctzrjxb.supabase.co/functions/v1/finanzas-api/"; // corre en Supabase
-// Locales que atiende el mismo Worker. Cada uno tiene su propia base D1 (registros,
-// ventas, catálogo) y su propia empresa/RUT; el Worker elige la base según `local`.
+// Locales que atiende la misma Edge Function (finanzas-api, en Supabase). Cada uno tiene su propio
+// esquema de Postgres (marin376 / argomedo455: registros, ventas, catálogo) y su propia empresa/RUT;
+// la función elige el esquema según `local`.
 // Cambiar de local recarga la página: hay demasiado estado global (DATA, gráficos,
 // mes activo) como para limpiarlo en caliente sin riesgo de mezclar datos.
 const LOCALES = {
@@ -1403,7 +1404,7 @@ function obtenerTokenFinanzas(){
   return t;
 }
 const TOKEN_FINANZAS = obtenerTokenFinanzas();
-// Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde D1 vía el Worker.
+// Apps Script/Google Sheets quedó abandonado — todo se lee ahora desde Supabase (Postgres) vía la Edge Function finanzas-api.
 const FINANZAS_GET_URL = WORKER_FINANZAS_URL + "?action=financiero&token=" + encodeURIComponent(TOKEN_FINANZAS) + "&local=" + localActivo;
 const MESES_ES={'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'};
 const TIPOS_OPC=['INGRESO','COSTOS','GASTO OPE','MERMA','PLASTICOS','RETIRO_UTILIDAD','PRESTAMO','IMPUESTOS','INVERSION',...(localActivo==='marin'?['PAGO DEUDA']:[])]; // PAGO DEUDA (abono a sueldo atrasado) solo existe en Marín: la base de Argomedo no lo acepta
@@ -1492,7 +1493,7 @@ function abrirDetalleLista(titulo, filas, vacioTxt, agruparPorCategoria){
     // subtipo (ej. ISABEL/ROSY en Imposiciones) es una etiqueta explícita de "quién" puesta a
     // propósito en el registro — si está presente, nunca se agrupa junto con otro subtipo
     // distinto aunque compartan nombre/categoría (antes "Diaz Martinez ×2" escondía que eran dos
-    // personas distintas). OJO: la columna en D1 se llama subtipo_original, pero el backend
+    // personas distintas). OJO: la columna en la base se llama subtipo_original, pero el backend
     // (marin376-finanzas) la manda al frontend ya renombrada a "subtipo" en cada fila — por eso
     // es f.subtipo acá, no f.subtipo_original (ese nombre nunca llega al navegador).
     const sub=(f.subtipo||'').trim();
@@ -3927,12 +3928,12 @@ async function descartarRev(r,card){
 
 async function post(body){
   // Puente entre las llamadas antiguas (accion:'editar'/'eliminar'/'agregar'/'quitarRevisar',
-  // ya usadas en el resto del dashboard) y las acciones nuevas del Worker sobre D1.
+  // ya usadas en el resto del dashboard) y las acciones nuevas de la Edge Function (finanzas-api) sobre Supabase.
   // Cierre de caja (leerCierre/guardarCierre) sigue pendiente de portar.
   const mapa = { editar:'financiero_editar_fila', eliminar:'financiero_eliminar_fila', agregar:'financiero_agregar_fila', quitarRevisar:'financiero_quitar_revisar', leerCierre:'financiero_leer_cierre', guardarCierre:'financiero_guardar_cierre', crearProveedor:'financiero_crear_proveedor' };
   const accionNueva = mapa[body.accion];
   if(!accionNueva){
-    return { ok:false, error:'Edición aún no conectada a la base nueva (D1) para "'+body.accion+'". Pendiente de portar.' };
+    return { ok:false, error:'Edición aún no conectada a la base (Supabase) para "'+body.accion+'". Pendiente de portar.' };
   }
   const resp = await fetch(WORKER_FINANZAS_URL, {
     method:'POST',
